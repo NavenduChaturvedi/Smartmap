@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Aegis | Login</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script src="js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="css/base.css">
+  <script type="module" src="js/supabase-client.js"></script>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex items-center justify-center p-6">
+  <div class="fixed inset-0 scanlines z-50"></div>
+
+  <main class="relative z-10 w-full max-w-md">
+    <div class="glass-panel rounded-lg p-8">
+      <div class="text-center mb-8">
+        <h1 class="text-4xl font-extrabold tracking-tight text-primary">PROJECT AEGIS</h1>
+        <p class="mt-2 text-xs tracking-[0.2em] uppercase text-on-surface-variant">Roadmap Command Center</p>
+      </div>
+
+      <form class="space-y-6" id="login-form">
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-on-surface-variant mb-2">Operative ID</label>
+          <input class="w-full bg-transparent border-0 border-b border-outline-variant focus:border-primary focus:ring-0 px-0 py-2" id="login-email" type="email" placeholder="ENTER EMAIL" required />
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-on-surface-variant mb-2">Access Code</label>
+          <input class="w-full bg-transparent border-0 border-b border-outline-variant focus:border-primary focus:ring-0 px-0 py-2" id="login-password" type="password" placeholder="••••••••••••" required />
+        </div>
+
+        <p class="text-xs text-error hidden" id="auth-error"></p>
+
+        <button class="clip-btn w-full py-3 bg-primary text-black font-bold tracking-widest uppercase hover:opacity-90 transition" id="login-submit" type="submit">
+          Initialize Session
+        </button>
+      </form>
+
+      <div class="mt-6 text-center">
+        <button class="text-xs tracking-widest uppercase text-on-surface-variant/60 cursor-not-allowed" type="button" disabled>
+          Create Account (Coming Later)
+        </button>
+      </div>
+    </div>
+  </main>
+  <script src="js/auth.js"></script>
+</body>
+</html>

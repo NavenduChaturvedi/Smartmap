@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Aegis Mission Control - System Configuration</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=Roboto+Mono:wght@400;500;700&amp;family=Space+Grotesk:wght@500;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/base.css">
+<script src="js/tailwind-config.js"></script>
+<script type="module" src="js/supabase-client.js"></script>
+<script src="js/app.js"></script>
+<script src="js/components.js"></script>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-container selection:text-on-primary-container min-h-screen overflow-x-hidden">
+<div class="fixed inset-0 scanlines opacity-[0.05] z-50 pointer-events-none"></div>
+<!-- SIDE NAV BAR -->
+<aegis-sidebar></aegis-sidebar>
+<!-- TOP NAV BAR -->
+<aegis-topbar title="" subtitle=""></aegis-topbar>
+<!-- MAIN CONTENT -->
+<main class="ml-64 pt-24 p-margin grid grid-cols-12 gap-gutter">
+<!-- LEFT COLUMN (2/3) -->
+<div class="col-span-8 space-y-margin">
+<!-- PROFILE CARD -->
+<section class="glass-panel p-margin rounded-xl flex flex-col gap-margin border-t border-l border-white/5">
+<div class="flex items-center justify-between border-b border-outline-variant/20 pb-4">
+<div class="flex items-center gap-2">
+<span class="font-label-mono text-primary">[TASK_001]</span>
+<h3 class="font-label-caps text-label-mono text-on-surface-variant uppercase">Profile Settings</h3>
+</div>
+<span class="material-symbols-outlined text-white/30" data-icon="person">person</span>
+</div>
+<div class="flex gap-margin">
+<div class="flex flex-col items-center gap-4">
+<div class="w-32 h-32 rounded-full bg-surface-container-highest border-2 border-dashed border-white/20 flex items-center justify-center relative group overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.02)]">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant/30" data-icon="account_circle">account_circle</span>
+<div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer backdrop-blur-sm">
+<span class="material-symbols-outlined text-white" data-icon="upload">upload</span>
+</div>
+</div>
+<button class="text-body-sm font-label-mono text-white/60 hover:text-white hover:underline transition-all">Change Avatar</button>
+</div>
+<div class="flex-1 grid grid-cols-2 gap-margin">
+<div class="space-y-unit">
+<label class="font-label-caps text-[10px] text-on-surface-variant uppercase opacity-70">Display Name</label>
+<input class="w-full bg-transparent border-b border-outline-variant/50 px-0 py-2 text-on-surface font-body-md input-scan-focus transition-all" id="display-name-input" type="text" value="Commander"/>
+</div>
+<div class="space-y-unit">
+<label class="font-label-caps text-[10px] text-on-surface-variant uppercase opacity-70">Email Address</label>
+<input class="w-full bg-transparent border-b border-outline-variant/50 px-0 py-2 text-on-surface font-body-md input-scan-focus transition-all" id="email-input" type="email" value="commander@aegis.dev"/>
+</div>
+<div class="col-span-2 pt-4">
+<button class="clip-angled bg-white text-background px-10 py-4 font-label-caps text-label-mono font-bold uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.15)]" id="save-profile-btn" type="button">
+                                Save Changes
+                            </button>
+</div>
+</div>
+</div>
+</section>
+<!-- APPEARANCE CARD -->
+<section class="glass-panel p-margin rounded-xl flex flex-col gap-margin border-t border-l border-white/5">
+<div class="flex items-center justify-between border-b border-outline-variant/20 pb-4">
+<div class="flex items-center gap-2">
+<span class="font-label-mono text-primary">[TASK_002]</span>
+<h3 class="font-label-caps text-label-mono text-on-surface-variant uppercase">Appearance</h3>
+</div>
+<span class="material-symbols-outlined text-white/30" data-icon="palette">palette</span>
+</div>
+<div class="grid grid-cols-2 gap-margin">
+<div class="space-y-margin">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-on-surface">Theme Mode</span>
+<div class="flex bg-surface-container rounded-lg p-unit border border-outline-variant/20">
+<button class="px-gutter py-unit bg-white text-background text-label-mono font-bold rounded-lg shadow-[0_0_12px_rgba(255,255,255,0.2)]" id="theme-dark-btn" type="button">Dark</button>
+<button class="px-gutter py-unit text-on-surface-variant text-label-mono hover:text-on-surface transition-colors" id="theme-light-btn" type="button">Light</button>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-body-md text-on-surface">Color Accent</span>
+<div class="flex gap-4">
+<button class="w-6 h-6 rounded-full bg-white ring-2 ring-white ring-offset-2 ring-offset-background shadow-[0_0_15px_rgba(255,255,255,0.6)]"></button>
+<button class="w-6 h-6 rounded-full bg-tertiary-fixed-dim hover:scale-110 transition-transform shadow-[0_0_10px_rgba(198,198,198,0.3)]"></button>
+<button class="w-6 h-6 rounded-full bg-on-primary-container hover:scale-110 transition-transform"></button>
+<button class="w-6 h-6 rounded-full bg-error hover:scale-110 transition-transform"></button>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<span class="font-body-md text-on-surface">Font Size</span>
+<span class="font-label-mono text-white/80" id="font-size-label">Medium</span>
+</div>
+<input class="w-full accent-white h-1 bg-surface-container rounded-full appearance-none cursor-pointer" id="font-size-range" max="120" min="90" type="range" value="100"/>
+</div>
+</div>
+<div class="space-y-4 border-l border-outline-variant/20 pl-margin">
+<div class="flex items-center justify-between py-1">
+<span class="font-body-md text-on-surface">Enable Scanlines</span>
+<button class="w-12 h-6 bg-white/10 rounded-full relative border border-white/20" data-toggle="scanlines" type="button">
+<div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.8)]"></div>
+</button>
+</div>
+<div class="flex items-center justify-between py-1">
+<span class="font-body-md text-on-surface">Enable Sound Effects</span>
+<button class="w-12 h-6 bg-white/10 rounded-full relative border border-white/20" data-toggle="soundEffects" type="button">
+<div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.8)]"></div>
+</button>
+</div>
+<div class="flex items-center justify-between py-1">
+<span class="font-body-md text-on-surface">Enable Animations</span>
+<button class="w-12 h-6 bg-white/10 rounded-full relative border border-white/20" data-toggle="animations" type="button">
+<div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.8)]"></div>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- NOTIFICATIONS CARD -->
+<section class="glass-panel p-margin rounded-xl flex flex-col gap-margin border-t border-l border-white/5">
+<div class="flex items-center justify-between border-b border-outline-variant/20 pb-4">
+<div class="flex items-center gap-2">
+<span class="font-label-mono text-primary">[TASK_003]</span>
+<h3 class="font-label-caps text-label-mono text-on-surface-variant uppercase">Notifications</h3>
+</div>
+<span class="material-symbols-outlined text-white/30" data-icon="notifications">notifications</span>
+</div>
+<div class="grid grid-cols-3 gap-margin">
+<div class="space-y-2 bg-surface-container/30 p-4 rounded-lg border border-white/5">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Daily Reminder</span>
+<span class="material-symbols-outlined text-white text-sm" data-icon="check_circle">check_circle</span>
+</div>
+<p class="font-body-md text-on-surface">Active</p>
+</div>
+<div class="space-y-2 bg-surface-container/30 p-4 rounded-lg border border-white/5">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Streak Warning</span>
+<span class="material-symbols-outlined text-white text-sm" data-icon="check_circle">check_circle</span>
+</div>
+<p class="font-body-md text-on-surface">Enabled</p>
+</div>
+<div class="space-y-2 bg-surface-container/30 p-4 rounded-lg border border-white/5">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-[10px] text-on-surface-variant">Achievement Alerts</span>
+<span class="material-symbols-outlined text-white text-sm" data-icon="check_circle">check_circle</span>
+</div>
+<p class="font-body-md text-on-surface">Global</p>
+</div>
+</div>
+<div class="flex items-center justify-between bg-white/5 p-margin rounded-lg border-l-2 border-white">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-white" data-icon="schedule">schedule</span>
+<div>
+<p class="font-body-md font-bold text-on-surface">Reminder Time</p>
+<p class="font-label-mono text-xs text-on-surface-variant">System sync every 24h</p>
+</div>
+</div>
+<div class="text-h3 font-label-mono text-white bg-surface-container-high px-margin py-4 rounded-lg border border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+                        08:00 AM
+                    </div>
+</div>
+</section>
+</div>
+<!-- RIGHT COLUMN (1/3) -->
+<div class="col-span-4 space-y-margin">
+<!-- DATA MANAGEMENT -->
+<section class="glass-panel p-margin rounded-xl flex flex-col gap-margin border-t border-l border-white/5">
+<div class="flex items-center justify-between border-b border-outline-variant/20 pb-4">
+<div class="flex items-center gap-2">
+<span class="font-label-mono text-primary">[SYS_DATA]</span>
+<h3 class="font-label-caps text-label-mono text-on-surface-variant uppercase">Data Management</h3>
+</div>
+</div>
+<div class="space-y-4">
+<button class="w-full text-left flex items-center justify-between p-margin border border-white/20 text-white hover:bg-white/10 transition-colors group rounded-lg">
+<span class="font-label-mono uppercase">Export Cloud Data</span>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" data-icon="download">download</span>
+</button>
+<button class="w-full text-left flex items-center justify-between p-margin border border-white/20 text-white hover:bg-white/10 transition-colors group rounded-lg">
+<span class="font-label-mono uppercase">Import System Backup</span>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" data-icon="upload">upload</span>
+</button>
+</div>
+<div class="space-y-2 pt-4">
+<div class="flex justify-between text-label-mono mb-1">
+<span class="text-on-surface-variant uppercase">Local Storage</span>
+<span class="text-white" id="local-storage-size">2.3 MB / 10 MB</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden flex gap-1 p-0.5">
+<div class="h-full w-1/12 bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)] rounded-full"></div>
+<div class="h-full w-1/12 bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)] rounded-full"></div>
+<div class="h-full w-1/12 bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)] rounded-full"></div>
+<div class="h-full w-1/12 bg-white/20 rounded-full"></div>
+<div class="h-full w-1/12 bg-white/20 rounded-full"></div>
+<div class="h-full w-1/12 bg-white/20 rounded-full"></div>
+<div class="h-full w-1/12 bg-white/20 rounded-full"></div>
+<div class="h-full w-1/12 bg-white/20 rounded-full"></div>
+<div class="h-full w-1/12 bg-white/20 rounded-full"></div>
+<div class="h-full w-1/12 bg-white/20 rounded-full"></div>
+</div>
+</div>
+<button class="w-full mt-4 flex items-center justify-center gap-4 p-margin bg-error-container/10 border border-error/30 text-error hover:bg-error/20 transition-colors rounded-lg">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+<span class="font-label-mono uppercase font-bold">Reset All Progress</span>
+</button>
+</section>
+<!-- ABOUT CARD -->
+<section class="glass-panel p-margin rounded-xl flex flex-col gap-margin border-t border-l border-white/5 bg-gradient-to-br from-surface-container/40 to-surface-container-highest/20">
+<div class="flex items-center justify-between border-b border-outline-variant/20 pb-4">
+<div class="flex items-center gap-2">
+<span class="font-label-mono text-primary">[INFO]</span>
+<h3 class="font-label-caps text-label-mono text-on-surface-variant uppercase">About System</h3>
+</div>
+</div>
+<div class="flex flex-col items-center py-6 text-center gap-4">
+<div class="w-20 h-20 bg-white/5 flex items-center justify-center rounded-lg border border-white/20 relative">
+<div class="absolute inset-0 border border-white opacity-10 scale-110 rounded-lg"></div>
+<span class="material-symbols-outlined text-4xl text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]" data-icon="shield">shield</span>
+</div>
+<div>
+<h4 class="font-h3 text-h3 text-on-surface tracking-[0.2em] italic uppercase">Project Aegis</h4>
+<p class="font-label-mono text-white/40">Version v1.0.0</p>
+</div>
+</div>
+<div class="space-y-2">
+<a class="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors group" href="analytics.html">
+<span class="font-body-md text-on-surface-variant group-hover:text-white">Security Protocol</span>
+<span class="material-symbols-outlined text-sm opacity-40 group-hover:opacity-100" data-icon="open_in_new">open_in_new</span>
+</a>
+<a class="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors group" href="dashboard.html">
+<span class="font-body-md text-on-surface-variant group-hover:text-white">Developer Credits</span>
+<span class="material-symbols-outlined text-sm opacity-40 group-hover:opacity-100" data-icon="open_in_new">open_in_new</span>
+</a>
+<a class="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors group" href="index.html">
+<span class="font-body-md text-on-surface-variant group-hover:text-white">Service Terms</span>
+<span class="material-symbols-outlined text-sm opacity-40 group-hover:opacity-100" data-icon="open_in_new">open_in_new</span>
+</a>
+</div>
+<button class="w-full mt-4 py-4 bg-surface-container border border-outline-variant/30 text-on-surface-variant font-label-mono uppercase hover:border-white/40 hover:text-white transition-all rounded-lg">
+                    Check for Updates
+                </button>
+</section>
+</div>
+</main>
+<!-- DATA CORNER BRACKETS -->
+<div class="fixed top-4 left-4 w-12 h-12 border-t-2 border-l-2 border-white/20 pointer-events-none z-50"></div>
+<div class="fixed top-4 right-4 w-12 h-12 border-t-2 border-r-2 border-white/20 pointer-events-none z-50"></div>
+<div class="fixed bottom-4 left-4 w-12 h-12 border-b-2 border-l-2 border-white/20 pointer-events-none z-50"></div>
+<div class="fixed bottom-4 right-4 w-12 h-12 border-b-2 border-r-2 border-white/20 pointer-events-none z-50"></div>
+<script src="js/settings.js"></script>
+</body></html>

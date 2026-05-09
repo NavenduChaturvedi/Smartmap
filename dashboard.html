@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Roboto+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="js/tailwind-config.js"></script>
+<link rel="stylesheet" href="css/base.css">
+<script type="module" src="js/supabase-client.js"></script>
+<script src="js/app.js"></script>
+<script src="js/components.js"></script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen relative overflow-x-hidden selection:bg-primary selection:text-on-primary">
+<!-- Decorative Global Elements -->
+<div class="fixed inset-0 scanlines z-50"></div>
+<div class="fixed inset-0 pointer-events-none z-0 opacity-10">
+<div class="absolute top-0 left-0 w-48 h-48 border-t border-l border-primary/20 m-margin"></div>
+<div class="absolute top-0 right-0 w-48 h-48 border-t border-r border-primary/20 m-margin"></div>
+<div class="absolute bottom-0 left-0 w-48 h-48 border-b border-l border-primary/20 m-margin"></div>
+<div class="absolute bottom-0 right-0 w-48 h-48 border-b border-r border-primary/20 m-margin"></div>
+</div>
+<!-- SideNavBar -->
+<aegis-sidebar></aegis-sidebar>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<aegis-topbar title="MISSION_CONTROL" subtitle="Strategic Operational Interface"></aegis-topbar>
+<!-- Dashboard Canvas -->
+<div class="p-margin space-y-10">
+<!-- Stats Row -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<div class="glass-panel p-6 rounded-xl relative group overflow-hidden">
+<div class="shimmer absolute inset-0 opacity-0 group-hover:opacity-100"></div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Active_Roadmaps</p>
+<div class="flex items-baseline gap-2">
+<p class="font-h2 text-h2 text-primary" id="stat-roadmaps">03</p>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Nodes</span>
+</div>
+</div>
+<div class="glass-panel p-6 rounded-xl relative group overflow-hidden">
+<div class="shimmer absolute inset-0 opacity-0 group-hover:opacity-100"></div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Tasks_Pending</p>
+<div class="flex items-baseline gap-2">
+<p class="font-h2 text-h2 text-primary" id="stat-pending">05</p>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Op_Today</span>
+</div>
+</div>
+<div class="glass-panel p-6 rounded-xl relative group overflow-hidden border-l-4 border-l-primary/30">
+<div class="shimmer absolute inset-0 opacity-0 group-hover:opacity-100"></div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Active_Streak</p>
+<div class="flex items-baseline gap-2">
+<p class="font-h2 text-h2 text-primary" id="stat-streak">12</p>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Days_Cont</span>
+</div>
+</div>
+<div class="glass-panel p-6 rounded-xl relative group overflow-hidden">
+<div class="shimmer absolute inset-0 opacity-0 group-hover:opacity-100"></div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Total_Experience</p>
+<div class="flex items-baseline gap-2">
+<p class="font-h2 text-h2 text-primary" id="stat-xp">4,250</p>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Accum_XP</span>
+</div>
+</div>
+</div>
+<!-- Main Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+<!-- Left Column: Tasks -->
+<div class="lg:col-span-2 space-y-6">
+<div class="flex justify-between items-center border-b border-outline-variant pb-4">
+<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Current_Objectives</h2>
+<span class="font-label-mono text-label-mono text-primary bg-primary/5 px-3 py-1 rounded border border-primary/20" id="objective-status">STATUS: NOMINAL</span>
+</div>
+<div class="space-y-3" id="objectives-list"></div>
+</div>
+<!-- Right Column: Active Roadmaps -->
+<div class="space-y-6">
+<div class="flex justify-between items-center border-b border-outline-variant pb-4">
+<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Roadmaps</h2>
+</div>
+<div class="space-y-4">
+<!-- Roadmap Card -->
+<div class="glass-panel p-4 rounded-xl flex items-center gap-4 group cursor-pointer">
+<div class="relative w-12 h-12 flex-shrink-0">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-variant" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="3"></circle>
+<circle class="text-primary aegis-glow" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="44" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+<span class="absolute inset-0 flex items-center justify-center text-[10px] font-label-mono text-primary">65%</span>
+</div>
+<div class="flex-1">
+<p class="font-body-md font-bold text-on-surface group-hover:text-primary transition-colors">Frontend Mastery</p>
+<p class="text-[9px] text-on-surface-variant uppercase tracking-widest">14 / 22 NODES COMPLETED</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-all" data-icon="arrow_forward_ios">arrow_forward_ios</span>
+</div>
+<div class="glass-panel p-4 rounded-xl flex items-center gap-4 group cursor-pointer">
+<div class="relative w-12 h-12 flex-shrink-0">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-variant" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="3"></circle>
+<circle class="text-primary aegis-glow" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="87.9" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+<span class="absolute inset-0 flex items-center justify-center text-[10px] font-label-mono text-primary">30%</span>
+</div>
+<div class="flex-1">
+<p class="font-body-md font-bold text-on-surface group-hover:text-primary transition-colors">Data Science</p>
+<p class="text-[9px] text-on-surface-variant uppercase tracking-widest">08 / 26 NODES COMPLETED</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-all" data-icon="arrow_forward_ios">arrow_forward_ios</span>
+</div>
+<button class="w-full p-6 border border-dashed border-outline-variant rounded-xl text-on-surface-variant hover:text-primary hover:border-primary/50 hover:bg-white/5 transition-all flex flex-col items-center gap-2 group">
+<span class="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform" data-icon="add_circle">add_circle</span>
+<span class="font-label-caps text-label-caps uppercase tracking-[0.2em]">Deploy_New_Asset</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Recent Achievements Section -->
+<section class="space-y-6">
+<div class="flex justify-between items-center border-b border-outline-variant pb-4">
+<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Commendations</h2>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-gutter">
+<div class="glass-panel p-8 rounded-xl flex flex-col items-center gap-4 text-center hover:scale-[1.02] transition-transform">
+<div class="w-16 h-16 rounded-full bg-primary/5 border border-primary flex items-center justify-center aegis-glow-intense">
+<span class="material-symbols-outlined text-[32px] text-primary" data-icon="military_tech">military_tech</span>
+</div>
+<div>
+<p class="font-body-md font-bold text-on-surface">Elite Streak</p>
+<p class="font-label-mono text-[9px] text-on-surface-variant uppercase mt-1">Status: Unlocked</p>
+</div>
+</div>
+<div class="glass-panel p-8 rounded-xl flex flex-col items-center gap-4 text-center hover:scale-[1.02] transition-transform">
+<div class="w-16 h-16 rounded-full bg-primary/5 border border-primary flex items-center justify-center aegis-glow-intense">
+<span class="material-symbols-outlined text-[32px] text-primary" data-icon="verified">verified</span>
+</div>
+<div>
+<p class="font-body-md font-bold text-on-surface">Alpha Phase</p>
+<p class="font-label-mono text-[9px] text-on-surface-variant uppercase mt-1">Status: Unlocked</p>
+</div>
+</div>
+<div class="glass-panel p-8 rounded-xl flex flex-col items-center gap-4 text-center opacity-40 grayscale group hover:grayscale-0 hover:opacity-100 transition-all">
+<div class="w-16 h-16 rounded-full bg-white/5 border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[32px]" data-icon="lock">lock</span>
+</div>
+<div>
+<p class="font-body-md font-bold text-on-surface">Centurion</p>
+<p class="font-label-mono text-[9px] text-on-surface-variant uppercase mt-1">Locked_Task_100</p>
+</div>
+</div>
+<div class="glass-panel p-8 rounded-xl flex flex-col items-center gap-4 text-center opacity-40 grayscale group hover:grayscale-0 hover:opacity-100 transition-all">
+<div class="w-16 h-16 rounded-full bg-white/5 border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[32px]" data-icon="lock">lock</span>
+</div>
+<div>
+<p class="font-body-md font-bold text-on-surface">Architect</p>
+<p class="font-label-mono text-[9px] text-on-surface-variant uppercase mt-1">Locked_Build_01</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+<footer class="mt-auto p-margin border-t border-outline-variant/30 bg-surface-container-lowest">
+<div class="flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="font-label-mono text-[10px] text-on-surface-variant tracking-[0.3em] uppercase">
+                    Terminal_ID: AEGIS-7734 // Build_v1.0.4-Stable // Encrypted_Session
+                </p>
+<div class="flex gap-6">
+<a class="font-label-mono text-[10px] text-on-surface-variant hover:text-primary transition-colors uppercase" href="analytics.html">Network_Diagnostics</a>
+<a class="font-label-mono text-[10px] text-on-surface-variant hover:text-primary transition-colors uppercase" href="settings.html">System_Logs</a>
+</div>
+</div>
+</footer>
+</main>
+<script src="js/dashboard.js"></script>
+</body></html>
