@@ -97,6 +97,10 @@ class AegisTopbar extends HTMLElement {
           </div>
         </div>
         <div class="flex items-center gap-4">
+          <button id="aegis-signout-btn" class="flex items-center gap-2 h-10 px-3 sm:px-4 rounded-full border border-outline-variant/30 text-on-surface-variant hover:text-error hover:border-error/50 transition-colors" type="button">
+            <span class="material-symbols-outlined text-[18px]">logout</span>
+            <span class="hidden sm:inline font-label-caps text-[10px] tracking-widest uppercase">Sign Out</span>
+          </button>
           <button class="w-10 h-10 rounded-full flex items-center justify-center border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors relative">
             <span class="material-symbols-outlined text-[20px]">notifications</span>
             <span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full animate-pulse border-2 border-background"></span>

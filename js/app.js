@@ -2,7 +2,25 @@
 
 const AEGIS_STORAGE_KEY = "aegis_state_v1";
 
-const defaultState = {
+const createTaskId = () => (crypto?.randomUUID ? crypto.randomUUID() : `task_${Date.now()}_${Math.random().toString(16).slice(2)}`);
+const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+const normalizeTasks = (tasks) => tasks.map((task) => ({
+  ...task,
+  id: isUuid(task.id) ? task.id : createTaskId(),
+  xp: Number(task.xp || 0),
+  done: Boolean(task.done)
+}));
+const sumCompletedXp = (tasks) => tasks.reduce((total, task) => total + (task.done ? task.xp : 0), 0);
+const countActiveRoadmaps = (tasks) => new Set(tasks
+  .map((task) => task.tag)
+  .filter((tag) => typeof tag === "string" && tag.startsWith("RM:"))).size;
+const refreshDerivedState = (state) => {
+  state.roadmapsActive = countActiveRoadmaps(state.tasks || []);
+  state.totalXp = sumCompletedXp(state.tasks || []);
+  return state;
+};
+
+const defaultState = refreshDerivedState({
   roadmapsActive: 0,
   streak: 0,
   totalXp: 0,
@@ -25,32 +43,22 @@ const defaultState = {
     soundEffects: false,
     animations: true
   }
-};
-
-const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-const createTaskId = () => (crypto?.randomUUID ? crypto.randomUUID() : `task_${Date.now()}_${Math.random().toString(16).slice(2)}`);
-const normalizeTasks = (tasks) => tasks.map((task) => ({
-  ...task,
-  id: isUuid(task.id) ? task.id : createTaskId(),
-  xp: Number(task.xp || 0),
-  done: Boolean(task.done)
-}));
-const sumCompletedXp = (tasks) => tasks.reduce((total, task) => total + (task.done ? task.xp : 0), 0);
+});
 
 const loadState = () => {
   try {
     const raw = localStorage.getItem(AEGIS_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : {};
-    return {
+    return refreshDerivedState({
       ...defaultState,
       ...parsed,
       profile: { ...defaultState.profile, ...(parsed.profile || {}) },
       settings: { ...defaultState.settings, ...(parsed.settings || {}) },
       roadmap: { ...defaultState.roadmap, ...(parsed.roadmap || {}) },
       tasks: normalizeTasks(parsed.tasks || defaultState.tasks)
-    };
+    });
   } catch {
-    return { ...defaultState };
+    return refreshDerivedState({ ...defaultState });
   }
 };
 
@@ -112,7 +120,7 @@ const seedDefaultsForUser = async (user) => {
   const email = user.email || defaultState.profile.email;
   const displayName = email.split("@")[0] || defaultState.profile.displayName;
 
-  await Promise.all([
+  const writes = [
     supabase.from("profiles").upsert({
       id: user.id,
       display_name: displayName,
@@ -130,7 +138,9 @@ const seedDefaultsForUser = async (user) => {
       user_id: user.id,
       selected_node: defaultState.roadmap.selectedNode
     }, { onConflict: "user_id" })
-  ]);
+  ];
+
+  await Promise.all(writes);
 };
 
 const hydrateStateFromSupabase = async () => {
@@ -150,13 +160,10 @@ const hydrateStateFromSupabase = async () => {
 
   if (!remote) return null;
 
-  const normalizedTasks = normalizeTasks(remote.tasks || window.Aegis.state.tasks);
-  const derivedXp = sumCompletedXp(normalizedTasks);
-  const nextState = {
+  const normalizedTasks = normalizeTasks(remote.tasks || []);
+  const nextState = refreshDerivedState({
     ...window.Aegis.state,
-    roadmapsActive: normalizedTasks.length > 0 ? 1 : 0,
     streak: normalizedTasks.length > 0 ? window.Aegis.state.streak : 0,
-    totalXp: derivedXp,
     profile: {
       displayName: remote.profile?.display_name || window.Aegis.state.profile.displayName,
       email: remote.profile?.email || window.Aegis.state.profile.email
@@ -172,7 +179,7 @@ const hydrateStateFromSupabase = async () => {
       selectedNode: remote.roadmap?.selected_node || window.Aegis.state.roadmap.selectedNode
     },
     tasks: normalizedTasks
-  };
+  });
 
   window.Aegis.state = nextState;
   saveState(nextState);
@@ -219,15 +226,33 @@ const syncStateToSupabase = async () => {
 };
 
 // Expose state API globally
+const resetLocalState = () => refreshDerivedState({
+  ...defaultState,
+  profile: { ...defaultState.profile },
+  settings: { ...defaultState.settings },
+  roadmap: { ...defaultState.roadmap },
+  tasks: []
+});
+
 window.Aegis = {
   storageKey: AEGIS_STORAGE_KEY,
   defaultState,
   state: loadState(),
   ready: Promise.resolve(),
   save: async function() {
+    refreshDerivedState(this.state);
     saveState(this.state);
     emitStateUpdate();
     await syncStateToSupabase();
+  },
+  signOut: async function() {
+    const supabase = await getSupabase();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    localStorage.removeItem(AEGIS_STORAGE_KEY);
+    this.state = resetLocalState();
+    window.location.href = "index.html";
   },
   updateTask: function(taskId, isDone) {
     this.state.tasks = this.state.tasks.map(task => {
@@ -242,6 +267,18 @@ window.Aegis = {
       return task;
     });
     this.save();
+  },
+  addTask: function(title, tag = "", xp = 0) {
+    const newTask = {
+      id: createTaskId(),
+      title,
+      tag,
+      xp: Number(xp),
+      done: false
+    };
+    this.state.tasks.push(newTask);
+    this.save();
+    return newTask;
   },
   getPendingTaskCount: function() {
     return this.state.tasks.filter(t => !t.done).length;
@@ -262,6 +299,13 @@ document.addEventListener("DOMContentLoaded", () => {
         // Remove hover styles that conflict with active state
         link.classList.remove('hover:bg-surface-variant');
     }
+  });
+
+  document.addEventListener("click", async (event) => {
+    const button = event.target.closest("#aegis-signout-btn");
+    if (!button || !window.Aegis?.signOut) return;
+    event.preventDefault();
+    await window.Aegis.signOut();
   });
 
   window.Aegis.ready = (async () => {

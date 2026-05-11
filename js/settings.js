@@ -1,6 +1,9 @@
-const AEGIS_STORAGE_KEY = window.Aegis?.storageKey || "aegis_state_v1";
-const state = window.Aegis.state;
-const fallbackProfile = window.Aegis.defaultState?.profile;
+// Wait for Aegis to be ready before populating inputs so remote profile arrives
+(async () => {
+  const AEGIS_STORAGE_KEY = window.Aegis?.storageKey || "aegis_state_v1";
+  await (window.Aegis?.ready || Promise.resolve());
+  const state = window.Aegis.state;
+  const fallbackProfile = window.Aegis.defaultState?.profile;
 
   const displayNameInput = document.getElementById("display-name-input");
   const emailInput = document.getElementById("email-input");
@@ -41,11 +44,12 @@ const fallbackProfile = window.Aegis.defaultState?.profile;
     storageSizeLabel.textContent = `${mb} MB / 10 MB`;
   };
 
+  // populate inputs from hydrated state (or fallback)
   displayNameInput.value = state.profile?.displayName || fallbackProfile?.displayName || "Commander";
   emailInput.value = state.profile?.email || fallbackProfile?.email || "commander@aegis.dev";
   applyTheme(state.settings.theme);
   applyFontScale(state.settings.fontScale);
-  scanlineLayer.style.display = state.settings.scanlines ? "block" : "none";
+  if (scanlineLayer) scanlineLayer.style.display = state.settings.scanlines ? "block" : "none";
   toggleButtons.forEach((button) => applyToggleVisual(button, !!state.settings[button.dataset.toggle]));
   updateStorageSize();
 
@@ -83,9 +87,10 @@ const fallbackProfile = window.Aegis.defaultState?.profile;
     button.addEventListener("click", () => {
       const key = button.dataset.toggle;
       state.settings[key] = !state.settings[key];
-      if (key === "scanlines") scanlineLayer.style.display = state.settings[key] ? "block" : "none";
+      if (key === "scanlines" && scanlineLayer) scanlineLayer.style.display = state.settings[key] ? "block" : "none";
       applyToggleVisual(button, state.settings[key]);
       window.Aegis.save();
       updateStorageSize();
     });
   });
+})();

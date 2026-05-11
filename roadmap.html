@@ -32,14 +32,11 @@
 				<header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 border-b border-outline-variant/30 pb-6">
 					<div>
 						<p class="font-label-caps text-label-caps text-on-surface-variant mb-1 tracking-[0.4em] font-bold">STRATEGIC NAVIGATION</p>
-						<h1 class="font-h1 text-h1 text-on-surface uppercase tracking-tighter font-extrabold italic leading-none">ROADMAP GRID</h1>
-					</div>
-					<div class="flex items-center gap-3">
-						<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest">ACTIVE TRACK</span>
-						<span class="font-label-caps text-[10px] text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase">FRONTEND CORE</span>
-					</div>
-				</header>
-
+							<h1 class="font-h1 text-h1 text-on-surface uppercase tracking-tighter font-extrabold italic leading-none" id="roadmap-title">ROADMAP GRID</h1>
+						</div>
+						<div class="flex items-center gap-3">
+							<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="mission-count">0 ACTIVE</span>
+							<span class="font-label-caps text-[10px] text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase" id="active-track">NO_ROADMAP</span>
 				<section class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
 					<div class="lg:col-span-2 space-y-gutter">
 						<div class="glass-panel p-margin rounded-xl border border-outline-variant/20">
@@ -94,55 +91,21 @@
 						<div class="glass-panel p-margin rounded-xl border border-outline-variant/20">
 							<div class="flex items-center justify-between mb-6">
 								<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Route Status</h2>
-								<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest">SYNCED</span>
+								<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="route-status-label">SYNCED</span>
 							</div>
-							<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-								<div class="glass-panel p-5 rounded-xl border border-outline-variant/20">
-									<p class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest">Nodes Cleared</p>
-									<p class="font-h2 text-h2 text-primary mt-3">2</p>
-									<p class="text-xs text-on-surface-variant mt-1">40% completion</p>
-								</div>
-								<div class="glass-panel p-5 rounded-xl border border-outline-variant/20">
-									<p class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest">Active Mission</p>
-									<p class="font-h2 text-h2 text-primary mt-3">NODE_03</p>
-									<p class="text-xs text-on-surface-variant mt-1">In progress</p>
-								</div>
-								<div class="glass-panel p-5 rounded-xl border border-outline-variant/20">
-									<p class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest">Next Unlock</p>
-									<p class="font-h2 text-h2 text-primary mt-3">NODE_04</p>
-									<p class="text-xs text-on-surface-variant mt-1">Awaiting clearance</p>
-								</div>
-							</div>
+							<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter" id="route-status-cards"></div>
 						</div>
 					</div>
 
-					<div class="space-y-gutter">
-						<div class="glass-panel p-margin rounded-xl border border-outline-variant/20">
-							<h3 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Command Notes</h3>
-							<p class="text-sm text-on-surface-variant mt-4">Select a node to populate the Mission Briefing panel. Each node will update objectives and sub-targets in real time.</p>
-							<div class="mt-6 space-y-3">
-								<div class="flex items-center justify-between text-xs text-on-surface-variant">
-									<span>Current Focus</span>
-									<span class="text-on-surface">JS Core</span>
-								</div>
-								<div class="w-full h-2 bg-surface-variant rounded-full overflow-hidden">
-									<div class="h-full w-2/3 bg-primary aegis-glow"></div>
-								</div>
-								<div class="flex items-center justify-between text-xs text-on-surface-variant">
-									<span>Next Unlock</span>
-									<span class="text-on-surface">React</span>
-								</div>
-							</div>
-						</div>
-					</div>
+					<div class="space-y-gutter" id="roadmap-sidebar"></div>
 				</section>
 			</div>
 		</main>
 
-		<aside class="hidden lg:flex fixed right-0 top-0 h-full w-[400px] bg-surface-container-low border-l border-outline-variant/30 px-8 py-margin flex-col shadow-2xl z-40 overflow-y-auto">
+		<aside id="mission-panel" class="hidden lg:flex fixed right-0 top-0 h-full w-[400px] bg-surface-container-low border-l border-outline-variant/30 px-8 py-margin flex-col shadow-2xl z-40 overflow-y-auto">
 			<div class="flex items-center justify-between mb-8 pb-4 border-b border-outline-variant/20">
 				<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest">Selected_Target</span>
-				<span class="material-symbols-outlined text-outline-variant hover:text-primary transition-colors text-[20px] cursor-pointer px-2">close</span>
+				<button id="mission-close-btn" class="material-symbols-outlined text-outline-variant hover:text-primary transition-colors text-[20px] cursor-pointer px-2 bg-transparent border-0 p-0">close</button>
 			</div>
 			<p class="font-h2 text-h2 text-primary mb-2" id="mission-title">Mission Briefing</p>
 			<div class="flex items-center gap-2 mb-6">
@@ -152,7 +115,7 @@
 			<p class="font-body-sm text-on-surface-variant/90 border-l-2 border-primary/50 pl-4 py-1 mb-8" id="mission-description">Select a node</p>
 			<p class="font-label-caps text-xs text-on-surface uppercase mb-4 tracking-widest border-b border-outline-variant/20 pb-2">Sub_Objectives</p>
 			<div class="space-y-4 mb-auto" id="mission-subnodes"></div>
-			<button class="mt-8 w-full py-4 bg-primary text-background font-bold tracking-widest uppercase hover:opacity-90 transition-all flex justify-center items-center gap-3">
+			<button id="mission-action-btn" class="mt-8 w-full py-4 bg-primary text-background font-bold tracking-widest uppercase hover:opacity-90 transition-all flex justify-center items-center gap-3">
 				<span id="mission-action">INITIALIZE LOGIC</span>
 				<span class="material-symbols-outlined text-[18px]">keyboard_double_arrow_right</span>
 			</button>

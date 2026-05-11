@@ -1,122 +1,173 @@
-  const nodeData = {
-    NODE_01: {
-      title: "HTML Fundamentals",
-      description: "Establish mission baseline with semantic structures, accessible markup, and document architecture essentials.",
-      reward: "100 XP",
-      action: "COMPLETED",
-      subnodes: [
-        { label: "Semantic Elements", status: "SECURED" },
-        { label: "Forms & Inputs", status: "SECURED" },
-        { label: "Accessibility Basics", status: "SECURED" }
-      ]
-    },
-    NODE_02: {
-      title: "CSS Mastery",
-      description: "Deploy styling protocols including responsive layouts, component-driven styles, and advanced visual control.",
-      reward: "180 XP",
-      action: "COMPLETED",
-      subnodes: [
-        { label: "Flexbox/Grid", status: "SECURED" },
-        { label: "Responsive Media Queries", status: "SECURED" },
-        { label: "Transitions & States", status: "SECURED" }
-      ]
-    },
-    NODE_03: {
-      title: "Javascript Core",
-      description: "Master the foundational logic of the modern web. This mission covers asynchronous execution, functional paradigms, and advanced DOM manipulation protocols required for high-level system operations.",
-      reward: "250 XP",
-      action: "INITIATE NODE",
-      subnodes: [
-        { label: "Variables & Scope", status: "SECURED" },
-        { label: "Functions & Prototypes", status: "SECURED" },
-        { label: "DOM Manipulation", status: "IN_PROGRESS" },
-        { label: "Asynchronous Logic", status: "LOCKED" }
-      ]
-    },
-    NODE_04: {
-      title: "React Basics",
-      description: "Initialize component architecture, state management, and event-driven UI composition for scalable interfaces.",
-      reward: "320 XP",
-      action: "LOCKED",
-      subnodes: [
-        { label: "JSX Components", status: "LOCKED" },
-        { label: "Props and State", status: "LOCKED" },
-        { label: "Hooks Overview", status: "LOCKED" }
-      ]
-    },
-    NODE_05: {
-      title: "Full Stack Integration",
-      description: "Synchronize frontend and backend systems with API pipelines, authentication layers, and deployment routines.",
-      reward: "500 XP",
-      action: "LOCKED",
-      subnodes: [
-        { label: "API Integration", status: "LOCKED" },
-        { label: "Auth and Sessions", status: "LOCKED" },
-        { label: "Deployment Pipeline", status: "LOCKED" }
-      ]
-    }
+  const getUrlParam = (param) => {
+    const url = new URL(window.location);
+    return url.searchParams.get(param);
   };
 
-  const nodes = document.querySelectorAll(".roadmap-node");
-  const titleEl = document.getElementById("mission-title");
-  const descriptionEl = document.getElementById("mission-description");
-  const rewardEl = document.getElementById("mission-reward");
-  const actionEl = document.getElementById("mission-action");
-  const subnodesEl = document.getElementById("mission-subnodes");
+  const getRoadmapName = () => {
+    return getUrlParam("roadmap") || null;
+  };
 
-  const renderSubnode = (item) => {
-    const isSecured = item.status === "SECURED";
-    const isProgress = item.status === "IN_PROGRESS";
-    const isLocked = item.status === "LOCKED";
-    const icon = isSecured
-      ? '<span class="material-symbols-outlined text-primary text-sm">check_circle</span>'
-      : isProgress
-        ? '<span class="w-4 h-4 border border-primary flex items-center justify-center"><span class="w-1.5 h-1.5 bg-primary glow-active"></span></span>'
-        : '<span class="w-4 h-4 border border-outline"></span>';
-    const rowClass = isLocked ? "flex items-center justify-between opacity-50" : "flex items-center justify-between";
-    const labelClass = isProgress ? "font-body-sm text-on-surface font-bold" : "font-body-sm text-on-surface";
-    const statusClass = isProgress ? "font-label-mono text-[10px] text-primary" : "font-label-mono text-[10px] text-outline";
+  const getRoadmapTasks = (roadmapName) => {
+    if (!roadmapName) return [];
+    return window.Aegis.state.tasks.filter(
+      (task) => task.tag && task.tag.startsWith(`RM: ${roadmapName}`)
+    );
+  };
 
-    return `
-      <div class="${rowClass}">
-        <div class="flex items-center gap-3">
-          ${icon}
-          <span class="${labelClass}">${item.label}</span>
-        </div>
-        <span class="${statusClass}">[${item.status}]</span>
+  const renderRoadmapTasks = () => {
+    const roadmapName = getRoadmapName();
+    const tasks = getRoadmapTasks(roadmapName);
+    const listEl = document.getElementById("roadmap-tasks-list");
+    const missionPanel = document.getElementById("mission-panel");
+    const roadmapTitle = document.getElementById("roadmap-title");
+    const activeTrack = document.getElementById("active-track");
+    const missionCount = document.getElementById("mission-count");
+
+    if (!roadmapName) {
+      listEl.innerHTML = '<p class="col-span-2 text-center text-on-surface-variant py-8">No roadmap selected. Go to dashboard to create or select one.</p>';
+      missionPanel.classList.add("hidden");
+      roadmapTitle.textContent = "ROADMAP GRID";
+      activeTrack.textContent = "NO_ROADMAP";
+      missionCount.textContent = "0 ACTIVE";
+      renderRouteStatus(null);
+      renderSidebar(null);
+      return;
+    }
+
+    roadmapTitle.textContent = roadmapName.toUpperCase();
+    activeTrack.textContent = roadmapName.toUpperCase();
+    missionCount.textContent = `${tasks.length} ACTIVE`;
+
+    if (tasks.length === 0) {
+      listEl.innerHTML = '<p class="col-span-2 text-center text-on-surface-variant py-8">No tasks in this roadmap yet.</p>';
+      renderRouteStatus(roadmapName);
+      renderSidebar(roadmapName);
+      return;
+    }
+
+    listEl.innerHTML = tasks
+      .map((task, idx) => {
+        const status = task.done ? "SECURED" : "IN_PROGRESS";
+        const badgeClass = task.done ? "text-primary" : "text-primary";
+        return `
+          <button class="roadmap-node glass-panel p-5 rounded-xl text-left border border-outline-variant/20 hover:border-primary/50 transition-all" data-task-id="${task.id}" data-task-title="${task.title}">
+            <div class="flex items-center justify-between mb-3">
+              <span class="font-label-mono text-[10px] text-on-surface-variant uppercase">TASK_${String(idx + 1).padStart(2, "0")}</span>
+              <span class="font-label-caps text-[10px] ${badgeClass} uppercase">${status}</span>
+            </div>
+            <h3 class="font-h3 text-lg text-on-surface font-bold">${task.title}</h3>
+            <p class="text-xs text-on-surface-variant mt-2">${task.xp} XP</p>
+          </button>
+        `;
+      })
+      .join("");
+
+    // Wire task clicks
+    listEl.querySelectorAll(".roadmap-node").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const taskId = btn.dataset.taskId;
+        const taskTitle = btn.dataset.taskTitle;
+        selectTask(taskId, taskTitle);
+      });
+    });
+
+    renderRouteStatus(roadmapName);
+    renderSidebar(roadmapName);
+  };
+
+  const selectTask = (taskId, taskTitle) => {
+    const task = window.Aegis.state.tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    document.getElementById("mission-title").textContent = task.title;
+    document.getElementById("mission-description").textContent = `XP Value: ${task.xp}`;
+    document.getElementById("mission-reward").textContent = `${task.xp} XP`;
+    document.getElementById("mission-action").textContent = task.done ? "COMPLETED" : "MARK_DONE";
+    document.getElementById("mission-action-btn").dataset.taskId = taskId;
+    document.getElementById("mission-subnodes").innerHTML = '';
+    document.getElementById("mission-panel").classList.remove("hidden");
+  };
+
+  const renderRouteStatus = (roadmapName) => {
+    const container = document.getElementById("route-status-cards");
+    if (!roadmapName) {
+      container.innerHTML = '';
+      return;
+    }
+    const tasks = getRoadmapTasks(roadmapName);
+    const completed = tasks.filter((t) => t.done).length;
+    const total = tasks.length;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    container.innerHTML = `
+      <div class="glass-panel p-5 rounded-xl border border-outline-variant/20">
+        <p class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest">Tasks Cleared</p>
+        <p class="font-h2 text-h2 text-primary mt-3">${completed}</p>
+        <p class="text-xs text-on-surface-variant mt-1">${percentage}% completion</p>
+      </div>
+      <div class="glass-panel p-5 rounded-xl border border-outline-variant/20">
+        <p class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest">Total Tasks</p>
+        <p class="font-h2 text-h2 text-primary mt-3">${total}</p>
+        <p class="text-xs text-on-surface-variant mt-1">In roadmap</p>
+      </div>
+      <div class="glass-panel p-5 rounded-xl border border-outline-variant/20">
+        <p class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest">Road Progress</p>
+        <p class="font-h2 text-h2 text-primary mt-3">${percentage}%</p>
+        <p class="text-xs text-on-surface-variant mt-1">Overall</p>
       </div>
     `;
   };
 
-  const setActiveNode = (nodeKey, options = { persist: true }) => {
-    const data = nodeData[nodeKey];
-    if (!data) return;
-    titleEl.textContent = data.title;
-    descriptionEl.textContent = data.description;
-    rewardEl.textContent = data.reward;
-    actionEl.textContent = data.action;
-    subnodesEl.innerHTML = data.subnodes.map(renderSubnode).join("");
-
-    nodes.forEach((node) => {
-      const selected = node.dataset.node === nodeKey;
-      node.classList.toggle("roadmap-node-selected", selected);
-      if (!node.classList.contains("opacity-40")) return;
-      node.classList.toggle("opacity-60", selected);
-    });
-    if (options.persist) {
-      window.Aegis.state.roadmap = { selectedNode: nodeKey };
-      window.Aegis.save();
+  const renderSidebar = (roadmapName) => {
+    const container = document.getElementById("roadmap-sidebar");
+    if (!roadmapName) {
+      container.innerHTML = '';
+      return;
     }
+    const tasks = getRoadmapTasks(roadmapName);
+    const completed = tasks.filter((t) => t.done).length;
+    const inProgress = tasks.filter((t) => !t.done).length;
+    const percentage = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
+
+    container.innerHTML = `
+      <div class="glass-panel p-margin rounded-xl border border-outline-variant/20">
+        <h3 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Mission Progress</h3>
+        <p class="text-sm text-on-surface-variant mt-4">Click a task to view details and mark as complete.</p>
+        <div class="mt-6 space-y-3">
+          <div class="flex items-center justify-between text-xs text-on-surface-variant">
+            <span>Completed</span>
+            <span class="text-on-surface font-bold">${completed}/${tasks.length}</span>
+          </div>
+          <div class="w-full h-2 bg-surface-variant rounded-full overflow-hidden">
+            <div class="h-full bg-primary aegis-glow" style="width: ${percentage}%"></div>
+          </div>
+          <div class="flex items-center justify-between text-xs text-on-surface-variant">
+            <span>Remaining</span>
+            <span class="text-on-surface font-bold">${inProgress}</span>
+          </div>
+        </div>
+      </div>
+    `;
   };
 
-  nodes.forEach((node) => {
-    node.addEventListener("click", () => setActiveNode(node.dataset.node));
-  });
+  // Wire close button
+  const closeBtn = document.getElementById("mission-close-btn");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      document.getElementById("mission-panel").classList.add("hidden");
+    });
+  }
 
-  const initialNode = window.Aegis.state?.roadmap?.selectedNode || "NODE_03";
-  setActiveNode(initialNode, { persist: false });
+  // Wire action button
+  const actionBtn = document.getElementById("mission-action-btn");
+  if (actionBtn) {
+    actionBtn.addEventListener("click", () => {
+      const taskId = actionBtn.dataset.taskId;
+      if (taskId) {
+        window.Aegis.updateTask(taskId, true);
+      }
+    });
+  }
 
-  window.addEventListener("aegis:state-updated", () => {
-    const selectedNode = window.Aegis.state?.roadmap?.selectedNode || "NODE_03";
-    setActiveNode(selectedNode, { persist: false });
-  });
+  renderRoadmapTasks();
+  window.addEventListener("aegis:state-updated", renderRoadmapTasks);

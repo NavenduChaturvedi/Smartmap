@@ -22,6 +22,10 @@
       </div>
 
       <form class="space-y-6" id="login-form">
+        <div id="name-field" style="display:none;">
+          <label class="block text-xs uppercase tracking-widest text-on-surface-variant mb-2">Full Name</label>
+          <input class="w-full bg-transparent border-0 border-b border-outline-variant focus:border-primary focus:ring-0 px-0 py-2" id="login-name" type="text" placeholder="YOUR NAME" />
+        </div>
         <div>
           <label class="block text-xs uppercase tracking-widest text-on-surface-variant mb-2">Operative ID</label>
           <input class="w-full bg-transparent border-0 border-b border-outline-variant focus:border-primary focus:ring-0 px-0 py-2" id="login-email" type="email" placeholder="ENTER EMAIL" required />
@@ -34,16 +38,17 @@
 
         <p class="text-xs text-error hidden" id="auth-error"></p>
 
-        <button class="clip-btn w-full py-3 bg-primary text-black font-bold tracking-widest uppercase hover:opacity-90 transition" id="login-submit" type="submit">
-          Initialize Session
-        </button>
-      </form>
+        <p class="text-[11px] uppercase tracking-[0.18em] text-on-surface-variant/70" id="auth-mode-hint">New operatives can create an account from here.</p>
 
-      <div class="mt-6 text-center">
-        <button class="text-xs tracking-widest uppercase text-on-surface-variant/60 cursor-not-allowed" type="button" disabled>
-          Create Account (Coming Later)
-        </button>
-      </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button class="clip-btn w-full py-3 bg-primary text-black font-bold tracking-widest uppercase hover:opacity-90 transition" id="login-submit" type="submit">
+            Initialize Session
+          </button>
+          <button class="clip-btn w-full py-3 border border-outline-variant/40 text-on-surface-variant font-bold tracking-widest uppercase hover:border-primary hover:text-primary transition" id="auth-toggle-btn" type="button">
+            Create Account
+          </button>
+        </div>
+      </form>
     </div>
   </main>
   <script src="js/auth.js"></script>

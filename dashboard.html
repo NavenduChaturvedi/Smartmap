@@ -79,41 +79,11 @@
 <div class="flex justify-between items-center border-b border-outline-variant pb-4">
 <h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Roadmaps</h2>
 </div>
-<div class="space-y-4">
-<!-- Roadmap Card -->
-<div class="glass-panel p-4 rounded-xl flex items-center gap-4 group cursor-pointer">
-<div class="relative w-12 h-12 flex-shrink-0">
-<svg class="w-full h-full transform -rotate-90">
-<circle class="text-surface-variant" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="3"></circle>
-<circle class="text-primary aegis-glow" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="44" stroke-linecap="round" stroke-width="3"></circle>
-</svg>
-<span class="absolute inset-0 flex items-center justify-center text-[10px] font-label-mono text-primary">65%</span>
-</div>
-<div class="flex-1">
-<p class="font-body-md font-bold text-on-surface group-hover:text-primary transition-colors">Frontend Mastery</p>
-<p class="text-[9px] text-on-surface-variant uppercase tracking-widest">14 / 22 NODES COMPLETED</p>
-</div>
-<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-all" data-icon="arrow_forward_ios">arrow_forward_ios</span>
-</div>
-<div class="glass-panel p-4 rounded-xl flex items-center gap-4 group cursor-pointer">
-<div class="relative w-12 h-12 flex-shrink-0">
-<svg class="w-full h-full transform -rotate-90">
-<circle class="text-surface-variant" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="3"></circle>
-<circle class="text-primary aegis-glow" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="87.9" stroke-linecap="round" stroke-width="3"></circle>
-</svg>
-<span class="absolute inset-0 flex items-center justify-center text-[10px] font-label-mono text-primary">30%</span>
-</div>
-<div class="flex-1">
-<p class="font-body-md font-bold text-on-surface group-hover:text-primary transition-colors">Data Science</p>
-<p class="text-[9px] text-on-surface-variant uppercase tracking-widest">08 / 26 NODES COMPLETED</p>
-</div>
-<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-all" data-icon="arrow_forward_ios">arrow_forward_ios</span>
-</div>
-<button class="w-full p-6 border border-dashed border-outline-variant rounded-xl text-on-surface-variant hover:text-primary hover:border-primary/50 hover:bg-white/5 transition-all flex flex-col items-center gap-2 group">
-<span class="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform" data-icon="add_circle">add_circle</span>
+<div class="space-y-4" id="roadmaps-list"></div>
+<button id="create-roadmap-btn" class="w-full p-6 border border-dashed border-outline-variant rounded-xl text-on-surface-variant hover:text-primary hover:border-primary/50 hover:bg-white/5 transition-all flex flex-col items-center gap-2 group" type="button">
+<span class="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform">add_circle</span>
 <span class="font-label-caps text-label-caps uppercase tracking-[0.2em]">Deploy_New_Asset</span>
 </button>
-</div>
 </div>
 </div>
 <!-- Recent Achievements Section -->

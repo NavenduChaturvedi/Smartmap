@@ -38,9 +38,9 @@ Use this file as the single source of truth for status, blockers, and immediate 
 ## Next Steps (Priority Order)
 
 1. Choose backend provider (Firebase vs Supabase) and define data model for users, roadmaps, and tasks.
-2. Implement auth flow (sign up, login, session restore) and replace localStorage with remote persistence.
+2. Finalize auth flow (sign up, login, session restore, sign out) and replace localStorage with remote persistence.
 3. Add sync strategy (offline cache + conflict resolution) for roadmap progress.
-4. Re-introduce signup/account creation flow after backend is stable.
+4. Polish signup confirmation and onboarding messaging after backend is stable.
 
 ## Future Plans
 
@@ -94,6 +94,12 @@ Use this snippet whenever you (or I) make a meaningful update:
 - Impact: Core pages now behave like a working app (stateful interactions survive reloads) rather than static UI mockups.
 - New completion %: 72%
 - Next immediate task: wire analytics and achievements to the same persisted state model.
+
+### Update - 2026-05-11 14:40
+- Change: Added a real sign-out action in the shared topbar and enabled login/signup mode switching on the auth page.
+- Impact: Users can now create accounts from the login screen and explicitly end sessions without placeholder controls.
+- New completion %: 84%
+- Next immediate task: test the full auth loop end-to-end and refine signup confirmation UX.
 
 ### Update - 2026-05-06 20:04
 - Change: Wired analytics and achievements pages to shared persisted state (XP, streak, completed task-derived metrics, commander profile summary).
