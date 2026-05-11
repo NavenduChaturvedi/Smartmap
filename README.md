@@ -2,191 +2,178 @@
 
 > An RPG-style productivity and self-improvement dashboard built for ambitious people.
 
-RoadmapOS is a futuristic roadmap and progress tracking web application designed to transform productivity into an immersive progression system.
+RoadmapOS transforms self-improvement into an immersive progression system — think RPG skill trees, XP gains, mission briefings, and achievement unlocks, but for real life goals.
 
 Instead of boring task lists and guilt-powered productivity apps, RoadmapOS treats growth like a game:
-- Build roadmaps
-- Complete missions
-- Gain XP
-- Level up
-- Track streaks
+- Build roadmaps for any life goal
+- Complete missions and tasks
+- Earn XP and level up
+- Track streaks and consistency
 - Unlock achievements
 - Visualize long-term progress
 
-The goal is to make self-improvement feel rewarding, motivating, and visually satisfying.
-
 ---
 
-# ✨ Core Idea
+## 🧠 Core Philosophy
 
 Most productivity apps fail because they feel like digital punishment.
 
 RoadmapOS is designed to feel like:
-- 🎮 an RPG progression system
-- 🧠 a personal operating system
-- 📊 a futuristic mission control dashboard
-- ⚡ a dopamine-friendly growth tracker
+- 🎮 An RPG progression system
+- 🧠 A personal operating system
+- 📊 A futuristic mission control dashboard
+- ⚡ A dopamine-friendly growth tracker
 
-This project focuses on:
-- Long-term consistency
-- Skill progression
-- Visual progress tracking
-- Gamification
-- Self-improvement systems
+> *"progression over perfection"*
 
 ---
 
-# 🧩 Main Features
+## 🚧 Current Status
 
-## 📌 Dashboard
-A centralized productivity hub showing:
-- Active roadmaps
-- Progress percentages
-- XP & levels
+```
+Frontend MVP:     ████████████████████░░░  82% Complete
+Backend:          ░░░░░░░░░░░░░░░░░░░░░░░  Planning Phase
+Overall:          ████████████░░░░░░░░░░░  ~50% Complete
+```
+
+**Frontend MVP is stable and fully interactive.** All core pages are built, wired, and stateful. Backend integration is the next major phase.
+
+---
+
+## ✅ What's Built
+
+### Core Pages
+- `index.html` — Entry page (repaired and stable)
+- `dashboard.html` — Fully interactive: task toggles, XP tracking, pending count, live status updates
+- `roadmap.html` — Interactive node system with dynamic mission briefing panel
+- `analytics.html` — Connected to persisted app state (XP, streak, task metrics)
+- `achievements.html` — Filters (All/Rare/Common/Locked), modals, commander/vault summary from state
+- `settings.html` — Full persistence: theme, font scale, profile fields, scanlines/sound/animation toggles
+
+### Architecture
+- **Shared state layer** — `aegis_state_v1` via localStorage; consistent data across all pages
+- **Web Components** — `<aegis-sidebar>` and `<aegis-topbar>` replace hundreds of lines of repeated HTML
+- **Centralized JS** — All scripts extracted to `js/` directory (no inline scripts)
+- **Global CSS** — `css/base.css` and `js/tailwind-config.js` replace scattered inline styles
+- **Zero broken links** — All navigation wired and functional
+- **Lint-clean** — All edited files verified
+
+### Roadmap Features
+- Clickable nodes update mission title, description, rewards, and sub-task checklist dynamically
+- Selected node persists across page reloads
+- Visual highlight for active selected node
+
+---
+
+## 🔄 In Progress
+
+- Backend provider selection (Firebase vs Supabase)
+- Auth flow design (sign up, login, session restore)
+- Remote persistence model to replace localStorage
+
+---
+
+## 🗺️ Next Steps
+
+1. **Choose backend** — Firebase or Supabase; define data model for users, roadmaps, tasks
+2. **Implement auth** — Sign up, login, session restore; replace localStorage with remote persistence
+3. **Sync strategy** — Offline cache + conflict resolution for roadmap progress
+4. **Re-introduce signup flow** — After backend is stable
+5. **YouTube Course Player** — Paste a course link, watch inside the app, auto-track lecture progress
+
+---
+
+## 🧩 Feature Overview
+
+### 📌 Dashboard
+Centralized productivity hub:
+- Active roadmaps with progress %
+- XP & level display
 - Daily streaks
 - Recent activity
 - Upcoming milestones
-- Analytics overview
+- Live analytics overview
 
----
-
-## 🗺️ Roadmap System
-Create multiple roadmaps for different life goals.
-
-Examples:
-- Python
-- MMA Training
-- Ethical Hacking
-- School Subjects
-- Fitness
-- Content Creation
-- AI Learning
+### 🗺️ Roadmap System
+Create roadmaps for any goal — Python, MMA, Ethical Hacking, Fitness, Content Creation, etc.
 
 Each roadmap supports:
-- Stages
-- Milestones
-- Tasks
-- Subtasks
-- Progress tracking
-- Completion percentages
+- Stages, milestones, tasks, subtasks
+- Progress tracking and completion %
+- Interactive node-based visual tree
 
----
+### 🎮 Gamification
+- **XP** — Earned from tasks, milestones, streaks, roadmap completions
+- **Leveling** — Progress through XP milestones
+- **Achievements** — Unlock badges for consistency, speed, streaks, completions
 
-## 🎮 Gamification System
-
-### XP System
-Earn XP for completing:
-- Tasks
-- Milestones
-- Daily streaks
-- Roadmap completions
-
-### Leveling
-Users level up after reaching XP milestones.
-
-### Achievements
-Unlock badges for:
-- Consistency
-- Speed
-- Completion
-- Streaks
-- Milestones
-
----
-
-## 📊 Analytics
-Track:
-- Weekly productivity
+### 📊 Analytics
+- Weekly productivity tracking
 - Completion trends
 - Most active roadmaps
-- Time spent
-- Progress heatmaps
 - Consistency graphs
+- Progress heatmaps
 
 ---
 
-## 🌌 Visual Roadmap View
-Interactive roadmap visualization inspired by:
-- RPG skill trees
-- Tech trees
-- Progression systems in games
+## 🎨 Design
 
-Features:
-- Connected nodes
-- Locked/unlocked paths
-- Completion indicators
-- Stage progression
-
----
-
-# 🎨 Design Philosophy
-
-RoadmapOS is NOT:
-- a boring admin dashboard
-- a corporate productivity app
-- a spreadsheet with buttons
-
-The UI should feel:
-- futuristic
-- immersive
-- minimal
-- smooth
-- rewarding
-
----
-
-# 🎨 Color Palette
+**Color Palette**
 
 | Color | Purpose |
 |---|---|
-| Pearl White | Primary text/highlights |
+| Pearl White | Primary text / highlights |
 | Charcoal Stone | Main background |
 | Graphite Gray | Secondary surfaces |
 | Soft Silver | UI accents |
-| Muted Black | Depth/shadows |
+| Muted Black | Depth / shadows |
+
+**UI Philosophy** — Futuristic, immersive, minimal, smooth, rewarding. Not a corporate admin panel.
 
 ---
 
-# 🛠️ Tech Stack
+## 🛠️ Tech Stack
 
-## Frontend
-- HTML5
-- CSS3
-- JavaScript
+### Frontend (Complete)
+- HTML5, CSS3, Vanilla JavaScript
+- Web Components for shared UI (`<aegis-sidebar>`, `<aegis-topbar>`)
+- localStorage for state persistence (`aegis_state_v1`)
 
-## Backend (Optional)
-- Firebase
-or
-- Supabase
+### Backend (Planned)
+- Firebase **or** Supabase (decision pending)
 
-## Hosting
-- Netlify
-or
-- Vercel
+### Hosting (Planned)
+- Netlify **or** Vercel
 
 ---
 
-# 📁 Project Structure
+## 📁 Project Structure
 
-```bash
+```
 RoadmapOS/
 │
 ├── index.html
 ├── dashboard.html
 ├── roadmap.html
 ├── analytics.html
+├── achievements.html
+├── settings.html
 │
 ├── css/
-│   ├── style.css
+│   ├── base.css              # Global shared styles
 │   ├── dashboard.css
 │   ├── roadmap.css
 │   └── animations.css
 │
 ├── js/
-│   ├── app.js
+│   ├── app.js                # Shared state logic
+│   ├── components.js         # Web Components (sidebar, topbar)
+│   ├── tailwind-config.js    # Shared Tailwind config
 │   ├── dashboard.js
 │   ├── roadmap.js
 │   ├── analytics.js
+│   ├── achievements.js
+│   ├── settings.js
 │   └── xp-system.js
 │
 ├── assets/
@@ -195,54 +182,16 @@ RoadmapOS/
 │   └── fonts/
 │
 └── backend/
-    └── firebase-config.js
+    └── firebase-config.js    # Placeholder — backend TBD
 ```
 
 ---
 
-# ⚡ Development Goals
+## 🔮 Future Features
 
-## Phase 1
-- Core UI
-- Dashboard
-- Roadmap structure
-- Progress bars
-
-## Phase 2
-- Task system
-- XP system
-- Leveling
-- Streak tracking
-
-## Phase 3
-- Analytics
-- Achievement system
-- Visual roadmap tree
-
-## Phase 4
-- Optimization
-- Mobile responsiveness
-- Deployment
-
----
-
-# 📱 Responsive Design
-
-RoadmapOS is designed for:
-- Desktop
-- Tablets
-- Mobile devices
-
-The UI should remain smooth and immersive across all screen sizes.
-
----
-
-# 🔥 Future Features
-
-Planned future upgrades:
 - AI-generated roadmaps
+- YouTube Course Player with auto progress tracking
 - AI productivity assistant
-- Voice interaction
 - Pomodoro system
 - Real-time sync
 - Mobile app
@@ -251,65 +200,29 @@ Planned future upgrades:
 
 ---
 
-# 🧠 Philosophy Behind The Project
+## 📜 Changelog
 
-This app exists because:
-- motivation fades,
-- systems matter,
-- and visible progress changes behavior.
+### 2026-05-09
+- Restored `roadmap.html` after accidental wipe
+- Rebuilt `analytics.html` layout with shared topbar
+- Fixed layout overlap issues
+- **Completion: 82%**
 
-RoadmapOS is built to make users WANT to come back daily.
-
-The focus is:
-> progression over perfection
-
----
-
-# 🚧 Current Status
-
-Project Status:
-```diff
-+ Planning & Architecture Phase
-```
+### 2026-05-06
+- Replaced repeated sidebar/topbar HTML with Web Components (`<aegis-sidebar>`, `<aegis-topbar>`)
+- Extracted all inline scripts to `js/` directory
+- Centralized styles into `css/base.css` and `js/tailwind-config.js`
+- Implemented shared state persistence (`aegis_state_v1`)
+- Wired analytics and achievements to live persisted state
+- Made roadmap nodes fully interactive with dynamic mission briefing
+- **Frontend MVP Architecture: Complete**
 
 ---
 
-# 🏗️ MVP Goals
-
-The first version should focus ONLY on:
-- roadmap creation
-- task tracking
-- progress visualization
-- XP system
-- dashboard
-
-Avoid overbuilding early.
-
-Do NOT waste 3 weeks making glowing neon buttons before the task system works.
-That’s the productivity version of buying MMA gloves and never training.
-
----
-
-# 🤝 Contribution
-
-Currently a private/self-focused project.
-
-Possible future expansion:
-- Open-source modules
-- Plugin systems
-- Community templates
-
----
-
-# 📜 License
+## 📜 License
 
 MIT License
 
 ---
 
-# 🧃 Final Note
-
-RoadmapOS is meant to feel like:
-> “A leveling system for real life.”
-
-Not another productivity prison.
+*RoadmapOS — A leveling system for real life.*
