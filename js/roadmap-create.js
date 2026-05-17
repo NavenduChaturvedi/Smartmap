@@ -110,13 +110,6 @@ const createRoadmap = async (event) => {
     return;
   }
 
-  const roadmapTag = getRoadmapTag(roadmapName);
-  const roadmapExists = state.tasks.some((task) => task.tag === roadmapTag);
-  if (roadmapExists) {
-    setError("That roadmap already exists. Choose a different name.");
-    return;
-  }
-
   const phases = readPhaseRows();
   const validPhases = phases.filter((phase) => phase.title);
   if (validPhases.length === 0) {
@@ -128,12 +121,45 @@ const createRoadmap = async (event) => {
   setLoading(true);
 
   try {
+    // Try to create a roadmap in Supabase if API is available
+    let roadmapId = null;
+    const sessionRes = window.AegisSupabase ? await window.AegisSupabase.auth.getSession() : null;
+    const userId = sessionRes?.data?.session?.user?.id || null;
+
+    if (window.AegisApi && window.AegisApi.createRoadmap && userId) {
+      const res = await window.AegisApi.createRoadmap({ user_id: userId, name: roadmapName, description: '' });
+      if (res.error) throw res.error;
+      roadmapId = res.data?.id || null;
+    }
+
+    if (!roadmapId) {
+      // Fallback to tag-based roadmap creation
+      const roadmapTag = getRoadmapTag(roadmapName);
+      const roadmapExists = state.tasks.some((task) => task.tag === roadmapTag);
+      if (roadmapExists) {
+        setError("That roadmap already exists. Choose a different name.");
+        setLoading(false);
+        return;
+      }
+
+      for (const phase of validPhases) {
+        const taskTitle = phase.label ? `${phase.label}: ${phase.title}` : phase.title;
+        window.Aegis.addTask(taskTitle, roadmapTag, phase.xp);
+      }
+
+      await window.Aegis.save();
+      window.location.href = `roadmap.html?roadmap=${encodeURIComponent(roadmapName)}`;
+      return;
+    }
+
+    // Create tasks linked to the new roadmap_id
     for (const phase of validPhases) {
       const taskTitle = phase.label ? `${phase.label}: ${phase.title}` : phase.title;
-      window.Aegis.addTask(taskTitle, roadmapTag, phase.xp);
+      window.Aegis.addTask(taskTitle, '', phase.xp, roadmapId, null);
     }
+
     await window.Aegis.save();
-    window.location.href = `roadmap.html?roadmap=${encodeURIComponent(roadmapName)}`;
+    window.location.href = `roadmap.html?roadmap_id=${encodeURIComponent(roadmapId)}`;
   } catch (error) {
     setError(error?.message || "Failed to create roadmap.");
     setLoading(false);

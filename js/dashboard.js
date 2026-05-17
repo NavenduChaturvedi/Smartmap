@@ -28,12 +28,13 @@ const renderTasks = () => {
     const titleClass = task.done ? "font-body-md text-on-surface opacity-40 line-through" : "font-body-md text-on-surface";
     const xpClass = task.done ? "font-label-mono text-primary text-xs" : "font-label-mono text-on-surface-variant text-xs group-hover:text-primary";
     const iconClass = task.done ? "material-symbols-outlined text-primary" : "material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors";
+    const roadmapLabel = task.roadmap_id ? `RM:${String(task.roadmap_id).slice(0,8)}` : (task.tag || '');
     return `
       <button class="${base} ${doneClass}" data-task-id="${task.id}" type="button">
         <span class="${iconClass}">${icon}</span>
         <div class="flex-1 text-left">
           <p class="${titleClass}">${task.title}</p>
-          <p class="font-label-mono text-[10px] text-on-surface-variant uppercase">${task.tag}</p>
+          <p class="font-label-mono text-[10px] text-on-surface-variant uppercase">${roadmapLabel}</p>
         </div>
         <div class="${xpClass}">+${task.xp}_XP</div>
       </button>
@@ -62,22 +63,31 @@ const getRoadmapStats = () => {
   const roadmapMap = new Map();
 
   state.tasks.forEach((task) => {
-    if (task.tag && typeof task.tag === "string" && task.tag.startsWith("RM:")) {
-      const rmName = task.tag.replace("RM:", "").trim();
-      if (!roadmapMap.has(rmName)) {
-        roadmapMap.set(rmName, { total: 0, completed: 0 });
-      }
-      const stats = roadmapMap.get(rmName);
-      stats.total += 1;
-      if (task.done) stats.completed += 1;
+    let key = null;
+    let displayName = null;
+    if (task.roadmap_id) {
+      key = task.roadmap_id;
+      displayName = null;
+    } else if (task.tag && typeof task.tag === "string" && task.tag.startsWith("RM:")) {
+      key = task.tag.replace("RM:", "").trim();
+      displayName = key;
     }
+
+    if (!key) return;
+    if (!roadmapMap.has(key)) {
+      roadmapMap.set(key, { id: task.roadmap_id || null, name: displayName || null, total: 0, completed: 0 });
+    }
+    const stats = roadmapMap.get(key);
+    stats.total += 1;
+    if (task.done) stats.completed += 1;
   });
 
-  return Array.from(roadmapMap.entries()).map(([name, stats]) => ({
-    name,
-    total: stats.total,
-    completed: stats.completed,
-    percentage: Math.round((stats.completed / stats.total) * 100)
+  return Array.from(roadmapMap.values()).map((row) => ({
+    name: row.name || String(row.id).slice(0, 8),
+    total: row.total,
+    completed: row.completed,
+    percentage: Math.round((row.completed / row.total) * 100),
+    id: row.id
   }));
 };
 
@@ -94,8 +104,9 @@ const renderRoadmaps = () => {
   list.innerHTML = roadmaps.map((rm) => {
     const circumference = 125.6;
     const offset = circumference - (rm.percentage / 100) * circumference;
+    const key = rm.id || rm.name;
     return `
-      <div class="glass-panel p-4 rounded-xl flex items-center gap-4 group cursor-pointer roadmap-card" data-roadmap="${rm.name}">
+      <div class="glass-panel p-4 rounded-xl flex items-center gap-4 group cursor-pointer roadmap-card" data-roadmap="${key}">
         <div class="relative w-12 h-12 flex-shrink-0">
           <svg class="w-full h-full transform -rotate-90">
             <circle class="text-surface-variant" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="3"></circle>
@@ -114,8 +125,13 @@ const renderRoadmaps = () => {
 
   list.querySelectorAll(".roadmap-card").forEach((card) => {
     card.addEventListener("click", () => {
-      const roadmapName = card.dataset.roadmap;
-      window.location.href = `roadmap.html?roadmap=${encodeURIComponent(roadmapName)}`;
+      const roadmapKey = card.dataset.roadmap;
+      const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}/i.test(roadmapKey);
+      if (isId) {
+        window.location.href = `roadmap.html?roadmap_id=${encodeURIComponent(roadmapKey)}`;
+      } else {
+        window.location.href = `roadmap.html?roadmap=${encodeURIComponent(roadmapKey)}`;
+      }
     });
   });
 };

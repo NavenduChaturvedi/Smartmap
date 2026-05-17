@@ -5,7 +5,8 @@
     if (element) element.textContent = value;
   };
 
-  const getRoadmapName = () => getUrlParam("roadmap") || null;
+  // URL may provide either a roadmap ID (preferred) or a legacy roadmap name
+  const getRoadmapName = () => getUrlParam("roadmap_id") || getUrlParam("roadmap") || null;
 
   const normalizeRoadmapName = (value) => value.trim();
 
@@ -15,37 +16,47 @@
     return rest.split("|")[0].trim();
   };
 
-  const getParentTaskIdFromTag = (tag) => {
-    if (!tag || !tag.includes("PARENT:")) return null;
-    const match = tag.match(/PARENT:\s*([^|]+)/i);
+  const getParentTaskIdFromTag = (tagOrTask) => {
+    if (!tagOrTask) return null;
+    if (typeof tagOrTask === 'object') return tagOrTask.parent_task_id || null;
+    if (!tagOrTask.includes("PARENT:")) return null;
+    const match = tagOrTask.match(/PARENT:\s*([^|]+)/i);
     return match ? match[1].trim() : null;
   };
 
-  const getRoadmapTasks = (roadmapName) => {
-    if (!roadmapName) return [];
-    return window.Aegis.state.tasks.filter((task) => getRoadmapFromTag(task.tag) === roadmapName);
+  const getRoadmapTasks = (roadmapIdOrName) => {
+    if (!roadmapIdOrName) return [];
+    return window.Aegis.state.tasks.filter((task) => {
+      if (task.roadmap_id && task.roadmap_id === roadmapIdOrName) return true;
+      const rmName = getRoadmapFromTag(task.tag);
+      if (rmName && rmName === roadmapIdOrName) return true;
+      return false;
+    });
   };
 
   const getRoadmaps = () => {
     const map = new Map();
 
     window.Aegis.state.tasks.forEach((task) => {
-      const roadmapName = getRoadmapFromTag(task.tag);
-      if (!roadmapName) return;
+      const roadmapId = task.roadmap_id || null;
+      const roadmapName = roadmapId ? null : getRoadmapFromTag(task.tag);
+      const key = roadmapId || roadmapName;
+      if (!key) return;
 
-      if (!map.has(roadmapName)) {
-        map.set(roadmapName, {
-          name: roadmapName,
+      if (!map.has(key)) {
+        map.set(key, {
+          id: roadmapId,
+          name: roadmapName || String(key).slice(0, 8),
           total: 0,
           completed: 0,
           rootCount: 0
         });
       }
 
-      const stats = map.get(roadmapName);
+      const stats = map.get(key);
       stats.total += 1;
       if (task.done) stats.completed += 1;
-      if (!getParentTaskIdFromTag(task.tag)) stats.rootCount += 1;
+      if (!task.parent_task_id && !getParentTaskIdFromTag(task)) stats.rootCount += 1;
     });
 
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -98,8 +109,8 @@
 
     addTaskForm?.addEventListener("submit", (e) => {
       e.preventDefault();
-      const roadmapName = getRoadmapName();
-      if (!roadmapName) return;
+      const roadmapParam = getRoadmapName();
+      if (!roadmapParam) return;
 
       const titleInput = document.getElementById("task-title-input");
       const xpInput = document.getElementById("task-xp-input");
@@ -108,14 +119,16 @@
 
       if (!taskTitle) return;
 
-      const tag = `RM: ${roadmapName}`;
-      // Add the parent task
-      window.Aegis.addTask(taskTitle, tag, xp);
-      
-      // Look up the newly created task (it will be the last one added with that tag)
-      // This is a bit of a hack since addTask doesn't return the ID immediately,
-      // but in window.Aegis.state it becomes available right away since it's synchronous logic
-      const createdParent = [...window.Aegis.state.tasks].reverse().find(t => t.title === taskTitle && t.tag === tag);
+      const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}/i.test(roadmapParam);
+      const roadmapId = isId ? roadmapParam : null;
+
+      let createdParent = null;
+      if (roadmapId) {
+        createdParent = window.Aegis.addTask(taskTitle, '', xp, roadmapId, null);
+      } else {
+        const tag = `RM: ${roadmapParam}`;
+        createdParent = window.Aegis.addTask(taskTitle, tag, xp);
+      }
 
       if (createdParent) {
         // Add subtasks
@@ -125,7 +138,11 @@
           const stTitle = inputs[0].value.trim();
           const stXp = Number.parseInt(inputs[1].value, 10) || 0;
           if (stTitle) {
-            window.Aegis.addTask(stTitle, `RM: ${roadmapName} | PARENT: ${createdParent.id}`, stXp);
+            if (roadmapId) {
+              window.Aegis.addTask(stTitle, '', stXp, roadmapId, createdParent.id);
+            } else {
+              window.Aegis.addTask(stTitle, `RM: ${roadmapParam} | PARENT: ${createdParent.id}`, stXp);
+            }
           }
         });
       }
@@ -133,7 +150,7 @@
       taskModal.classList.add("hidden");
       addTaskForm.reset();
       subtasksContainer.innerHTML = '';
-      renderDetailTaskPanel(roadmapName);
+      renderDetailTaskPanel(roadmapParam);
     });
 
     // Add Single Subtask Modal Setup
@@ -146,21 +163,28 @@
 
     addSingleSubtaskForm?.addEventListener("submit", (e) => {
       e.preventDefault();
-      const roadmapName = getRoadmapName();
-      if (!roadmapName || !currentTargetParentId) return;
+      const roadmapParam = getRoadmapName();
+      if (!roadmapParam || !currentTargetParentId) return;
 
       const titleInput = document.getElementById("subtask-title-input");
       const xpInput = document.getElementById("subtask-xp-input");
       const stTitle = titleInput.value.trim();
       const stXp = Number.parseInt(xpInput.value, 10) || 0;
 
+      const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}/i.test(roadmapParam);
+      const roadmapId = isId ? roadmapParam : null;
+
       if (stTitle) {
-        window.Aegis.addTask(stTitle, `RM: ${roadmapName} | PARENT: ${currentTargetParentId}`, stXp);
+        if (roadmapId) {
+          window.Aegis.addTask(stTitle, '', stXp, roadmapId, currentTargetParentId);
+        } else {
+          window.Aegis.addTask(stTitle, `RM: ${roadmapParam} | PARENT: ${currentTargetParentId}`, stXp);
+        }
       }
 
       subtaskModal.classList.add("hidden");
       addSingleSubtaskForm.reset();
-      renderDetailTaskPanel(roadmapName);
+      renderDetailTaskPanel(roadmapParam);
     });
   };
 
@@ -235,10 +259,11 @@
     }
 
     overviewList.innerHTML = roadmaps.map((roadmap) => {
-      const progress = getRoadmapProgress(roadmap.name);
+      const key = roadmap.id || roadmap.name;
+      const progress = getRoadmapProgress(key);
       const ring = renderRoadmapRing(progress.percentage);
       return `
-        <button class="glass-panel p-5 rounded-xl text-left border border-outline-variant/20 hover:border-primary/50 transition-all roadmap-card" data-roadmap="${roadmap.name}" type="button">
+        <button class="glass-panel p-5 rounded-xl text-left border border-outline-variant/20 hover:border-primary/50 transition-all roadmap-card" data-roadmap="${key}" type="button">
           <div class="flex items-center gap-4">
             ${ring}
             <div class="flex-1 min-w-0">
@@ -258,8 +283,13 @@
 
     overviewList.querySelectorAll("[data-roadmap]").forEach((button) => {
       button.addEventListener("click", () => {
-        const roadmapName = button.dataset.roadmap;
-        window.location.href = `roadmap.html?roadmap=${encodeURIComponent(roadmapName)}`;
+        const roadmapKey = button.dataset.roadmap;
+        const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}/i.test(roadmapKey);
+        if (isId) {
+          window.location.href = `roadmap.html?roadmap_id=${encodeURIComponent(roadmapKey)}`;
+        } else {
+          window.location.href = `roadmap.html?roadmap=${encodeURIComponent(roadmapKey)}`;
+        }
       });
     });
 
@@ -267,7 +297,7 @@
   };
 
   const renderTaskChildren = (roadmapName, parentTaskId) => {
-    const tasks = getRoadmapTasks(roadmapName).filter((task) => getParentTaskIdFromTag(task.tag) === parentTaskId);
+    const tasks = getRoadmapTasks(roadmapName).filter((task) => getParentTaskIdFromTag(task) === parentTaskId);
     if (tasks.length === 0) {
       return '<p class="text-xs text-on-surface-variant">No subtasks yet.</p>';
     }
@@ -295,16 +325,33 @@
     if (!detailShell || !detailList) return;
 
     const progress = getRoadmapProgress(roadmapName);
-    setText("roadmap-title", roadmapName.toUpperCase());
-    setText("active-track", roadmapName.toUpperCase());
+    const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}/i.test(roadmapName || '');
+    // Set preliminary labels, then fetch roadmap name if we have an ID
     setText("mission-count", `${progress.total} TASKS`);
     setText("primary-panel-title", `${roadmapName} Tasks`);
     setText("primary-panel-copy", "Tick tasks done, then pick any task to add subtasks under it.");
-    setText("detail-roadmap-title", roadmapName.toUpperCase());
     setText("detail-roadmap-count", `${progress.total} TASKS`);
     setText("task-summary", `${progress.total} ACTIVE`);
     setText("detail-completed-count", `${progress.completed}/${progress.total}`);
     setText("detail-progress-text", `${progress.percentage}%`);
+
+    if (isId && window.AegisApi && window.AegisApi.getRoadmap) {
+      setText("roadmap-title", (roadmapName || '').toUpperCase());
+      setText("active-track", (roadmapName || '').toUpperCase());
+      setText("detail-roadmap-title", (roadmapName || '').toUpperCase());
+      window.AegisApi.getRoadmap(roadmapName).then(res => {
+        if (!res.error && res.data) {
+          const title = (res.data.name || '').toUpperCase();
+          setText("roadmap-title", title);
+          setText("active-track", title);
+          setText("detail-roadmap-title", title);
+        }
+      }).catch(() => {});
+    } else {
+      setText("roadmap-title", (roadmapName || '').toUpperCase());
+      setText("active-track", (roadmapName || '').toUpperCase());
+      setText("detail-roadmap-title", (roadmapName || '').toUpperCase());
+    }
 
     const ring = document.getElementById("detail-progress-ring");
     if (ring) {
@@ -319,7 +366,7 @@
     addTaskBtn?.classList.remove("hidden");
     backBtn?.classList.remove("hidden");
 
-    const rootTasks = getRoadmapTasks(roadmapName).filter((task) => !getParentTaskIdFromTag(task.tag));
+    const rootTasks = getRoadmapTasks(roadmapName).filter((task) => !getParentTaskIdFromTag(task));
 
     if (rootTasks.length === 0) {
       detailList.innerHTML = '<p class="text-sm text-on-surface-variant py-8">No tasks in this roadmap yet. Use Add Task to create the first phase.</p>';
@@ -391,7 +438,7 @@
       return;
     }
 
-    const subtasks = getRoadmapTasks(roadmapName).filter((item) => getParentTaskIdFromTag(item.tag) === task.id);
+    const subtasks = getRoadmapTasks(roadmapName).filter((item) => getParentTaskIdFromTag(item) === task.id);
     selectedTaskTitle.textContent = task.title;
     selectedTaskMeta.textContent = `${task.xp} XP • ${task.done ? 'Completed' : 'In progress'}`;
     selectedTaskToggleBtn.textContent = task.done ? "Mark Undone" : "Mark Done";

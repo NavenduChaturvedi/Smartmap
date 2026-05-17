@@ -97,7 +97,7 @@ const fetchUserState = async (userId) => {
     supabase.from("profiles").select("id, display_name, email").eq("id", userId).maybeSingle(),
     supabase.from("settings").select("user_id, theme, font_scale, scanlines, sound_effects, animations").eq("user_id", userId).maybeSingle(),
     supabase.from("roadmap_state").select("user_id, selected_node").eq("user_id", userId).maybeSingle(),
-    supabase.from("tasks").select("id, title, tag, xp, done").eq("user_id", userId)
+    supabase.from("tasks").select("id, title, tag, xp, done, roadmap_id, parent_task_id").eq("user_id", userId)
   ]);
 
   const profile = profileRes.data || null;
@@ -211,7 +211,9 @@ const syncStateToSupabase = async () => {
     title: task.title,
     tag: task.tag,
     xp: task.xp,
-    done: task.done
+    done: task.done,
+    roadmap_id: task.roadmap_id || null,
+    parent_task_id: task.parent_task_id || null
   }));
 
   await Promise.all([
@@ -279,13 +281,15 @@ window.Aegis = {
     });
     this.save();
   },
-  addTask: function(title, tag = "", xp = 0) {
+  addTask: function(title, tag = "", xp = 0, roadmap_id = null, parent_task_id = null) {
     const newTask = {
       id: createTaskId(),
       title,
       tag,
       xp: Number(xp),
-      done: false
+      done: false,
+      roadmap_id: roadmap_id || null,
+      parent_task_id: parent_task_id || null
     };
     this.state.tasks.push(newTask);
     this.save();
