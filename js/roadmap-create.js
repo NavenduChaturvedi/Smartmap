@@ -142,23 +142,25 @@ const createRoadmap = async (event) => {
         return;
       }
 
-      for (const phase of validPhases) {
-        const taskTitle = phase.label ? `${phase.label}: ${phase.title}` : phase.title;
-        window.Aegis.addTask(taskTitle, roadmapTag, phase.xp);
-      }
-
-      await window.Aegis.save();
+      const tasksToAdd = validPhases.map((phase) => ({
+        title: phase.label ? `${phase.label}: ${phase.title}` : phase.title,
+        tag: roadmapTag,
+        xp: phase.xp
+      }));
+      window.Aegis.addTasks(tasksToAdd);
       window.location.href = `roadmap.html?roadmap=${encodeURIComponent(roadmapName)}`;
       return;
     }
 
     // Create tasks linked to the new roadmap_id
-    for (const phase of validPhases) {
-      const taskTitle = phase.label ? `${phase.label}: ${phase.title}` : phase.title;
-      window.Aegis.addTask(taskTitle, '', phase.xp, roadmapId, null);
-    }
-
-    await window.Aegis.save();
+    const tasksToAdd = validPhases.map((phase) => ({
+      title: phase.label ? `${phase.label}: ${phase.title}` : phase.title,
+      tag: '',
+      xp: phase.xp,
+      roadmap_id: roadmapId,
+      parent_task_id: null
+    }));
+    window.Aegis.addTasks(tasksToAdd);
     window.location.href = `roadmap.html?roadmap_id=${encodeURIComponent(roadmapId)}`;
   } catch (error) {
     setError(error?.message || "Failed to create roadmap.");

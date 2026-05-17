@@ -295,6 +295,20 @@ window.Aegis = {
     this.save();
     return newTask;
   },
+  addTasks: function(tasksData) {
+    const newTasks = tasksData.map(data => ({
+      id: createTaskId(),
+      title: data.title,
+      tag: data.tag || "",
+      xp: Number(data.xp || 0),
+      done: false,
+      roadmap_id: data.roadmap_id || null,
+      parent_task_id: data.parent_task_id || null
+    }));
+    this.state.tasks.push(...newTasks);
+    this.save();
+    return newTasks;
+  },
   getPendingTaskCount: function() {
     return this.state.tasks.filter(t => !t.done).length;
   }
@@ -331,6 +345,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (user) {
       await hydrateStateFromSupabase();
+      
+      // Auto-migrate legacy task tags to foreign keys
+      if (window.AegisApi && window.AegisApi.migrateLegacyTagsToForeignKeys) {
+        await window.AegisApi.migrateLegacyTagsToForeignKeys();
+      }
     }
     return window.Aegis.state;
   })();

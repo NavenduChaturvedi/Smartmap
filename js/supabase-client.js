@@ -9,3 +9,11 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 window.AegisSupabase = supabase;
+
+import * as api from "./backend/api.js";
+import { migrateLegacyTagsToForeignKeys } from "./backend/migrate.js";
+
+window.AegisApi = {
+        ...window.AegisApi, // in case it was created already
+        migrateLegacyTagsToForeignKeys
+};
