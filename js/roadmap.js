@@ -484,13 +484,16 @@
     const addTaskBtn = document.getElementById("add-task-btn");
     const backBtn = document.getElementById("back-to-roadmaps-btn");
     const missionPanel = document.getElementById("mission-panel");
+    const newRoadmapBtn = document.getElementById("new-roadmap-btn");
 
     if (!roadmapName) {
       selectedTaskId = null;
       missionPanel?.classList.add("hidden");
       addTaskBtn?.classList.add("hidden");
+      newRoadmapBtn?.classList.remove("hidden");
       backBtn?.classList.add("hidden");
-      renderOverview();
+      // Fetch roadmaps from Supabase if available, otherwise render overview from tasks
+      fetchAndRenderRoadmaps().catch(() => renderOverview());
       return;
     }
 
@@ -498,6 +501,125 @@
     addTaskBtn?.classList.remove("hidden");
     backBtn?.classList.remove("hidden");
     addTaskBtn.onclick = () => addTask(roadmapName);
+    newRoadmapBtn?.classList.add("hidden");
+  };
+
+  const getCurrentUserId = async () => {
+    const supabase = window.AegisSupabase;
+    if (!supabase) return null;
+    try {
+      const { data } = await supabase.auth.getSession();
+      return data?.session?.user?.id || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const fetchAndRenderRoadmaps = async () => {
+    const container = document.getElementById('roadmap-overview-list');
+    if (!container) return;
+    const userId = await getCurrentUserId();
+    if (!userId || !window.AegisApi || !window.AegisApi.fetchRoadmaps) {
+      // fallback to task-derived overview
+      renderOverview();
+      return;
+    }
+
+    const res = await window.AegisApi.fetchRoadmaps(userId);
+    if (res.error || !res.data) {
+      renderOverview();
+      return;
+    }
+
+    const roadmaps = res.data;
+    if (!roadmaps || roadmaps.length === 0) {
+      container.innerHTML = '<p class="col-span-2 text-center text-on-surface-variant py-10">No roadmaps yet. Create one using New Roadmap.</p>';
+      renderSidebar(null);
+      return;
+    }
+
+    container.innerHTML = roadmaps.map(r => {
+      const name = r.name;
+      const created = new Date(r.created_at).toLocaleDateString();
+      return `
+        <div class="glass-panel p-5 rounded-xl text-left border border-outline-variant/20 hover:border-primary/50 transition-all roadmap-card">
+          <div class="flex items-center gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-3 mb-2">
+                <h3 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter truncate">${name}</h3>
+                <div class="flex items-center gap-2">
+                  <button data-id="${r.id}" class="edit-roadmap-btn px-3 py-1 rounded border border-outline-variant/20 text-[12px]">Edit</button>
+                  <button data-id="${r.id}" class="delete-roadmap-btn px-3 py-1 rounded border border-danger/20 text-[12px]">Delete</button>
+                </div>
+              </div>
+              <p class="text-xs text-on-surface-variant">${r.description || ''}</p>
+              <p class="text-[10px] text-on-surface-variant mt-3">Created ${created}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.querySelectorAll('.edit-roadmap-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const res = await window.AegisApi.getRoadmap(id);
+        if (res.error || !res.data) return;
+        openRoadmapModal(res.data);
+      });
+    });
+
+    container.querySelectorAll('.delete-roadmap-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        if (!confirm('Delete this roadmap? This will not delete associated tasks.')) return;
+        await window.AegisApi.deleteRoadmap(id);
+        fetchAndRenderRoadmaps();
+      });
+    });
+  };
+
+  const openRoadmapModal = (existing = null) => {
+    const modal = document.getElementById('roadmap-modal');
+    const nameInput = document.getElementById('roadmap-name-input');
+    const descInput = document.getElementById('roadmap-desc-input');
+    const form = document.getElementById('roadmap-form');
+    if (!modal || !form) return;
+    if (existing) {
+      modal.dataset.editId = existing.id;
+      nameInput.value = existing.name || '';
+      descInput.value = existing.description || '';
+    } else {
+      delete modal.dataset.editId;
+      form.reset();
+    }
+    modal.classList.remove('hidden');
+  };
+
+  const setupRoadmapModal = () => {
+    const newBtn = document.getElementById('new-roadmap-btn');
+    const closeBtn = document.getElementById('close-roadmap-modal-btn');
+    const modal = document.getElementById('roadmap-modal');
+    const form = document.getElementById('roadmap-form');
+    if (newBtn) newBtn.addEventListener('click', () => openRoadmapModal());
+    if (closeBtn) closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('roadmap-name-input').value.trim();
+      const description = document.getElementById('roadmap-desc-input').value.trim();
+      if (!name) return;
+      const userId = await getCurrentUserId();
+      if (!userId) return alert('Not signed in');
+      const editId = modal.dataset.editId;
+      if (editId) {
+        await window.AegisApi.updateRoadmap(editId, { name, description });
+      } else {
+        await window.AegisApi.createRoadmap({ user_id: userId, name, description });
+      }
+      modal.classList.add('hidden');
+      fetchAndRenderRoadmaps();
+    });
   };
 
   const closeBtn = document.getElementById("mission-close-btn");

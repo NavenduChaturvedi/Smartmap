@@ -37,6 +37,7 @@
 					<div class="flex items-center gap-3 flex-wrap">
 						<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="mission-count">0 ACTIVE</span>
 						<span class="font-label-caps text-[10px] text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase" id="active-track">OVERVIEW</span>
+						<button id="new-roadmap-btn" class="px-4 py-2 rounded-full border border-primary/30 text-primary uppercase tracking-widest text-[10px] font-bold hover:bg-primary/10 transition-colors" type="button">New Roadmap</button>
 						<button id="add-task-btn" class="px-4 py-2 rounded-full border border-primary/30 text-primary uppercase tracking-widest text-[10px] font-bold hover:bg-primary/10 transition-colors hidden" type="button">Add Task</button>
 						<a id="back-to-roadmaps-btn" href="roadmap.html" class="px-4 py-2 rounded-full border border-outline-variant/30 text-on-surface-variant uppercase tracking-widest text-[10px] font-bold hover:text-primary hover:border-primary/40 transition-colors hidden">All Roadmaps</a>
 					</div>
@@ -187,6 +188,32 @@
 				</form>
 			</div>
 		</div>
+
+			<!-- Roadmap Modal -->
+			<div id="roadmap-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-background/80 backdrop-blur-sm hidden">
+				<div class="glass-panel w-full max-w-md p-6 rounded-2xl border border-outline-variant/30 shadow-2xl max-h-[90vh] flex flex-col">
+					<div class="flex items-center justify-between mb-6">
+						<div>
+							<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">New Roadmap</h2>
+							<p class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Create a roadmap entry</p>
+						</div>
+						<button id="close-roadmap-modal-btn" type="button" class="material-symbols-outlined text-outline-variant hover:text-primary transition-colors cursor-pointer px-2 bg-transparent border-0 p-0">close</button>
+					</div>
+					<form id="roadmap-form" class="space-y-4 flex flex-col">
+						<div>
+							<label for="roadmap-name-input" class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest mb-2">Roadmap Name</label>
+							<input type="text" id="roadmap-name-input" class="w-full bg-surface-container p-3 rounded-lg border border-outline-variant/30 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="e.g. Core Platform" required>
+						</div>
+						<div>
+							<label for="roadmap-desc-input" class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest mb-2">Description</label>
+							<textarea id="roadmap-desc-input" rows="3" class="w-full bg-surface-container p-3 rounded-lg border border-outline-variant/30 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="Optional description"></textarea>
+						</div>
+						<div class="pt-4 mt-auto">
+							<button type="submit" class="w-full py-3 bg-primary text-background font-bold tracking-widest uppercase hover:opacity-90 rounded-xl transition-all">Create Roadmap</button>
+						</div>
+					</form>
+				</div>
+			</div>
 
 		<script src="js/roadmap.js"></script>
 	</body>
