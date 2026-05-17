@@ -1,252 +1,491 @@
 # Roadmap Webapp Project Analysis Report
 
 Generated: 2026-05-17  
+Updated after latest project changes: 2026-05-17  
 Project path: `C:\Users\pc\Desktop\Projects\Roadmap_webapp`
 
 ## Executive Summary
 
-The project is a static, multi-page HTML/CSS/vanilla JavaScript app for an RPG-style roadmap/productivity dashboard. The visual direction and page skeleton are mostly present, and there is meaningful work already done around shared navigation components, local state, dashboard rendering, settings persistence, achievements, analytics, and initial Supabase authentication.
+The project has moved forward since the previous analysis. The earlier blocking dashboard syntax issue has been fixed, the roadmap page has been reworked into a more realistic roadmap overview/detail experience, a dedicated create-roadmap flow now exists, the stale nested `Roadmap_webapp/` duplicate folder appears to have been removed, and the project now has a real JavaScript syntax check wired to `npm test`.
 
-However, the project is not currently in a stable MVP state. The existing `README.md` and `PROJECT_PROGRESS.md` describe the frontend as stable or near complete, but the current source has critical runtime and structural issues:
+The project is still not production-ready, but it is in a healthier state than the first report. It is now closer to a functional static MVP prototype with partial Supabase auth/sync than a broken visual mockup.
 
-- `js/dashboard.js` has an extra closing brace around line 118 that likely prevents the dashboard script from parsing.
-- `js/roadmap.js` expects an element with id `roadmap-tasks-list`, but `roadmap.html` does not contain that element. This makes the roadmap page fail as soon as it tries to render selected roadmap tasks.
-- Supabase auth and remote persistence have been started, but there is no schema/migration documentation in the repo, no environment separation, and the anon key is hardcoded in `js/supabase-client.js`.
-- Several CSS and JS placeholder files are empty.
-- The nested `Roadmap_webapp/` folder contains a second copy of the project with conflicting/stale files, including a `roadmap.html` that is only 2 bytes. This can cause confusion and accidental edits to the wrong copy.
-- There is no real test command. `npm test` is currently a placeholder that exits with an error, and in this environment it was also blocked by PowerShell execution policy.
+Most important current reality:
+
+- Dashboard roadmap creation now routes to `roadmap-create.html` instead of using a browser `prompt()`.
+- `roadmap-create.html` and `js/roadmap-create.js` let users create a named roadmap with one or more phase/task rows.
+- `roadmap.html` and `js/roadmap.js` now support an overview list, roadmap detail view, task progress, selected task panel, subtasks, and add-task/add-subtask behavior.
+- `package.json` now has `check:js` and `test` scripts.
+- `cmd /c npm test` passed and checked 17 JavaScript files.
+
+The remaining big concerns are data model maturity, Supabase setup/documentation, UX polish, test coverage beyond syntax checks, and some fragile task/roadmap modeling that still uses encoded `tag` strings instead of real roadmap/task relationships.
 
 ## Revised Actual Progress
 
-The previous tracker claims 82% frontend completion and roughly 50% overall completion. Based on the current files, a more realistic estimate is:
+The previous report estimated overall completion at 40-45%. After the latest changes, a better estimate is:
 
 | Area | Actual Progress | Status |
 |---|---:|---|
-| Visual/UI page skeletons | 70% | Main screens exist, but responsiveness and HTML validity need review. |
-| Shared frontend architecture | 55% | Shared components and state exist, but scripts are fragile and not consistently synchronized with HTML. |
-| Dashboard functionality | 45% | Rendering logic exists, but script currently has a likely parse-breaking brace issue. |
-| Roadmap functionality | 35% | Old static node UI and newer dynamic task UI are mixed together. Runtime element mismatch blocks the intended flow. |
-| Analytics | 35% | Basic metrics render from state; charts and deeper insights are placeholders. |
-| Achievements | 50% | Filters/modals work conceptually, but achievement data is hardcoded and not tied to real unlock rules. |
-| Settings | 55% | Local profile/theme controls exist; remote save is indirect and needs validation. |
-| Authentication | 30% | Supabase login/signup code exists, but database schema, environment setup, error handling, and end-to-end validation are incomplete. |
-| Backend/data model | 20% | Client code assumes tables exist; no migrations, policies, API contracts, or seed data are documented. |
-| Testing/QA | 5% | No automated tests or linting workflow. |
-| Deployment readiness | 15% | Static files can be hosted, but CDN dependencies, secrets/config, schema setup, and build strategy are unresolved. |
+| Visual/UI page skeletons | 75% | Core pages exist and the roadmap/create flow is more coherent. Mobile/responsive verification still needed. |
+| Shared frontend architecture | 60% | Shared state and components exist. More page code now waits for `Aegis.ready`, but globals and script order are still central. |
+| Dashboard functionality | 60% | Syntax issue fixed. Stats/tasks/roadmap cards render from state; create action now opens a real create page. |
+| Roadmap functionality | 55% | Major improvement: overview/detail/subtask flow exists. Still built on encoded tags and prompt-based add-task UX. |
+| Roadmap creation | 65% | Dedicated page exists with multiple phase rows and validation. Still no real roadmap entity. |
+| Analytics | 35% | Still basic state-derived cards; charting and historical metrics remain placeholders. |
+| Achievements | 50% | Filters/modals exist; achievement data and unlock rules remain mostly hardcoded. |
+| Settings | 55% | Local settings/profile behavior exists; account-level settings and avatar/security flows are incomplete. |
+| Authentication | 35% | Supabase login/signup exists and profile seeding improved, but schema/RLS/config documentation is still missing. |
+| Backend/data model | 25% | Client assumes Supabase tables. No schema, migrations, RLS policies, or real roadmap table yet. |
+| Testing/QA | 20% | JS syntax checker added and passing. No browser, integration, auth, or user-flow tests yet. |
+| Deployment readiness | 20% | Static deploy possible in principle, but CDN/config/schema/build concerns remain. |
 
-Estimated overall completion: **40-45%**.
+Estimated overall completion: **50-55%**.
 
-The app has a strong visual prototype and a partial state/auth foundation, but it needs stabilization before feature expansion.
+This is now a usable prototype foundation, but it still needs a data-model pass and browser-level QA before it should be called MVP-complete.
 
-## What Exists Now
+## What Changed Since The Previous Report
 
-### Pages
+### Fixed Or Improved
 
-- `index.html`: Login/signup entry page with Supabase auth script.
-- `dashboard.html`: Dashboard shell with stats, objective list, roadmap cards, commendations, and shared topbar/sidebar.
-- `roadmap.html`: Roadmap shell with static hardcoded mission nodes and a mission detail panel.
-- `analytics.html`: Analytics shell with state-derived metric cards and a "Chart visualization coming soon" placeholder.
-- `achievements.html`: Achievement vault with hardcoded cards, filters, and modal.
-- `settings.html`: Profile/settings UI with local state controls and save behavior.
+- `js/dashboard.js` no longer has the extra unmatched closing brace from the earlier report.
+- `dashboard.html` create button label changed from `Deploy_New_Asset` to `Create_New_Roadmap`.
+- `js/dashboard.js` create-roadmap behavior now navigates to `roadmap-create.html`.
+- `roadmap-create.html` was added.
+- `js/roadmap-create.js` was added.
+- `roadmap.html` was substantially rebuilt:
+  - overview list container,
+  - detail shell,
+  - task list,
+  - progress ring,
+  - selected task panel,
+  - subtask panel,
+  - add task button,
+  - all roadmaps back link.
+- `js/roadmap.js` was substantially rebuilt:
+  - derives roadmaps from task tags,
+  - supports overview and detail states,
+  - supports parent/child tasks using `PARENT:` in tags,
+  - renders progress,
+  - can toggle tasks/subtasks,
+  - can add tasks/subtasks.
+- `js/app.js` profile seeding now avoids overwriting an existing display name when seeding defaults.
+- `scripts/check-js.js` was added.
+- `package.json` now has:
 
-### Shared JavaScript
-
-- `js/app.js`: Global `window.Aegis` state manager, localStorage persistence, Supabase hydration/sync helpers, task helpers, sign-out flow.
-- `js/components.js`: Web Components for `<aegis-sidebar>` and `<aegis-topbar>`.
-- `js/auth.js`: Login/signup mode switching and Supabase auth calls.
-- `js/supabase-client.js`: Supabase client initialization from globals or hardcoded fallback values.
-- Page scripts: `dashboard.js`, `roadmap.js`, `analytics.js`, `achievements.js`, `settings.js`.
-
-### State Model Currently Implied
-
-Local state key: `aegis_state_v1`
-
-Current frontend state shape:
-
-```js
+```json
 {
-  roadmapsActive,
-  streak,
-  totalXp,
-  tasks: [{ id, title, tag, xp, done }],
-  roadmap: { selectedNode },
-  commanderName,
-  clearanceLevel,
-  profile: { displayName, email },
-  settings: {
-    theme,
-    fontScale,
-    scanlines,
-    soundEffects,
-    animations
+  "scripts": {
+    "check:js": "node scripts/check-js.js",
+    "test": "npm run check:js"
   }
 }
 ```
 
-Supabase tables assumed by client code:
+- `cmd /c npm test` passed:
 
-- `profiles`: `id`, `display_name`, `email`
-- `settings`: `user_id`, `theme`, `font_scale`, `scanlines`, `sound_effects`, `animations`
-- `roadmap_state`: `user_id`, `selected_node`
-- `tasks`: `id`, `user_id`, `title`, `tag`, `xp`, `done`
+```text
+Checked 17 JavaScript files.
+```
 
-No SQL schema, migration, RLS policy, or setup instructions for these tables were found.
+- The previously observed nested duplicate `Roadmap_webapp/Roadmap_webapp/` folder is no longer present in the current root listing.
 
-## Critical Issues To Fix First
+## Current Architecture
 
-### 1. Dashboard Script Parse Issue
+The app remains a static multi-page vanilla JavaScript web app.
 
-File: `js/dashboard.js`  
-Evidence: lines 113-118 include `handleCreateRoadmap`, followed by two closing `};` blocks. The second one appears unmatched.
+### Main Pages
 
-Current section:
+- `index.html`: login/signup page.
+- `dashboard.html`: mission dashboard, task list, roadmap cards.
+- `roadmap.html`: roadmap overview and selected roadmap detail.
+- `roadmap-create.html`: roadmap creation form with phase/task rows.
+- `analytics.html`: basic analytics metrics.
+- `achievements.html`: achievement vault with filters and modal.
+- `settings.html`: profile and UI settings.
+
+### Main Scripts
+
+- `js/app.js`: global state, localStorage, Supabase hydration/sync, auth guard, task helpers.
+- `js/auth.js`: login/signup behavior.
+- `js/components.js`: sidebar/topbar Web Components.
+- `js/dashboard.js`: dashboard rendering and roadmap card links.
+- `js/roadmap.js`: roadmap overview/detail/task/subtask rendering.
+- `js/roadmap-create.js`: create-roadmap form behavior.
+- `js/analytics.js`: derived analytics metric rendering.
+- `js/achievements.js`: filters, modal, achievement summary.
+- `js/settings.js`: settings/profile controls.
+- `js/supabase-client.js`: Supabase client config.
+
+### Current State Model
+
+Local state key:
+
+```text
+aegis_state_v1
+```
+
+Current task objects:
 
 ```js
-const handleCreateRoadmap = () => {
-  const roadmapName = prompt("Enter roadmap name:");
-  if (!roadmapName || !roadmapName.trim()) return;
-
-  window.Aegis.addTask(`Start ${roadmapName.trim()}`, `RM: ${roadmapName.trim()}`, 0);
-};
-};
+{
+  id,
+  title,
+  tag,
+  xp,
+  done
+}
 ```
 
-Impact:
+Roadmaps are currently inferred from task tags:
 
-- If this is parsed by the browser as-is, `dashboard.js` can fail completely.
-- Dashboard stats, task list, roadmap list, and create-roadmap behavior may not initialize.
-
-How to fix:
-
-1. Remove the extra `};`.
-2. Re-run syntax checks on every file in `js/`.
-3. Open `dashboard.html` in the browser and verify:
-   - stats render,
-   - task list renders,
-   - create roadmap works,
-   - no console errors appear.
-
-### 2. Roadmap HTML/JS Contract Is Broken
-
-File: `js/roadmap.js`  
-Evidence: line 20 calls `document.getElementById("roadmap-tasks-list")`.
-
-File: `roadmap.html`  
-Evidence: no `id="roadmap-tasks-list"` exists. The page instead contains hardcoded `.roadmap-node` buttons with `data-node="NODE_01"` through `NODE_05`.
-
-Impact:
-
-- `listEl` becomes `null`.
-- The first call to `listEl.innerHTML = ...` will throw.
-- The intended dynamic roadmap-by-query-param flow cannot work.
-
-How to fix:
-
-Choose one roadmap model and remove the other.
-
-Recommended direction:
-
-1. Keep the dynamic task-based roadmap model.
-2. In `roadmap.html`, replace the hardcoded static node grid with an empty container:
-
-```html
-<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-gutter" id="roadmap-tasks-list"></div>
+```text
+RM: Roadmap Name
 ```
 
-3. Update `roadmap.js` so it handles both states gracefully:
-   - no roadmap selected,
-   - roadmap selected but no tasks,
-   - roadmap selected with tasks.
-4. Make the dashboard roadmap cards link to `roadmap.html?roadmap=<name>` as they already attempt to do.
-5. Add an "Add Task" action inside the roadmap page, not only on the dashboard.
+Subtasks are currently inferred from task tags:
 
-### 3. Supabase Is Partially Wired But Not Product-Ready
+```text
+RM: Roadmap Name | PARENT: parent-task-id
+```
 
-File: `js/supabase-client.js`  
-Evidence: Supabase URL and anon key are hardcoded on lines 3-4.
+This works for a prototype, but it is the next major thing to replace.
 
-Impact:
+## Current Working Status
 
-- Hardcoded project config makes environment switching difficult.
-- The project cannot be safely cloned or deployed without editing source.
-- The code assumes Supabase tables and policies exist, but the repo does not define them.
+### Dashboard
 
-How to fix:
+Current status: improved and likely functional.
 
-1. Add `supabase/schema.sql` with the required tables.
-2. Add RLS policies so users can only access their own rows.
-3. Move runtime config into one of these:
-   - `config.js` ignored by Git, with `config.example.js` committed,
-   - or a small build step that injects environment variables.
-4. Document Supabase setup in `README.md`.
-5. Add graceful handling for missing/failed remote tables. Right now failed reads are not surfaced clearly to the user.
+What works conceptually:
 
-Suggested initial schema:
+- Reads tasks from `window.Aegis.state`.
+- Calculates pending tasks, XP, streak, and active roadmap count.
+- Renders roadmap cards from `RM:` task tags.
+- Clicking a roadmap card navigates to `roadmap.html?roadmap=<name>`.
+- Create button opens `roadmap-create.html`.
+- Script now waits on `window.Aegis.ready` before initializing.
+- Syntax check passes.
+
+Remaining concerns:
+
+- No browser smoke test has verified click behavior visually.
+- Roadmap cards still depend on encoded task tags.
+- Empty states are basic.
+
+### Roadmap Creation
+
+Current status: newly added and useful.
+
+What works conceptually:
+
+- User can enter a roadmap name.
+- User can add multiple phase rows.
+- Each phase row creates a task under the roadmap.
+- Validation requires a roadmap name and at least one phase title.
+- Duplicate prevention checks for exact existing task tag match.
+- Redirects into the created roadmap detail page.
+
+Important caveat:
+
+`js/roadmap-create.js` calls `window.Aegis.addTask()` in a loop, and `addTask()` already calls `this.save()` each time. After the loop, `createRoadmap()` also calls `await window.Aegis.save()`. This is safe enough for a local prototype, but with Supabase it can create multiple remote sync writes per roadmap creation. Later, this should be batched.
+
+How to improve:
+
+1. Add a bulk add helper such as `window.Aegis.addTasks(tasks)`.
+2. Save once after all roadmap tasks are added.
+3. Move duplicate detection to a real `roadmaps` collection/table.
+
+### Roadmap Detail
+
+Current status: significantly improved.
+
+What works conceptually:
+
+- Shows an overview of all roadmaps when no `roadmap` query parameter is present.
+- Shows selected roadmap details when `?roadmap=<name>` is present.
+- Shows progress ring and completed/total counts.
+- Shows root tasks and nested subtasks.
+- Lets users select a task.
+- Lets users mark selected tasks done/undone.
+- Lets users add root tasks and subtasks.
+- Re-renders on `aegis:state-updated`.
+
+Remaining concerns:
+
+- Add task/subtask still uses browser `prompt()`, which is not polished UX.
+- Parent/child relationships are stored inside `tag` strings.
+- `normalizeRoadmapName()` exists but is currently unused.
+- The old right-side `mission-panel` markup still exists but is mostly unused by the new design.
+- There is no edit/delete task action.
+- There is no real ordering for phases/tasks.
+- There is no real roadmap metadata beyond the roadmap name in task tags.
+
+### Auth And Supabase
+
+Current status: partial.
+
+What works conceptually:
+
+- Supabase client is loaded.
+- Login/signup code exists.
+- Protected pages redirect unauthenticated users back to `index.html`.
+- Existing sessions hydrate state from Supabase.
+- Profile seeding no longer overwrites an existing `display_name` unnecessarily.
+
+Remaining concerns:
+
+- Supabase URL and anon key are still hardcoded in `js/supabase-client.js`.
+- No committed Supabase schema or migration exists.
+- No RLS policy documentation exists.
+- No auth test checklist exists.
+- No password reset flow exists.
+- Remote sync errors are not surfaced clearly in UI.
+
+## Critical Remaining Issues
+
+### 1. Replace Tag-Based Data Modeling
+
+Current roadmap relationship:
+
+```text
+task.tag = "RM: My Roadmap"
+```
+
+Current subtask relationship:
+
+```text
+task.tag = "RM: My Roadmap | PARENT: <task-id>"
+```
+
+Why this is risky:
+
+- Renaming a roadmap requires rewriting many tags.
+- A task title/tag typo can break grouping.
+- Parent ids inside strings are fragile.
+- Queries and Supabase filtering will become awkward.
+- It is hard to add ordering, descriptions, due dates, status, and roadmap metadata.
+
+Recommended model:
+
+```js
+roadmaps: [
+  { id, title, description, status, createdAt, updatedAt }
+]
+
+tasks: [
+  { id, roadmapId, parentTaskId, title, xp, done, sortOrder, createdAt, updatedAt }
+]
+```
+
+Recommended Supabase tables:
 
 ```sql
-create table profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  display_name text,
-  email text,
+create table roadmaps (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  description text,
+  status text default 'active',
+  sort_order integer default 0,
   created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
-create table settings (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  theme text default 'dark',
-  font_scale integer default 100,
-  scanlines boolean default true,
-  sound_effects boolean default false,
-  animations boolean default true,
-  updated_at timestamptz default now()
-);
-
-create table roadmap_state (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  selected_node text default 'NODE_01',
   updated_at timestamptz default now()
 );
 
 create table tasks (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
+  roadmap_id uuid not null references roadmaps(id) on delete cascade,
+  parent_task_id uuid references tasks(id) on delete cascade,
   title text not null,
-  tag text,
   xp integer default 0,
   done boolean default false,
+  sort_order integer default 0,
+  completed_at timestamptz,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
 ```
 
-### 4. Project Has Duplicate/Stale Copies
+### 2. Add Supabase Schema And RLS
 
-There is a nested directory:
+The client assumes these tables exist:
 
-`Roadmap_webapp/Roadmap_webapp/`
+- `profiles`
+- `settings`
+- `roadmap_state`
+- `tasks`
 
-It contains another set of HTML/CSS/JS files with different sizes and stale content. For example, nested `Roadmap_webapp/roadmap.html` is only 2 bytes.
-
-Impact:
-
-- Easy to edit the wrong file.
-- Reports and future tooling may scan duplicate/stale files.
-- Deployment may accidentally publish the wrong directory.
+But the repo still does not define them.
 
 How to fix:
 
-1. Decide the canonical root. The current canonical root should be:
+1. Add `supabase/schema.sql`.
+2. Add row-level security policies.
+3. Add setup instructions in `README.md`.
+4. Add seed/default behavior documentation.
 
-`C:\Users\pc\Desktop\Projects\Roadmap_webapp`
+Minimum RLS pattern:
 
-2. Move any useful file from the nested copy into the root if needed.
-3. Delete or archive the nested copy after confirmation.
-4. Update `.gitignore` if generated extraction folders should not be tracked.
+```sql
+alter table profiles enable row level security;
+alter table settings enable row level security;
+alter table roadmaps enable row level security;
+alter table tasks enable row level security;
 
-### 5. Empty Placeholder Files Create False Confidence
+create policy "Users can manage their profile"
+on profiles for all
+using (auth.uid() = id)
+with check (auth.uid() = id);
 
-Empty or placeholder files include:
+create policy "Users can manage their settings"
+on settings for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+create policy "Users can manage their roadmaps"
+on roadmaps for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+create policy "Users can manage their tasks"
+on tasks for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+```
+
+### 3. Remove Hardcoded Supabase Config
+
+File:
+
+```text
+js/supabase-client.js
+```
+
+Current concern:
+
+- The URL and anon key are embedded in source as fallbacks.
+- The app has no clear local/dev/prod config story.
+
+How to fix:
+
+1. Add `config.example.js`:
+
+```js
+window.__SUPABASE_URL = "https://your-project.supabase.co";
+window.__SUPABASE_ANON_KEY = "your-anon-key";
+```
+
+2. Add `config.js` to `.gitignore`.
+3. Load `config.js` before `js/supabase-client.js`.
+4. Remove hardcoded fallback values.
+
+### 4. Replace Prompt-Based Task Creation
+
+Current:
+
+- Roadmap creation page has a real form.
+- Roadmap detail page still uses `prompt()` for add task and add subtask.
+
+Why this matters:
+
+- `prompt()` is not styled, not validated well, and not mobile-friendly.
+- XP entry is a separate prompt.
+- It feels inconsistent with the new roadmap creation page.
+
+How to fix:
+
+1. Add an in-page task modal or inline form.
+2. Fields:
+   - task title,
+   - XP,
+   - parent task optional,
+   - order/phase optional.
+3. Save through `Aegis.addTask()` or future `Aegis.createTask()`.
+
+### 5. Add Browser-Level Smoke Tests
+
+Current testing:
+
+- JS syntax check passes.
+
+Still missing:
+
+- Page load checks.
+- Click checks.
+- Auth redirect checks.
+- Roadmap creation flow checks.
+- Task toggle checks.
+
+Recommended Playwright smoke flows:
+
+1. Load `index.html`.
+2. Mock or bypass auth for local testing.
+3. Load `dashboard.html` with seeded localStorage.
+4. Click create roadmap.
+5. Fill `roadmap-create.html`.
+6. Confirm redirect to `roadmap.html?roadmap=...`.
+7. Mark task done.
+8. Confirm dashboard/analytics state updates.
+
+## Remaining Feature Gaps
+
+### Analytics
+
+Still needs:
+
+- Real charts.
+- Date-based completion history.
+- `completed_at` tracking.
+- Roadmap-level filters.
+- Weekly/monthly trend views.
+
+### Achievements
+
+Still needs:
+
+- Achievement definition data structure.
+- Unlock rule engine.
+- Persisted unlocked achievements.
+- Unlock notifications.
+- Real connection to XP, streak, and roadmap completion.
+
+### Settings
+
+Still needs:
+
+- Avatar upload.
+- Password reset/account security.
+- Export data.
+- Delete account.
+- Email update via Supabase auth, not only profile table updates.
+- Remote sync status/error display.
+
+### UX And Responsiveness
+
+Still needs:
+
+- Mobile sidebar/topbar behavior.
+- Replace `prompt()`.
+- Loading states while `Aegis.ready` resolves.
+- Error toasts for failed Supabase sync.
+- Better empty states.
+- Review text overflow in cards/buttons.
+
+### Build And Deployment
+
+Still needs:
+
+- Tailwind local build instead of CDN for production.
+- Environment config handling.
+- Deployment instructions.
+- Supabase setup instructions.
+- Browser test workflow.
+
+## Technical Debt Still Present
+
+### Empty Placeholder Files
+
+Still present:
 
 - `css/animations.css`
 - `css/components.css`
@@ -263,402 +502,148 @@ Empty or placeholder files include:
 - `js/features/roadmap.js`
 - `js/features/tasks.js`
 
-Impact:
+Recommendation:
 
-- The folder structure looks more complete than it is.
-- Future contributors may not know where real code belongs.
-
-How to fix:
-
-1. Either remove unused placeholders or add a short comment explaining planned ownership.
-2. Consolidate CSS into either:
-   - one real `css/base.css` plus page CSS files that are actually used, or
-   - a structured CSS system: `tokens.css`, `layout.css`, `components.css`, `pages/*.css`.
-3. Do the same for JS: either use current page scripts or move logic into `js/features`, but avoid both.
-
-## Functional Gaps
-
-### Authentication
-
-Current state:
-
-- Login and signup UI exist.
-- Supabase `signInWithPassword` and `signUp` are called.
-- Signup can optionally upsert a display name into `profiles`.
-- Existing sessions redirect from `index.html` to `dashboard.html`.
-- Protected pages redirect unauthenticated users back to `index.html`.
-
-Missing:
-
-- Confirmed database schema.
-- RLS policies.
-- Password reset.
-- Email confirmation UX.
-- Loading states for protected pages while session restores.
-- Clear error messages for missing Supabase tables/policies.
-- Config separation for local/dev/prod.
-
-How to complete:
-
-1. Add schema and RLS policies.
-2. Add a manual auth test checklist.
-3. Add password reset.
-4. Add a loading overlay while `window.Aegis.ready` resolves.
-5. Add user-facing remote sync errors.
-
-### Roadmaps
-
-Current state:
-
-- Dashboard can create a roadmap by adding one task tagged `RM: <name>`.
-- Roadmap cards are derived from task tags.
-- Roadmap page has a mission panel and dynamic task rendering logic.
-
-Missing:
-
-- Real roadmap entity/table.
-- Real nodes/stages/subtasks model.
-- Create/edit/delete roadmap.
-- Add/edit/delete/reorder tasks.
-- Completion rules.
-- Locked/unlocked node logic.
-- Dedicated roadmap progress persistence beyond tasks.
-
-How to complete:
-
-1. Introduce a `roadmaps` table:
-
-```sql
-create table roadmaps (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  title text not null,
-  description text,
-  status text default 'active',
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-```
-
-2. Add `roadmap_id` to `tasks`.
-3. Stop using `tag` as the main relationship.
-4. Build UI flows:
-   - create roadmap modal,
-   - create task modal,
-   - mark task done,
-   - edit task,
-   - delete task,
-   - archive roadmap.
-
-### Dashboard
-
-Current state:
-
-- UI sections exist.
-- Stats are derived from `window.Aegis.state`.
-- Task toggles update state.
-- Roadmap cards derive progress from task tags.
-
-Missing:
-
-- Stable parsing due dashboard script issue.
-- Empty-state quality.
-- Real onboarding seed tasks.
-- Better create-roadmap modal instead of `prompt()`.
-- Loading and error states.
-- Recent activity should be generated from real events.
-
-How to complete:
-
-1. Fix syntax.
-2. Replace `prompt()` with a modal.
-3. Add `activity_log` state/table.
-4. Seed a first roadmap/task for new users.
-5. Add dashboard smoke tests.
-
-### Analytics
-
-Current state:
-
-- Basic task count, XP, throughput, and streak values render.
-- Chart area is explicitly "coming soon."
-
-Missing:
-
-- Real charts.
-- Date-aware task completion history.
-- Weekly/monthly filters.
-- Streak calculation from actual activity dates.
-- Roadmap-specific analytics.
-
-How to complete:
-
-1. Add `completed_at` to tasks.
-2. Track activity events.
-3. Add a chart library or lightweight SVG/canvas charts.
-4. Define metrics:
-   - completion rate,
-   - XP by day,
-   - streak,
-   - best roadmap,
-   - pending load,
-   - weekly velocity.
-
-### Achievements
-
-Current state:
-
-- Achievement cards are hardcoded.
-- Filtering works by `data-rarity`.
-- Modal shows card data.
-- Summary loosely reacts to completed task count.
-
-Missing:
-
-- Real achievement definitions.
-- Unlock rules.
-- Persistence of unlocked achievements.
-- Notification/toast when achievements unlock.
-
-How to complete:
-
-1. Move achievement definitions to JS or JSON.
-2. Add unlock evaluator:
-
-```js
-const achievementRules = {
-  first_task: (state) => state.tasks.some((task) => task.done),
-  ten_tasks: (state) => state.tasks.filter((task) => task.done).length >= 10,
-  first_roadmap: (state) => state.roadmapsActive >= 1
-};
-```
-
-3. Save unlocked achievement ids.
-4. Render achievements from data, not static HTML.
-
-### Settings
-
-Current state:
-
-- Profile fields and UI settings are present.
-- Settings save into `window.Aegis.state` and then call `window.Aegis.save()`.
-
-Missing:
-
-- Avatar upload.
-- Account security section.
-- Remote sync status.
-- Delete account/export data flows.
-- Validation for profile/email edits.
-
-How to complete:
-
-1. Decide whether email can be edited from settings. If yes, use Supabase auth email update, not only profile table updates.
-2. Add avatar storage via Supabase Storage.
-3. Add account actions:
-   - reset password,
-   - export data,
-   - delete account.
-
-## Technical Debt
+- Remove unused placeholders, or add comments explaining ownership and planned purpose.
+- Do not keep empty structure that suggests finished modules.
 
 ### Encoding Issues
 
-Several files show mojibake in rendered text, especially `README.md` and `achievements.html` symbols. This likely happened from mismatched UTF-8/Windows encoding.
+`README.md` and parts of the HTML still show corrupted characters/mojibake from encoding mismatch.
 
-How to fix:
+Recommendation:
 
-1. Convert all project text files to UTF-8.
-2. Replace corrupted characters manually.
-3. Add editor settings:
+1. Convert files to UTF-8.
+2. Replace corrupted symbols manually.
+3. Add `.vscode/settings.json` encoding rules if not already complete.
 
-```json
-{
-  "files.encoding": "utf8",
-  "files.eol": "\n"
-}
+### Global State
+
+The app still relies on:
+
+```js
+window.Aegis
 ```
 
-### CDN Dependency
+This is acceptable for the current prototype, but the next stage should make state APIs more explicit and testable.
 
-All HTML pages load Tailwind and fonts from CDNs.
+## Recommended Next Implementation Plan
 
-Impact:
+### Phase 1: Stabilize The New Flow
 
-- App needs network access to render correctly.
-- Tailwind CDN is not a production build strategy.
-- CSS class scanning/minification is absent.
-
-How to fix:
-
-1. Add a build setup with Tailwind CLI or Vite.
-2. Move Tailwind config into `tailwind.config.js`.
-3. Build a local CSS bundle.
-4. Keep fonts local or accept external font dependency intentionally.
-
-### Global State and Global Scripts
-
-The app depends on `window.Aegis` and script load order.
-
-Impact:
-
-- Pages can break if scripts load in the wrong order.
-- Testing individual modules is hard.
-- Race conditions exist around Supabase hydration and page render.
-
-How to fix:
-
-1. Convert scripts to ES modules.
-2. Export/import state functions explicitly.
-3. Make page scripts wait for `window.Aegis.ready` before rendering.
-4. Add defensive null checks for every DOM lookup.
-
-### No Automated QA
-
-Current `package.json` has:
-
-```json
-"test": "echo \"Error: no test specified\" && exit 1"
-```
-
-How to fix:
-
-1. Add a syntax check script.
-2. Add a link/DOM smoke test.
-3. Add Playwright for the core flows.
-
-Suggested scripts:
-
-```json
-{
-  "scripts": {
-    "check:js": "node scripts/check-js.js",
-    "test": "npm run check:js",
-    "serve": "npx http-server . -p 4173"
-  }
-}
-```
-
-## Recommended Implementation Plan
-
-### Phase 1: Stabilize Current Frontend
-
-Goal: Make existing app pages load without console errors.
+Goal: make the current dashboard -> create roadmap -> roadmap detail flow reliable.
 
 Tasks:
 
-1. Fix `js/dashboard.js` extra brace.
-2. Fix `roadmap.html` / `js/roadmap.js` mismatch.
-3. Add defensive DOM checks in page scripts.
-4. Remove or archive nested duplicate project folder.
-5. Convert corrupted text to UTF-8.
-6. Add a basic JS syntax check script.
-7. Update `PROJECT_PROGRESS.md` to reflect reality.
+1. Browser-test `dashboard.html`, `roadmap-create.html`, and `roadmap.html`.
+2. Confirm unauthenticated redirect behavior does not block local testing unexpectedly.
+3. Create a roadmap with multiple phases.
+4. Confirm the roadmap appears on dashboard and roadmap overview.
+5. Confirm task done/undone updates progress.
+6. Confirm subtasks can be created and toggled.
+7. Remove unused `mission-panel` from `roadmap.html` if the new selected task panel fully replaces it.
+8. Replace `prompt()` on roadmap detail with a styled task modal.
 
 Exit criteria:
 
-- `index.html`, `dashboard.html`, `roadmap.html`, `analytics.html`, `achievements.html`, and `settings.html` load with no console errors.
-- Dashboard can create a roadmap.
-- Roadmap page can open that roadmap.
-- Task completion updates dashboard, roadmap, analytics, and achievements summary.
+- No console errors on all core pages.
+- Core roadmap flow works from blank state.
+- `npm test` passes.
 
-### Phase 2: Define Real Data Model
+### Phase 2: Introduce Real Roadmap Data
 
-Goal: Stop using task tags as the primary data model.
+Goal: stop using `tag` as the database.
+
+Tasks:
+
+1. Add `roadmaps` to local state.
+2. Add `roadmapId` and `parentTaskId` to tasks.
+3. Add a migration helper that converts existing `RM:` tags to the new shape.
+4. Update dashboard, roadmap, analytics, and achievements to use the new shape.
+5. Keep backward compatibility for old localStorage during one migration pass.
+
+Exit criteria:
+
+- Roadmaps are first-class objects.
+- Tasks link by ids, not string parsing.
+
+### Phase 3: Supabase Schema And Sync
+
+Goal: make auth and persistence reproducible.
 
 Tasks:
 
 1. Add `supabase/schema.sql`.
-2. Create tables: `profiles`, `settings`, `roadmaps`, `tasks`, `achievements`, `activity_events`.
-3. Add RLS policies.
-4. Add `config.example.js`.
-5. Document Supabase setup.
+2. Add RLS policies.
+3. Add `config.example.js`.
+4. Remove hardcoded Supabase fallback config.
+5. Update `README.md` setup steps.
+6. Add sync error handling.
 
 Exit criteria:
 
-- A new developer can create the Supabase project and run the app from the README.
-- User data is isolated per account.
-- Remote persistence works after refresh and across browsers.
+- A fresh clone can be configured and run against a fresh Supabase project.
+- Users can only access their own data.
 
-### Phase 3: Build Core Product Workflows
+### Phase 4: Product Completion
 
-Goal: Make the app useful as a real roadmap tracker.
+Goal: turn prototype into MVP.
 
 Tasks:
 
-1. Create roadmap modal.
-2. Roadmap detail page with task CRUD.
-3. Mark done/undo done.
-4. XP and level calculation.
-5. Activity log.
-6. Achievement unlock engine.
-7. Dashboard recent activity from real events.
+1. Achievement unlock engine.
+2. Real analytics charts and date history.
+3. Activity feed.
+4. Account settings.
+5. Responsive sidebar/topbar.
+6. Browser smoke tests.
+7. Deployment setup.
 
 Exit criteria:
 
-- User can sign up, create a roadmap, add tasks, complete tasks, gain XP, unlock achievements, and see analytics update.
-
-### Phase 4: UX and Production Polish
-
-Goal: Make the app deployable and pleasant.
-
-Tasks:
-
-1. Replace Tailwind CDN with local build.
-2. Add responsive mobile sidebar/topbar.
-3. Add loading/skeleton states.
-4. Add error toasts.
-5. Add password reset.
-6. Add account settings.
-7. Add Playwright smoke tests.
-8. Deploy to Netlify/Vercel.
-
-Exit criteria:
-
-- Deployed app works on desktop and mobile.
-- Core flows pass automated smoke tests.
-- No hardcoded environment values in source.
-
-## Suggested File Changes
-
-Immediate files to edit:
-
-- `js/dashboard.js`: remove unmatched closing brace and wait for `Aegis.ready`.
-- `roadmap.html`: add `#roadmap-tasks-list` or revert `roadmap.js` to static node behavior.
-- `js/roadmap.js`: add null checks and support task add/toggle.
-- `js/supabase-client.js`: remove hardcoded fallback config after adding `config.example.js`.
-- `README.md`: fix encoding, update status, add setup instructions.
-- `PROJECT_PROGRESS.md`: update progress and blockers.
-- `package.json`: add real scripts.
-
-New files to add:
-
-- `PROJECT_ANALYSIS_REPORT_2026-05-17.md`
-- `supabase/schema.sql`
-- `config.example.js`
-- `scripts/check-js.js`
-- `tests/smoke.spec.js` after Playwright is introduced
+- The app supports the main loop: sign up, create roadmap, add tasks, complete tasks, gain XP, unlock achievements, view progress.
 
 ## Verification Performed
 
-Commands and checks attempted:
+Reviewed current changed files:
 
-- Inspected root project files and nested duplicate folder.
-- Reviewed `README.md` and `PROJECT_PROGRESS.md`.
-- Reviewed core HTML pages and page scripts.
-- Checked Git history and status with `git -C`.
-- Searched for placeholders, Supabase config, and roadmap DOM contract mismatches.
-- Attempted `npm test`; it is not currently usable because the package test script is a placeholder and PowerShell blocked `npm.ps1` under the current execution policy.
-- Attempted JS syntax checks through shell/Node; shell checks were unreliable in this sandbox, but manual source inspection found clear breakpoints that should be fixed first.
+- `dashboard.html`
+- `roadmap.html`
+- `roadmap-create.html`
+- `js/app.js`
+- `js/dashboard.js`
+- `js/roadmap.js`
+- `js/roadmap-create.js`
+- `package.json`
+- `scripts/check-js.js`
+
+Checked Git working tree:
+
+```text
+ M dashboard.html
+ M js/app.js
+ M js/dashboard.js
+ M roadmap.html
+?? js/roadmap-create.js
+?? roadmap-create.html
+```
+
+Ran test command through `cmd` to avoid PowerShell execution policy issues:
+
+```text
+cmd /c npm test
+```
+
+Result:
+
+```text
+Checked 17 JavaScript files.
+```
+
+Status: passed.
 
 ## Immediate Next Action
 
-Start with stabilization, not new features:
+The next best move is to browser-test the new roadmap creation flow end to end, then replace the remaining `prompt()` task/subtask creation with a proper in-app modal. After that, the project should tackle the real roadmap/task data model before adding more features.
 
-1. Fix `dashboard.js`.
-2. Fix `roadmap.html` and `roadmap.js` contract.
-3. Add a minimal `scripts/check-js.js`.
-4. Run the app locally and verify all pages in browser.
-5. Only then continue backend/schema work.
-
-The project has a solid concept and enough UI work to build from, but the honest current state is a prototype with partial auth and broken page contracts, not a complete frontend MVP.
+Current honest status: **improved prototype, about 50-55% complete overall, with the most serious frontend script blocker fixed and the roadmap workflow now meaningfully underway.**

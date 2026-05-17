@@ -119,13 +119,24 @@ const seedDefaultsForUser = async (user) => {
 
   const email = user.email || defaultState.profile.email;
   const displayName = email.split("@")[0] || defaultState.profile.displayName;
+  const existingProfileRes = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const existingDisplayName = existingProfileRes.data?.display_name?.trim();
+  const profilePayload = {
+    id: user.id,
+    email
+  };
+
+  if (!existingDisplayName) {
+    profilePayload.display_name = displayName;
+  }
 
   const writes = [
-    supabase.from("profiles").upsert({
-      id: user.id,
-      display_name: displayName,
-      email
-    }, { onConflict: "id" }),
+    supabase.from("profiles").upsert(profilePayload, { onConflict: "id" }),
     supabase.from("settings").upsert({
       user_id: user.id,
       theme: defaultState.settings.theme,

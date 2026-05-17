@@ -121,10 +121,7 @@ const renderRoadmaps = () => {
 };
 
 const handleCreateRoadmap = () => {
-  const roadmapName = prompt("Enter roadmap name:");
-  if (!roadmapName || !roadmapName.trim()) return;
-
-  window.Aegis.addTask(`Start ${roadmapName.trim()}`, `RM: ${roadmapName.trim()}`, 0);
+  window.location.href = "roadmap-create.html";
 };
 
 const initDashboard = () => {

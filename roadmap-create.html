@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Roadmap | AEGIS COMMAND CENTER</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script src="js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="css/base.css" />
+  <script type="module" src="js/supabase-client.js"></script>
+  <script src="js/app.js"></script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen relative overflow-x-hidden selection:bg-primary selection:text-on-primary">
+  <div class="fixed inset-0 scanlines z-50 pointer-events-none"></div>
+  <div class="fixed inset-0 pointer-events-none z-0 opacity-10">
+    <div class="absolute top-0 left-0 w-48 h-48 border-t border-l border-primary/20 m-margin"></div>
+    <div class="absolute top-0 right-0 w-48 h-48 border-t border-r border-primary/20 m-margin"></div>
+    <div class="absolute bottom-0 left-0 w-48 h-48 border-b border-l border-primary/20 m-margin"></div>
+    <div class="absolute bottom-0 right-0 w-48 h-48 border-b border-r border-primary/20 m-margin"></div>
+  </div>
+
+  <main class="relative z-10 min-h-screen flex items-center justify-center p-6">
+    <section class="w-full max-w-4xl">
+      <div class="glass-panel rounded-2xl border border-outline-variant/30 shadow-2xl shadow-black/40 overflow-hidden">
+        <div class="px-8 pt-8 pb-6 border-b border-outline-variant/20 bg-white/3">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p class="font-label-caps text-label-caps text-on-surface-variant tracking-[0.35em] uppercase mb-2">Roadmap Initialization</p>
+              <h1 class="font-h1 text-h1 text-on-surface uppercase tracking-tighter leading-none">Create Roadmap</h1>
+              <p class="mt-3 text-sm text-on-surface-variant max-w-2xl">Set the mission name, add as many phases as you need, then launch directly into the new roadmap.</p>
+            </div>
+            <a class="inline-flex items-center gap-2 self-start px-4 py-2 rounded-full border border-outline-variant/30 text-xs uppercase tracking-[0.2em] text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors" href="dashboard.html">
+              <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+              Back
+            </a>
+          </div>
+        </div>
+
+        <form class="p-8 space-y-6" id="roadmap-create-form">
+          <div class="grid gap-2">
+            <label class="font-label-caps text-label-caps uppercase tracking-widest text-on-surface-variant" for="roadmap-name">Roadmap Name</label>
+            <input id="roadmap-name" name="roadmapName" type="text" required class="w-full rounded-2xl border border-outline-variant/40 bg-surface-container-low px-4 py-3 text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Example: Build portfolio site" />
+          </div>
+
+          <div class="flex items-center justify-between gap-4 border-b border-outline-variant/20 pb-3">
+            <div>
+              <p class="font-label-caps text-label-caps uppercase tracking-[0.25em] text-on-surface-variant">Roadmap Phases</p>
+              <p class="text-xs text-on-surface-variant mt-1">Add one or more phases/tasks before launching the roadmap.</p>
+            </div>
+            <button class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 text-primary uppercase tracking-[0.18em] text-[10px] font-bold hover:bg-primary/10 transition-colors" id="add-phase-btn" type="button">
+              <span class="material-symbols-outlined text-[16px]">add_circle</span>
+              Add Phase
+            </button>
+          </div>
+
+          <div class="space-y-4" id="phases-list"></div>
+
+          <p class="text-xs text-error hidden" id="roadmap-create-error"></p>
+
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3 pt-2">
+            <button class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-primary text-background font-bold uppercase tracking-[0.2em] hover:opacity-90 transition-opacity" type="submit" id="roadmap-create-submit">
+              <span class="material-symbols-outlined text-[18px]">rocket_launch</span>
+              Launch Roadmap
+            </button>
+            <a class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl border border-outline-variant/30 text-on-surface-variant uppercase tracking-[0.2em] hover:text-primary hover:border-primary/40 transition-colors" href="roadmap.html">
+              Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/roadmap-create.js"></script>
+</body>
+</html>

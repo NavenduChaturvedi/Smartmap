@@ -32,29 +32,75 @@
 				<header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 border-b border-outline-variant/30 pb-6">
 					<div>
 						<p class="font-label-caps text-label-caps text-on-surface-variant mb-1 tracking-[0.4em] font-bold">STRATEGIC NAVIGATION</p>
-							<h1 class="font-h1 text-h1 text-on-surface uppercase tracking-tighter font-extrabold italic leading-none" id="roadmap-title">ROADMAP GRID</h1>
-						</div>
-						<div class="flex items-center gap-3">
-							<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="mission-count">0 ACTIVE</span>
-							<span class="font-label-caps text-[10px] text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase" id="active-track">NO_ROADMAP</span>
-				<section class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-									<h1 class="font-h1 text-h1 text-on-surface uppercase tracking-tighter font-extrabold italic leading-none" id="roadmap-title">ROADMAP GRID</h1>
+						<h1 class="font-h1 text-h1 text-on-surface uppercase tracking-tighter font-extrabold italic leading-none" id="roadmap-title">ROADMAPS</h1>
+					</div>
+					<div class="flex items-center gap-3 flex-wrap">
+						<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="mission-count">0 ACTIVE</span>
+						<span class="font-label-caps text-[10px] text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase" id="active-track">OVERVIEW</span>
+						<button id="add-task-btn" class="px-4 py-2 rounded-full border border-primary/30 text-primary uppercase tracking-widest text-[10px] font-bold hover:bg-primary/10 transition-colors hidden" type="button">Add Task</button>
+						<a id="back-to-roadmaps-btn" href="roadmap.html" class="px-4 py-2 rounded-full border border-outline-variant/30 text-on-surface-variant uppercase tracking-widest text-[10px] font-bold hover:text-primary hover:border-primary/40 transition-colors hidden">All Roadmaps</a>
+					</div>
+				</header>
+
+				<section class="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-gutter">
+					<div class="space-y-gutter">
+						<div class="glass-panel p-margin rounded-xl border border-outline-variant/20">
+							<div class="flex items-center justify-between gap-4">
+								<div>
+									<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter" id="primary-panel-title">Roadmap Overview</h2>
+									<p class="text-xs text-on-surface-variant mt-2" id="primary-panel-copy">Select a roadmap to inspect its tasks and subtask structure.</p>
 								</div>
-								<div class="flex items-center gap-3 flex-wrap">
-									<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="mission-count">0 ACTIVE</span>
-									<span class="font-label-caps text-[10px] text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase" id="active-track">NO_ROADMAP</span>
-									<button id="add-task-btn" class="px-4 py-2 rounded-full border border-primary/30 text-primary uppercase tracking-widest text-[10px] font-bold hover:bg-primary/10 transition-colors" type="button">Add Task</button>
+								<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="task-summary">0 ACTIVE</span>
 							</div>
-							<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-gutter">
-								<button class="roadmap-node glass-panel p-5 rounded-xl text-left border border-outline-variant/20 hover:border-primary/50 transition-all" data-node="NODE_01">
-									<div class="flex items-center justify-between mb-3">
-										<span class="font-label-mono text-[10px] text-on-surface-variant uppercase">NODE_01</span>
-										<span class="font-label-caps text-[10px] text-primary uppercase">SECURED</span>
+							<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-gutter" id="roadmap-overview-list"></div>
+							<div class="mt-8 hidden" id="roadmap-detail-shell">
+								<div class="flex items-center justify-between gap-4 mb-6">
+									<div>
+										<p class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-[0.25em]">Selected Roadmap</p>
+										<h3 class="font-h2 text-h2 text-on-surface uppercase tracking-tighter" id="detail-roadmap-title">ROADMAP</h3>
 									</div>
-											<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Mission Tasks</h2>
-											<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="task-summary">0 ACTIVE</span>
-								</button>
-										<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-gutter" id="roadmap-tasks-list"></div>
+									<div class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="detail-roadmap-count">0 TASKS</div>
+								</div>
+								<div class="grid grid-cols-1 lg:grid-cols-[1.4fr_0.9fr] gap-gutter">
+									<div class="space-y-4">
+										<div id="roadmap-detail-list" class="space-y-3"></div>
+									</div>
+									<div class="space-y-gutter">
+										<div class="glass-panel p-5 rounded-xl border border-outline-variant/20">
+											<div class="flex items-center gap-4">
+												<div class="relative w-20 h-20 flex-shrink-0">
+													<svg class="w-full h-full -rotate-90">
+														<circle class="text-surface-variant" cx="40" cy="40" fill="transparent" r="30" stroke="currentColor" stroke-width="5"></circle>
+														<circle class="text-primary aegis-glow" cx="40" cy="40" fill="transparent" r="30" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="188.5" id="detail-progress-ring"></circle>
+													</svg>
+													<span class="absolute inset-0 flex items-center justify-center font-label-mono text-[12px] text-primary" id="detail-progress-text">0%</span>
+												</div>
+												<div>
+													<p class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-[0.2em]">Completion</p>
+													<p class="font-h2 text-h2 text-primary mt-2" id="detail-completed-count">0/0</p>
+													<p class="text-xs text-on-surface-variant mt-1">Tasks completed</p>
+												</div>
+											</div>
+										</div>
+										<div class="glass-panel p-5 rounded-xl border border-outline-variant/20 hidden" id="task-detail-shell">
+											<div class="flex items-start justify-between gap-3">
+												<div>
+													<p class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-[0.2em]">Selected Task</p>
+													<h4 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter mt-2" id="selected-task-title">Task</h4>
+													<p class="text-xs text-on-surface-variant mt-2" id="selected-task-meta">0 XP</p>
+												</div>
+												<button id="selected-task-toggle-btn" class="px-3 py-2 rounded-full border border-primary/30 text-primary uppercase tracking-widest text-[10px] font-bold hover:bg-primary/10 transition-colors" type="button">Mark Done</button>
+											</div>
+											<div class="mt-5 border-t border-outline-variant/20 pt-4">
+												<p class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-[0.2em] mb-3">Subtasks</p>
+												<div class="space-y-3" id="selected-task-subtasks"></div>
+												<button id="add-subtask-btn" class="mt-4 w-full py-3 rounded-xl border border-dashed border-outline-variant/40 text-on-surface-variant uppercase tracking-[0.2em] text-[10px] font-bold hover:text-primary hover:border-primary/40 hover:bg-white/5 transition-colors" type="button">Add Subtask</button>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
 					</div>
 
 					<div class="space-y-gutter" id="roadmap-sidebar"></div>
@@ -80,6 +126,67 @@
 				<span class="material-symbols-outlined text-[18px]">keyboard_double_arrow_right</span>
 			</button>
 		</aside>
+
+		<!-- Task Modal -->
+		<div id="add-task-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm hidden">
+			<div class="glass-panel w-full max-w-md p-6 rounded-2xl border border-outline-variant/30 shadow-2xl max-h-[90vh] flex flex-col">
+				<div class="flex items-center justify-between mb-6">
+					<div>
+						<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">New Task</h2>
+						<p class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Initialize Roadmap Node</p>
+					</div>
+					<button id="close-task-modal-btn" type="button" class="material-symbols-outlined text-outline-variant hover:text-primary transition-colors cursor-pointer px-2 bg-transparent border-0 p-0">close</button>
+				</div>
+				<form id="add-task-form" class="space-y-4 flex flex-col flex-1 overflow-y-auto pr-2">
+					<div>
+						<label for="task-title-input" class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest mb-2">Task Title</label>
+						<input type="text" id="task-title-input" class="w-full bg-surface-container p-3 rounded-lg border border-outline-variant/30 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="e.g. Design Database Schema" required>
+					</div>
+					<div>
+						<label for="task-xp-input" class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest mb-2">XP Reward</label>
+						<input type="number" id="task-xp-input" class="w-full bg-surface-container p-3 rounded-lg border border-outline-variant/30 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="0" value="0" min="0">
+					</div>
+					<div class="pt-4 border-t border-outline-variant/20">
+						<div class="flex items-center justify-between mb-3">
+							<span class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest">Initial Subtasks (Optional)</span>
+							<button type="button" id="modal-add-subtask-row-btn" class="text-primary text-[10px] font-bold uppercase tracking-widest hover:text-primary/80 transition-colors">+ Add Row</button>
+						</div>
+						<div id="modal-subtasks-container" class="space-y-3">
+							<!-- Subtask inputs injected here -->
+						</div>
+					</div>
+					<div class="pt-6 mt-auto">
+						<button type="submit" class="w-full py-3 bg-primary text-background font-bold tracking-widest uppercase hover:opacity-90 rounded-xl transition-all">Create Task</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- Single Subtask Modal -->
+		<div id="add-single-subtask-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm hidden">
+			<div class="glass-panel w-full max-w-sm p-6 rounded-2xl border border-outline-variant/30 shadow-2xl">
+				<div class="flex items-center justify-between mb-6">
+					<div>
+						<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">New Subtask</h2>
+						<p class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Append Node</p>
+					</div>
+					<button id="close-single-subtask-modal-btn" type="button" class="material-symbols-outlined text-outline-variant hover:text-primary transition-colors cursor-pointer px-2 bg-transparent border-0 p-0">close</button>
+				</div>
+				<form id="add-single-subtask-form" class="space-y-4">
+					<div>
+						<label for="subtask-title-input" class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest mb-2">Subtask Title</label>
+						<input type="text" id="subtask-title-input" class="w-full bg-surface-container p-3 rounded-lg border border-outline-variant/30 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="e.g. Write Queries" required>
+					</div>
+					<div>
+						<label for="subtask-xp-input" class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest mb-2">XP Reward</label>
+						<input type="number" id="subtask-xp-input" class="w-full bg-surface-container p-3 rounded-lg border border-outline-variant/30 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="0" value="0" min="0">
+					</div>
+					<div class="pt-4 mt-2">
+						<button type="submit" class="w-full py-3 bg-primary text-background font-bold tracking-widest uppercase hover:opacity-90 rounded-xl transition-all">Add Subtask</button>
+					</div>
+				</form>
+			</div>
+		</div>
 
 		<script src="js/roadmap.js"></script>
 	</body>
