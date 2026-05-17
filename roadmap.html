@@ -38,11 +38,12 @@
 							<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="mission-count">0 ACTIVE</span>
 							<span class="font-label-caps text-[10px] text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase" id="active-track">NO_ROADMAP</span>
 				<section class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-					<div class="lg:col-span-2 space-y-gutter">
-						<div class="glass-panel p-margin rounded-xl border border-outline-variant/20">
-							<div class="flex items-center justify-between">
-								<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Mission Nodes</h2>
-								<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest">5 ACTIVE</span>
+									<h1 class="font-h1 text-h1 text-on-surface uppercase tracking-tighter font-extrabold italic leading-none" id="roadmap-title">ROADMAP GRID</h1>
+								</div>
+								<div class="flex items-center gap-3 flex-wrap">
+									<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="mission-count">0 ACTIVE</span>
+									<span class="font-label-caps text-[10px] text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase" id="active-track">NO_ROADMAP</span>
+									<button id="add-task-btn" class="px-4 py-2 rounded-full border border-primary/30 text-primary uppercase tracking-widest text-[10px] font-bold hover:bg-primary/10 transition-colors" type="button">Add Task</button>
 							</div>
 							<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-gutter">
 								<button class="roadmap-node glass-panel p-5 rounded-xl text-left border border-outline-variant/20 hover:border-primary/50 transition-all" data-node="NODE_01">
@@ -50,51 +51,10 @@
 										<span class="font-label-mono text-[10px] text-on-surface-variant uppercase">NODE_01</span>
 										<span class="font-label-caps text-[10px] text-primary uppercase">SECURED</span>
 									</div>
-									<h3 class="font-h3 text-lg text-on-surface font-bold">HTML Fundamentals</h3>
-									<p class="text-xs text-on-surface-variant mt-2">Semantic structure, accessibility, and reliable document scaffolding.</p>
+											<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Mission Tasks</h2>
+											<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="task-summary">0 ACTIVE</span>
 								</button>
-								<button class="roadmap-node glass-panel p-5 rounded-xl text-left border border-outline-variant/20 hover:border-primary/50 transition-all" data-node="NODE_02">
-									<div class="flex items-center justify-between mb-3">
-										<span class="font-label-mono text-[10px] text-on-surface-variant uppercase">NODE_02</span>
-										<span class="font-label-caps text-[10px] text-primary uppercase">SECURED</span>
-									</div>
-									<h3 class="font-h3 text-lg text-on-surface font-bold">CSS Mastery</h3>
-									<p class="text-xs text-on-surface-variant mt-2">Responsive layout systems, component styling, and motion control.</p>
-								</button>
-								<button class="roadmap-node glass-panel p-5 rounded-xl text-left border border-outline-variant/20 hover:border-primary/50 transition-all" data-node="NODE_03">
-									<div class="flex items-center justify-between mb-3">
-										<span class="font-label-mono text-[10px] text-on-surface-variant uppercase">NODE_03</span>
-										<span class="font-label-caps text-[10px] text-primary uppercase">IN_PROGRESS</span>
-									</div>
-									<h3 class="font-h3 text-lg text-on-surface font-bold">Javascript Core</h3>
-									<p class="text-xs text-on-surface-variant mt-2">Asynchronous execution, functional patterns, and DOM mastery.</p>
-								</button>
-								<button class="roadmap-node glass-panel p-5 rounded-xl text-left border border-outline-variant/20 hover:border-primary/50 transition-all opacity-40" data-node="NODE_04">
-									<div class="flex items-center justify-between mb-3">
-										<span class="font-label-mono text-[10px] text-on-surface-variant uppercase">NODE_04</span>
-										<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">LOCKED</span>
-									</div>
-									<h3 class="font-h3 text-lg text-on-surface font-bold">React Basics</h3>
-									<p class="text-xs text-on-surface-variant mt-2">Component composition, state controls, and UI orchestration.</p>
-								</button>
-								<button class="roadmap-node glass-panel p-5 rounded-xl text-left border border-outline-variant/20 hover:border-primary/50 transition-all opacity-40" data-node="NODE_05">
-									<div class="flex items-center justify-between mb-3">
-										<span class="font-label-mono text-[10px] text-on-surface-variant uppercase">NODE_05</span>
-										<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">LOCKED</span>
-									</div>
-									<h3 class="font-h3 text-lg text-on-surface font-bold">Full Stack Integration</h3>
-									<p class="text-xs text-on-surface-variant mt-2">APIs, auth layers, and deployment readiness for scale.</p>
-								</button>
-							</div>
-						</div>
-
-						<div class="glass-panel p-margin rounded-xl border border-outline-variant/20">
-							<div class="flex items-center justify-between mb-6">
-								<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Route Status</h2>
-								<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="route-status-label">SYNCED</span>
-							</div>
-							<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter" id="route-status-cards"></div>
-						</div>
+										<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-gutter" id="roadmap-tasks-list"></div>
 					</div>
 
 					<div class="space-y-gutter" id="roadmap-sidebar"></div>

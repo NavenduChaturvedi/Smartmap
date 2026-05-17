@@ -3,6 +3,13 @@
     return url.searchParams.get(param);
   };
 
+  const setText = (id, value) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = value;
+    }
+  };
+
   const getRoadmapName = () => {
     return getUrlParam("roadmap") || null;
   };
@@ -14,32 +21,54 @@
     );
   };
 
+  const createRoadmapTask = () => {
+    const currentRoadmap = getRoadmapName();
+    const roadmapName = currentRoadmap || prompt("Enter roadmap name:");
+    if (!roadmapName || !roadmapName.trim()) return;
+
+    const taskTitle = prompt(`Enter task title for ${roadmapName.trim()}:`);
+    if (!taskTitle || !taskTitle.trim()) return;
+
+    window.Aegis.addTask(taskTitle.trim(), `RM: ${roadmapName.trim()}`, 0);
+
+    if (!currentRoadmap) {
+      window.location.href = `roadmap.html?roadmap=${encodeURIComponent(roadmapName.trim())}`;
+    }
+  };
+
   const renderRoadmapTasks = () => {
     const roadmapName = getRoadmapName();
     const tasks = getRoadmapTasks(roadmapName);
     const listEl = document.getElementById("roadmap-tasks-list");
+    const summaryEl = document.getElementById("task-summary");
     const missionPanel = document.getElementById("mission-panel");
     const roadmapTitle = document.getElementById("roadmap-title");
     const activeTrack = document.getElementById("active-track");
     const missionCount = document.getElementById("mission-count");
 
+    if (!listEl) return;
+
+    if (summaryEl) {
+      summaryEl.textContent = `${tasks.length} ACTIVE`;
+    }
+
     if (!roadmapName) {
-      listEl.innerHTML = '<p class="col-span-2 text-center text-on-surface-variant py-8">No roadmap selected. Go to dashboard to create or select one.</p>';
-      missionPanel.classList.add("hidden");
-      roadmapTitle.textContent = "ROADMAP GRID";
-      activeTrack.textContent = "NO_ROADMAP";
-      missionCount.textContent = "0 ACTIVE";
+      listEl.innerHTML = '<p class="col-span-2 text-center text-on-surface-variant py-8">No roadmap selected. Create one from the dashboard or use Add Task to start a new route.</p>';
+      missionPanel?.classList.add("hidden");
+      setText("roadmap-title", "ROADMAP GRID");
+      setText("active-track", "NO_ROADMAP");
+      setText("mission-count", "0 ACTIVE");
       renderRouteStatus(null);
       renderSidebar(null);
       return;
     }
 
-    roadmapTitle.textContent = roadmapName.toUpperCase();
-    activeTrack.textContent = roadmapName.toUpperCase();
-    missionCount.textContent = `${tasks.length} ACTIVE`;
+    setText("roadmap-title", roadmapName.toUpperCase());
+    setText("active-track", roadmapName.toUpperCase());
+    setText("mission-count", `${tasks.length} ACTIVE`);
 
     if (tasks.length === 0) {
-      listEl.innerHTML = '<p class="col-span-2 text-center text-on-surface-variant py-8">No tasks in this roadmap yet.</p>';
+      listEl.innerHTML = '<p class="col-span-2 text-center text-on-surface-variant py-8">No tasks in this roadmap yet. Use Add Task to create the first one.</p>';
       renderRouteStatus(roadmapName);
       renderSidebar(roadmapName);
       return;
@@ -50,7 +79,7 @@
         const status = task.done ? "SECURED" : "IN_PROGRESS";
         const badgeClass = task.done ? "text-primary" : "text-primary";
         return `
-          <button class="roadmap-node glass-panel p-5 rounded-xl text-left border border-outline-variant/20 hover:border-primary/50 transition-all" data-task-id="${task.id}" data-task-title="${task.title}">
+          <button class="roadmap-node glass-panel p-5 rounded-xl text-left border border-outline-variant/20 hover:border-primary/50 transition-all" data-task-id="${task.id}">
             <div class="flex items-center justify-between mb-3">
               <span class="font-label-mono text-[10px] text-on-surface-variant uppercase">TASK_${String(idx + 1).padStart(2, "0")}</span>
               <span class="font-label-caps text-[10px] ${badgeClass} uppercase">${status}</span>
@@ -66,8 +95,7 @@
     listEl.querySelectorAll(".roadmap-node").forEach((btn) => {
       btn.addEventListener("click", () => {
         const taskId = btn.dataset.taskId;
-        const taskTitle = btn.dataset.taskTitle;
-        selectTask(taskId, taskTitle);
+        selectTask(taskId);
       });
     });
 
@@ -75,21 +103,28 @@
     renderSidebar(roadmapName);
   };
 
-  const selectTask = (taskId, taskTitle) => {
+  const selectTask = (taskId) => {
     const task = window.Aegis.state.tasks.find((t) => t.id === taskId);
     if (!task) return;
 
-    document.getElementById("mission-title").textContent = task.title;
-    document.getElementById("mission-description").textContent = `XP Value: ${task.xp}`;
-    document.getElementById("mission-reward").textContent = `${task.xp} XP`;
-    document.getElementById("mission-action").textContent = task.done ? "COMPLETED" : "MARK_DONE";
-    document.getElementById("mission-action-btn").dataset.taskId = taskId;
-    document.getElementById("mission-subnodes").innerHTML = '';
-    document.getElementById("mission-panel").classList.remove("hidden");
+    setText("mission-title", task.title);
+    setText("mission-description", `XP Value: ${task.xp}`);
+    setText("mission-reward", `${task.xp} XP`);
+    setText("mission-action", task.done ? "COMPLETED" : "MARK_DONE");
+    const actionBtn = document.getElementById("mission-action-btn");
+    if (actionBtn) {
+      actionBtn.dataset.taskId = taskId;
+    }
+    const missionSubnodes = document.getElementById("mission-subnodes");
+    if (missionSubnodes) {
+      missionSubnodes.innerHTML = "";
+    }
+    document.getElementById("mission-panel")?.classList.remove("hidden");
   };
 
   const renderRouteStatus = (roadmapName) => {
     const container = document.getElementById("route-status-cards");
+    if (!container) return;
     if (!roadmapName) {
       container.innerHTML = '';
       return;
@@ -120,6 +155,7 @@
 
   const renderSidebar = (roadmapName) => {
     const container = document.getElementById("roadmap-sidebar");
+    if (!container) return;
     if (!roadmapName) {
       container.innerHTML = '';
       return;
@@ -154,7 +190,7 @@
   const closeBtn = document.getElementById("mission-close-btn");
   if (closeBtn) {
     closeBtn.addEventListener("click", () => {
-      document.getElementById("mission-panel").classList.add("hidden");
+      document.getElementById("mission-panel")?.classList.add("hidden");
     });
   }
 
@@ -169,5 +205,10 @@
     });
   }
 
-  renderRoadmapTasks();
+  const addTaskBtn = document.getElementById("add-task-btn");
+  if (addTaskBtn) {
+    addTaskBtn.addEventListener("click", createRoadmapTask);
+  }
+
+  Promise.resolve(window.Aegis?.ready).then(renderRoadmapTasks);
   window.addEventListener("aegis:state-updated", renderRoadmapTasks);
