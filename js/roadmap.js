@@ -8,7 +8,9 @@
   // URL may provide either a roadmap ID (preferred) or a legacy roadmap name
   const getRoadmapName = () => getUrlParam("roadmap_id") || getUrlParam("roadmap") || null;
 
-  const normalizeRoadmapName = (value) => value.trim();
+  const isUuidLike = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}/i.test(value || "");
+
+  const normalizeRoadmapName = (value) => (value || "").trim();
 
   const getRoadmapFromTag = (tag) => {
     if (!tag || !tag.startsWith("RM:")) return null;
@@ -119,7 +121,7 @@
 
       if (!taskTitle) return;
 
-      const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}/i.test(roadmapParam);
+      const isId = isUuidLike(roadmapParam);
       const roadmapId = isId ? roadmapParam : null;
 
       let createdParent = null;
@@ -171,7 +173,7 @@
       const stTitle = titleInput.value.trim();
       const stXp = Number.parseInt(xpInput.value, 10) || 0;
 
-      const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}/i.test(roadmapParam);
+      const isId = isUuidLike(roadmapParam);
       const roadmapId = isId ? roadmapParam : null;
 
       if (stTitle) {
@@ -284,7 +286,7 @@
     overviewList.querySelectorAll("[data-roadmap]").forEach((button) => {
       button.addEventListener("click", () => {
         const roadmapKey = button.dataset.roadmap;
-        const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}/i.test(roadmapKey);
+        const isId = isUuidLike(roadmapKey);
         if (isId) {
           window.location.href = `roadmap.html?roadmap_id=${encodeURIComponent(roadmapKey)}`;
         } else {
@@ -325,7 +327,7 @@
     if (!detailShell || !detailList) return;
 
     const progress = getRoadmapProgress(roadmapName);
-    const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}/i.test(roadmapName || '');
+    const isId = isUuidLike(roadmapName);
     // Set preliminary labels, then fetch roadmap name if we have an ID
     setText("mission-count", `${progress.total} TASKS`);
     setText("primary-panel-title", `${roadmapName} Tasks`);
@@ -526,17 +528,88 @@
     `;
   };
 
+  const getLegacyRoadmapName = (roadmapName) => {
+    if (!roadmapName || isUuidLike(roadmapName)) return null;
+    return roadmapName;
+  };
+
+  const roadmapNameExists = (name, currentName = null) => {
+    const normalized = normalizeRoadmapName(name).toLowerCase();
+    const current = normalizeRoadmapName(currentName).toLowerCase();
+    if (!normalized || normalized === current) return false;
+    return getRoadmaps().some((roadmap) => roadmap.name.toLowerCase() === normalized);
+  };
+
+  const renameLegacyRoadmap = async (oldName, nextName) => {
+    const cleanName = normalizeRoadmapName(nextName);
+    if (!oldName || !cleanName || roadmapNameExists(cleanName, oldName)) return false;
+
+    window.Aegis.state.tasks = window.Aegis.state.tasks.map((task) => {
+      if (getRoadmapFromTag(task.tag) !== oldName) return task;
+      const parentId = getParentTaskIdFromTag(task.tag);
+      return {
+        ...task,
+        tag: parentId ? `RM: ${cleanName} | PARENT: ${parentId}` : `RM: ${cleanName}`
+      };
+    });
+
+    await window.Aegis.save();
+    window.location.href = `roadmap.html?roadmap=${encodeURIComponent(cleanName)}`;
+    return true;
+  };
+
+  const deleteLocalRoadmapTasks = async (roadmapName) => {
+    const beforeCount = window.Aegis.state.tasks.length;
+    window.Aegis.state.tasks = window.Aegis.state.tasks.filter((task) => {
+      if (task.roadmap_id && task.roadmap_id === roadmapName) return false;
+      return getRoadmapFromTag(task.tag) !== roadmapName;
+    });
+
+    if (window.Aegis.state.tasks.length !== beforeCount) {
+      selectedTaskId = null;
+      await window.Aegis.save();
+    }
+  };
+
+  const openDeleteRoadmapModal = (roadmapName) => {
+    const modal = document.getElementById("delete-roadmap-modal");
+    const confirmBtn = document.getElementById("confirm-delete-roadmap-btn");
+    const cancelBtn = document.getElementById("cancel-delete-roadmap-btn");
+    if (!modal || !confirmBtn || !cancelBtn) return;
+
+    modal.classList.remove("hidden");
+    cancelBtn.onclick = () => modal.classList.add("hidden");
+    confirmBtn.onclick = async () => {
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = "Deleting...";
+      try {
+        if (isUuidLike(roadmapName) && window.AegisApi?.deleteRoadmap) {
+          await window.AegisApi.deleteRoadmap(roadmapName);
+        }
+        await deleteLocalRoadmapTasks(roadmapName);
+        window.location.href = "roadmap.html";
+      } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = "Delete";
+        modal.classList.add("hidden");
+      }
+    };
+  };
+
   const initOverviewOrDetail = () => {
     const roadmapName = getRoadmapName();
     const addTaskBtn = document.getElementById("add-task-btn");
     const backBtn = document.getElementById("back-to-roadmaps-btn");
     const missionPanel = document.getElementById("mission-panel");
     const newRoadmapBtn = document.getElementById("new-roadmap-btn");
-
+    const editBtn = document.getElementById("edit-roadmap-btn");
+    const deleteBtn = document.getElementById("delete-roadmap-btn");
     if (!roadmapName) {
       selectedTaskId = null;
       missionPanel?.classList.add("hidden");
       addTaskBtn?.classList.add("hidden");
+      if(editBtn) editBtn.classList.add("hidden");
+      if(deleteBtn) deleteBtn.classList.add("hidden");
       newRoadmapBtn?.classList.remove("hidden");
       backBtn?.classList.add("hidden");
       // Fetch roadmaps from Supabase if available, otherwise render overview from tasks
@@ -544,11 +617,37 @@
       return;
     }
 
+    const isId = isUuidLike(roadmapName);
+
     renderDetailTaskPanel(roadmapName);
     addTaskBtn?.classList.remove("hidden");
     backBtn?.classList.remove("hidden");
     addTaskBtn.onclick = () => addTask(roadmapName);
     newRoadmapBtn?.classList.add("hidden");
+
+    if (editBtn) {
+      editBtn.classList.remove("hidden");
+      editBtn.onclick = async () => {
+        if (isId && window.AegisApi?.getRoadmap) {
+          const res = await window.AegisApi.getRoadmap(roadmapName);
+          if (!res.error && res.data) {
+            openRoadmapModal(res.data);
+            return;
+          }
+        }
+
+        openRoadmapModal({
+          id: null,
+          name: getLegacyRoadmapName(roadmapName) || roadmapName,
+          description: ""
+        });
+      };
+    }
+
+    if (deleteBtn) {
+      deleteBtn.classList.remove("hidden");
+      deleteBtn.onclick = () => openDeleteRoadmapModal(roadmapName);
+    }
   };
 
   const getCurrentUserId = async () => {
@@ -608,7 +707,8 @@
     }).join('');
 
     container.querySelectorAll('.edit-roadmap-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', async (event) => {
+        event.stopPropagation();
         const id = btn.dataset.id;
         const res = await window.AegisApi.getRoadmap(id);
         if (res.error || !res.data) return;
@@ -617,11 +717,10 @@
     });
 
     container.querySelectorAll('.delete-roadmap-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', async (event) => {
+        event.stopPropagation();
         const id = btn.dataset.id;
-        if (!confirm('Delete this roadmap? This will not delete associated tasks.')) return;
-        await window.AegisApi.deleteRoadmap(id);
-        fetchAndRenderRoadmaps();
+        openDeleteRoadmapModal(id);
       });
     });
   };
@@ -631,14 +730,26 @@
     const nameInput = document.getElementById('roadmap-name-input');
     const descInput = document.getElementById('roadmap-desc-input');
     const form = document.getElementById('roadmap-form');
+    const titleEle = document.getElementById('roadmap-modal-title');
+    const descEle = document.getElementById('roadmap-modal-desc');
+    const submitBtn = document.getElementById('roadmap-modal-submit-btn');
+
     if (!modal || !form) return;
     if (existing) {
-      modal.dataset.editId = existing.id;
+      modal.dataset.editId = existing.id || "";
+      modal.dataset.legacyName = existing.id ? "" : (existing.name || "");
       nameInput.value = existing.name || '';
       descInput.value = existing.description || '';
+      if (titleEle) titleEle.textContent = 'Edit Roadmap';
+      if (descEle) descEle.textContent = 'Modify roadmap details';
+      if (submitBtn) submitBtn.textContent = 'Save Changes';
     } else {
       delete modal.dataset.editId;
+      delete modal.dataset.legacyName;
       form.reset();
+      if (titleEle) titleEle.textContent = 'New Roadmap';
+      if (descEle) descEle.textContent = 'Create a roadmap entry';
+      if (submitBtn) submitBtn.textContent = 'Create Roadmap';
     }
     modal.classList.remove('hidden');
   };
@@ -657,15 +768,31 @@
       const description = document.getElementById('roadmap-desc-input').value.trim();
       if (!name) return;
       const userId = await getCurrentUserId();
-      if (!userId) return alert('Not signed in');
-      const editId = modal.dataset.editId;
+      const editId = modal.dataset.editId || "";
+      const legacyName = modal.dataset.legacyName || "";
       if (editId) {
         await window.AegisApi.updateRoadmap(editId, { name, description });
+      } else if (legacyName) {
+        await renameLegacyRoadmap(legacyName, name);
+        return;
+      } else if (userId && window.AegisApi?.createRoadmap) {
+        const res = await window.AegisApi.createRoadmap({ user_id: userId, name, description });
+        if (!res.error && res.data?.id) {
+          window.location.href = `roadmap.html?roadmap_id=${encodeURIComponent(res.data.id)}`;
+          return;
+        }
       } else {
-        await window.AegisApi.createRoadmap({ user_id: userId, name, description });
+        window.Aegis.addTask(`Start ${name}`, `RM: ${name}`, 0);
+        window.location.href = `roadmap.html?roadmap=${encodeURIComponent(name)}`;
+        return;
       }
       modal.classList.add('hidden');
-      fetchAndRenderRoadmaps();
+      const activeName = getRoadmapName();
+      if (activeName) {
+        renderDetailTaskPanel(activeName);
+      } else {
+        fetchAndRenderRoadmaps();
+      }
     });
   };
 
@@ -679,6 +806,7 @@
 
   Promise.resolve(window.Aegis?.ready).then(() => {
     setupModals();
+    setupRoadmapModal();
     initOverviewOrDetail();
   });
 

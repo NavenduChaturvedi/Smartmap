@@ -57,6 +57,9 @@ export const deleteRoadmap = async (id) => {
   const supabase = getSupabaseClient();
   if (!supabase) return { data: null, error: new Error('Supabase client not available') };
   try {
+    const taskDelete = await supabase.from('tasks').delete().eq('roadmap_id', id);
+    if (taskDelete.error) return handleResponse(taskDelete);
+
     const res = await supabase.from('roadmaps').delete().eq('id', id).select().maybeSingle();
     return handleResponse(res);
   } catch (err) {

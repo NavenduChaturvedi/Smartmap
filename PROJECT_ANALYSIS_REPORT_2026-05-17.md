@@ -2,11 +2,12 @@
 
 Generated: 2026-05-17  
 Updated after latest project changes: 2026-05-17  
+Latest update: Roadmap edit/delete completion pass
 Project path: `C:\Users\pc\Desktop\Projects\Roadmap_webapp`
 
 ## Executive Summary
 
-The project has moved forward since the previous analysis. The earlier blocking dashboard syntax issue has been fixed, the roadmap page has been reworked into a more realistic roadmap overview/detail experience, a dedicated create-roadmap flow now exists, the stale nested `Roadmap_webapp/` duplicate folder appears to have been removed, and the project now has a real JavaScript syntax check wired to `npm test`.
+The project has moved forward since the previous analysis. The earlier blocking dashboard syntax issue has been fixed, the roadmap page has been reworked into a more realistic roadmap overview/detail experience, a dedicated create-roadmap flow now exists, roadmap add/edit/delete UI work has been completed, the stale nested `Roadmap_webapp/` duplicate folder appears to have been removed, and the project now has a real JavaScript syntax check wired to `npm test`.
 
 The project is still not production-ready, but it is in a healthier state than the first report. It is now closer to a functional static MVP prototype with partial Supabase auth/sync than a broken visual mockup.
 
@@ -14,9 +15,10 @@ Most important current reality:
 
 - Dashboard roadmap creation now routes to `roadmap-create.html` instead of using a browser `prompt()`.
 - `roadmap-create.html` and `js/roadmap-create.js` let users create a named roadmap with one or more phase/task rows.
-- `roadmap.html` and `js/roadmap.js` now support an overview list, roadmap detail view, task progress, selected task panel, subtasks, and add-task/add-subtask behavior.
+- `roadmap.html` and `js/roadmap.js` now support an overview list, roadmap detail view, task progress, selected task panel, subtasks, add-task/add-subtask modals, and roadmap edit/delete controls.
+- `js/backend/api.js` is now loaded by `roadmap.html` and exposes Supabase helpers for roadmap create/read/update/delete.
 - `package.json` now has `check:js` and `test` scripts.
-- `cmd /c npm test` passed and checked 17 JavaScript files.
+- `cmd /c npm test` passed and checked 18 JavaScript files.
 
 The remaining big concerns are data model maturity, Supabase setup/documentation, UX polish, test coverage beyond syntax checks, and some fragile task/roadmap modeling that still uses encoded `tag` strings instead of real roadmap/task relationships.
 
@@ -29,17 +31,17 @@ The previous report estimated overall completion at 40-45%. After the latest cha
 | Visual/UI page skeletons | 75% | Core pages exist and the roadmap/create flow is more coherent. Mobile/responsive verification still needed. |
 | Shared frontend architecture | 60% | Shared state and components exist. More page code now waits for `Aegis.ready`, but globals and script order are still central. |
 | Dashboard functionality | 60% | Syntax issue fixed. Stats/tasks/roadmap cards render from state; create action now opens a real create page. |
-| Roadmap functionality | 55% | Major improvement: overview/detail/subtask flow exists. Still built on encoded tags and prompt-based add-task UX. |
-| Roadmap creation | 65% | Dedicated page exists with multiple phase rows and validation. Still no real roadmap entity. |
+| Roadmap functionality | 65% | Overview/detail/subtask flow exists, task/subtask creation uses modals, and roadmap edit/delete controls are wired. Still split between Supabase roadmaps and legacy tag-derived roadmaps. |
+| Roadmap creation | 70% | Dedicated page plus in-roadmap modal creation exist. Supabase-backed creation is started; local fallback creates tag-derived roadmaps. |
 | Analytics | 35% | Still basic state-derived cards; charting and historical metrics remain placeholders. |
 | Achievements | 50% | Filters/modals exist; achievement data and unlock rules remain mostly hardcoded. |
 | Settings | 55% | Local settings/profile behavior exists; account-level settings and avatar/security flows are incomplete. |
 | Authentication | 35% | Supabase login/signup exists and profile seeding improved, but schema/RLS/config documentation is still missing. |
-| Backend/data model | 25% | Client assumes Supabase tables. No schema, migrations, RLS policies, or real roadmap table yet. |
-| Testing/QA | 20% | JS syntax checker added and passing. No browser, integration, auth, or user-flow tests yet. |
+| Backend/data model | 30% | Supabase roadmap API helpers exist, including delete-with-tasks behavior. Schema, migrations, RLS policies, and full frontend migration are still missing. |
+| Testing/QA | 25% | JS syntax checker added and passing across 18 files. No automated browser, integration, auth, or user-flow tests yet. |
 | Deployment readiness | 20% | Static deploy possible in principle, but CDN/config/schema/build concerns remain. |
 
-Estimated overall completion: **50-55%**.
+Estimated overall completion: **55-60%**.
 
 This is now a usable prototype foundation, but it still needs a data-model pass and browser-level QA before it should be called MVP-complete.
 
@@ -60,14 +62,21 @@ This is now a usable prototype foundation, but it still needs a data-model pass 
   - selected task panel,
   - subtask panel,
   - add task button,
-  - all roadmaps back link.
+  - edit/delete buttons,
+  - all roadmaps back link,
+  - task, subtask, roadmap, and delete-confirmation modals.
 - `js/roadmap.js` was substantially rebuilt:
   - derives roadmaps from task tags,
   - supports overview and detail states,
   - supports parent/child tasks using `PARENT:` in tags,
   - renders progress,
   - can toggle tasks/subtasks,
-  - can add tasks/subtasks.
+  - can add tasks/subtasks through modals,
+  - can edit Supabase-backed roadmaps,
+  - can rename legacy local/tag-derived roadmaps,
+  - can delete Supabase-backed and legacy local roadmaps.
+- `roadmap.html` now loads `js/backend/api.js` as an ES module so the roadmap UI can use `window.AegisApi`.
+- `js/backend/api.js` now includes roadmap CRUD helpers. `deleteRoadmap()` attempts to delete tasks with the matching `roadmap_id` before deleting the roadmap row.
 - `js/app.js` profile seeding now avoids overwriting an existing display name when seeding defaults.
 - `scripts/check-js.js` was added.
 - `package.json` now has:
@@ -84,7 +93,7 @@ This is now a usable prototype foundation, but it still needs a data-model pass 
 - `cmd /c npm test` passed:
 
 ```text
-Checked 17 JavaScript files.
+Checked 18 JavaScript files.
 ```
 
 - The previously observed nested duplicate `Roadmap_webapp/Roadmap_webapp/` folder is no longer present in the current root listing.
@@ -110,6 +119,7 @@ The app remains a static multi-page vanilla JavaScript web app.
 - `js/components.js`: sidebar/topbar Web Components.
 - `js/dashboard.js`: dashboard rendering and roadmap card links.
 - `js/roadmap.js`: roadmap overview/detail/task/subtask rendering.
+- `js/backend/api.js`: Supabase API helpers for roadmap create/read/update/delete.
 - `js/roadmap-create.js`: create-roadmap form behavior.
 - `js/analytics.js`: derived analytics metric rendering.
 - `js/achievements.js`: filters, modal, achievement summary.
@@ -132,11 +142,18 @@ Current task objects:
   title,
   tag,
   xp,
-  done
+  done,
+  roadmap_id,
+  parent_task_id
 }
 ```
 
-Roadmaps are currently inferred from task tags:
+The project now has two roadmap paths:
+
+- Supabase-backed roadmaps from a `roadmaps` table, accessed through `window.AegisApi`.
+- Legacy local roadmaps inferred from task tags.
+
+Legacy roadmaps are inferred from task tags:
 
 ```text
 RM: Roadmap Name
@@ -202,23 +219,28 @@ Current status: significantly improved.
 What works conceptually:
 
 - Shows an overview of all roadmaps when no `roadmap` query parameter is present.
-- Shows selected roadmap details when `?roadmap=<name>` is present.
+- Shows selected roadmap details when `?roadmap=<name>` or `?roadmap_id=<id>` is present.
 - Shows progress ring and completed/total counts.
 - Shows root tasks and nested subtasks.
 - Lets users select a task.
 - Lets users mark selected tasks done/undone.
-- Lets users add root tasks and subtasks.
+- Lets users add root tasks and subtasks through styled modals.
+- Lets users create new Supabase-backed roadmaps from the roadmap screen when signed in.
+- Lets users edit Supabase-backed roadmap name/description through the roadmap modal.
+- Lets users rename legacy local/tag-derived roadmaps by rewriting their task tags.
+- Lets users delete Supabase-backed roadmaps through a confirmation modal.
+- Lets users delete legacy local/tag-derived roadmaps and their associated local tasks.
+- `js/backend/api.js` attempts to delete tasks with the matching `roadmap_id` before deleting a Supabase roadmap row.
 - Re-renders on `aegis:state-updated`.
 
 Remaining concerns:
 
-- Add task/subtask still uses browser `prompt()`, which is not polished UX.
-- Parent/child relationships are stored inside `tag` strings.
-- `normalizeRoadmapName()` exists but is currently unused.
+- The app now has both Supabase-backed roadmaps and legacy tag-derived roadmaps, so behavior is split across two models.
+- Parent/child relationships can live either in explicit `parent_task_id` fields or inside legacy `tag` strings.
 - The old right-side `mission-panel` markup still exists but is mostly unused by the new design.
 - There is no edit/delete task action.
 - There is no real ordering for phases/tasks.
-- There is no real roadmap metadata beyond the roadmap name in task tags.
+- Legacy local roadmaps still have no metadata beyond the roadmap name in task tags.
 
 ### Auth And Supabase
 
@@ -227,16 +249,20 @@ Current status: partial.
 What works conceptually:
 
 - Supabase client is loaded.
+- `roadmap.html` now loads `js/backend/api.js`, which exposes `window.AegisApi`.
+- `window.AegisApi` supports `fetchRoadmaps`, `getRoadmap`, `createRoadmap`, `updateRoadmap`, and `deleteRoadmap`.
 - Login/signup code exists.
 - Protected pages redirect unauthenticated users back to `index.html`.
 - Existing sessions hydrate state from Supabase.
 - Profile seeding no longer overwrites an existing `display_name` unnecessarily.
+- Task sync now includes `roadmap_id` and `parent_task_id`.
 
 Remaining concerns:
 
 - Supabase URL and anon key are still hardcoded in `js/supabase-client.js`.
 - No committed Supabase schema or migration exists.
 - No RLS policy documentation exists.
+- `js/app.js` references `window.AegisApi.migrateLegacyTagsToForeignKeys()`, but the current API helper does not expose that method.
 - No auth test checklist exists.
 - No password reset flow exists.
 - Remote sync errors are not surfaced clearly in UI.
@@ -379,28 +405,27 @@ window.__SUPABASE_ANON_KEY = "your-anon-key";
 3. Load `config.js` before `js/supabase-client.js`.
 4. Remove hardcoded fallback values.
 
-### 4. Replace Prompt-Based Task Creation
+### 4. Complete Data Migration Between Legacy And Supabase Roadmaps
 
 Current:
 
-- Roadmap creation page has a real form.
-- Roadmap detail page still uses `prompt()` for add task and add subtask.
+- Supabase roadmaps can be created, fetched, edited, and deleted through `window.AegisApi`.
+- Legacy local roadmaps can still be shown, renamed, and deleted through tag rewriting.
+- Tasks now support `roadmap_id` and `parent_task_id`, but legacy `tag` parsing is still retained.
 
 Why this matters:
 
-- `prompt()` is not styled, not validated well, and not mobile-friendly.
-- XP entry is a separate prompt.
-- It feels inconsistent with the new roadmap creation page.
+- Maintaining both models increases bug risk.
+- Dashboard and analytics still primarily infer roadmaps from task tags.
+- `window.AegisApi.migrateLegacyTagsToForeignKeys()` is referenced but not implemented.
 
 How to fix:
 
-1. Add an in-page task modal or inline form.
-2. Fields:
-   - task title,
-   - XP,
-   - parent task optional,
-   - order/phase optional.
-3. Save through `Aegis.addTask()` or future `Aegis.createTask()`.
+1. Implement `migrateLegacyTagsToForeignKeys()` or remove the call until a real migration exists.
+2. Add first-class `roadmaps` to local state for offline/local usage.
+3. Update dashboard and analytics to prefer `roadmap_id`/roadmaps over `tag`.
+4. Keep one temporary compatibility adapter for old `RM:` tags.
+5. Remove tag parsing after migration is stable.
 
 ### 5. Add Browser-Level Smoke Tests
 
@@ -531,7 +556,7 @@ This is acceptable for the current prototype, but the next stage should make sta
 
 ### Phase 1: Stabilize The New Flow
 
-Goal: make the current dashboard -> create roadmap -> roadmap detail flow reliable.
+Goal: make the current dashboard -> create roadmap -> roadmap detail -> edit/delete flow reliable.
 
 Tasks:
 
@@ -541,13 +566,15 @@ Tasks:
 4. Confirm the roadmap appears on dashboard and roadmap overview.
 5. Confirm task done/undone updates progress.
 6. Confirm subtasks can be created and toggled.
-7. Remove unused `mission-panel` from `roadmap.html` if the new selected task panel fully replaces it.
-8. Replace `prompt()` on roadmap detail with a styled task modal.
+7. Confirm roadmap edit updates Supabase-backed roadmaps and legacy local roadmaps.
+8. Confirm roadmap delete removes the roadmap and associated tasks.
+9. Remove unused `mission-panel` from `roadmap.html` if the new selected task panel fully replaces it.
 
 Exit criteria:
 
 - No console errors on all core pages.
 - Core roadmap flow works from blank state.
+- Edit and delete are verified for both Supabase-backed and local fallback roadmaps.
 - `npm test` passes.
 
 ### Phase 2: Introduce Real Roadmap Data
@@ -607,25 +634,17 @@ Exit criteria:
 
 Reviewed current changed files:
 
-- `dashboard.html`
 - `roadmap.html`
-- `roadmap-create.html`
-- `js/app.js`
-- `js/dashboard.js`
 - `js/roadmap.js`
-- `js/roadmap-create.js`
-- `package.json`
-- `scripts/check-js.js`
+- `js/backend/api.js`
 
 Checked Git working tree:
 
 ```text
- M dashboard.html
- M js/app.js
- M js/dashboard.js
+ M PROJECT_ANALYSIS_REPORT_2026-05-17.md
+ M js/backend/api.js
+ M js/roadmap.js
  M roadmap.html
-?? js/roadmap-create.js
-?? roadmap-create.html
 ```
 
 Ran test command through `cmd` to avoid PowerShell execution policy issues:
@@ -637,13 +656,18 @@ cmd /c npm test
 Result:
 
 ```text
-Checked 17 JavaScript files.
+Checked 18 JavaScript files.
 ```
 
 Status: passed.
 
+Additional check:
+
+- `roadmap.html` returned HTTP status `200` once when served through a temporary local Python HTTP server.
+- A full interactive browser smoke test has not yet been completed.
+
 ## Immediate Next Action
 
-The next best move is to browser-test the new roadmap creation flow end to end, then replace the remaining `prompt()` task/subtask creation with a proper in-app modal. After that, the project should tackle the real roadmap/task data model before adding more features.
+The next best move is to browser-test the roadmap create/edit/delete flow end to end, including both Supabase-backed roadmaps and legacy local/tag-derived roadmaps. After that, the project should tackle the real roadmap/task data model before adding more features.
 
-Current honest status: **improved prototype, about 50-55% complete overall, with the most serious frontend script blocker fixed and the roadmap workflow now meaningfully underway.**
+Current honest status: **improved prototype, about 55-60% complete overall, with the most serious frontend script blocker fixed and the roadmap workflow now supporting create, edit, delete, task creation, and subtask creation at prototype level.**

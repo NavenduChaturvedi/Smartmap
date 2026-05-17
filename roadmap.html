@@ -18,6 +18,7 @@
 		<script src="js/tailwind-config.js"></script>
 		<link rel="stylesheet" href="css/base.css" />
 		<script type="module" src="js/supabase-client.js"></script>
+		<script type="module" src="js/backend/api.js"></script>
 		<script src="js/app.js"></script>
 		<script src="js/components.js"></script>
 	</head>
@@ -39,6 +40,8 @@
 						<span class="font-label-caps text-[10px] text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase" id="active-track">OVERVIEW</span>
 						<button id="new-roadmap-btn" class="px-4 py-2 rounded-full border border-primary/30 text-primary uppercase tracking-widest text-[10px] font-bold hover:bg-primary/10 transition-colors" type="button">New Roadmap</button>
 						<button id="add-task-btn" class="px-4 py-2 rounded-full border border-primary/30 text-primary uppercase tracking-widest text-[10px] font-bold hover:bg-primary/10 transition-colors hidden" type="button">Add Task</button>
+						<button id="edit-roadmap-btn" class="px-4 py-2 rounded-full border border-outline-variant/30 text-on-surface-variant uppercase tracking-widest text-[10px] font-bold hover:text-primary hover:border-primary/40 transition-colors hidden" type="button">Edit</button>
+						<button id="delete-roadmap-btn" class="px-4 py-2 rounded-full border border-outline-variant/30 text-on-surface-variant uppercase tracking-widest text-[10px] font-bold hover:text-error hover:border-error/40 transition-colors hidden" type="button">Delete</button>
 						<a id="back-to-roadmaps-btn" href="roadmap.html" class="px-4 py-2 rounded-full border border-outline-variant/30 text-on-surface-variant uppercase tracking-widest text-[10px] font-bold hover:text-primary hover:border-primary/40 transition-colors hidden">All Roadmaps</a>
 					</div>
 				</header>
@@ -194,8 +197,8 @@
 				<div class="glass-panel w-full max-w-md p-6 rounded-2xl border border-outline-variant/30 shadow-2xl max-h-[90vh] flex flex-col">
 					<div class="flex items-center justify-between mb-6">
 						<div>
-							<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">New Roadmap</h2>
-							<p class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Create a roadmap entry</p>
+							<h2 id="roadmap-modal-title" class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">New Roadmap</h2>
+							<p id="roadmap-modal-desc" class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Create a roadmap entry</p>
 						</div>
 						<button id="close-roadmap-modal-btn" type="button" class="material-symbols-outlined text-outline-variant hover:text-primary transition-colors cursor-pointer px-2 bg-transparent border-0 p-0">close</button>
 					</div>
@@ -209,9 +212,21 @@
 							<textarea id="roadmap-desc-input" rows="3" class="w-full bg-surface-container p-3 rounded-lg border border-outline-variant/30 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="Optional description"></textarea>
 						</div>
 						<div class="pt-4 mt-auto">
-							<button type="submit" class="w-full py-3 bg-primary text-background font-bold tracking-widest uppercase hover:opacity-90 rounded-xl transition-all">Create Roadmap</button>
+							<button id="roadmap-modal-submit-btn" type="submit" class="w-full py-3 bg-primary text-background font-bold tracking-widest uppercase hover:opacity-90 rounded-xl transition-all">Create Roadmap</button>
 						</div>
 					</form>
+				</div>
+			</div>
+
+			<!-- Delete Confirmation Modal -->
+			<div id="delete-roadmap-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-background/80 backdrop-blur-sm hidden">
+				<div class="glass-panel w-full max-w-sm p-6 rounded-2xl border border-outline-variant/30 shadow-2xl">
+					<h2 class="font-h3 text-h3 text-error uppercase tracking-tighter mb-2">Delete Roadmap?</h2>
+					<p class="text-sm text-on-surface-variant mb-6">This action will permanently delete this roadmap and all its associated tasks. This cannot be undone.</p>
+					<div class="flex gap-4">
+						<button id="cancel-delete-roadmap-btn" class="flex-1 py-3 px-4 rounded-xl border border-outline-variant/30 font-bold uppercase tracking-widest text-[10px] hover:bg-surface-container transition-colors">Cancel</button>
+						<button id="confirm-delete-roadmap-btn" class="flex-1 py-3 px-4 rounded-xl bg-error text-background font-bold uppercase tracking-widest text-[10px] hover:opacity-90 transition-colors">Delete</button>
+					</div>
 				</div>
 			</div>
 
