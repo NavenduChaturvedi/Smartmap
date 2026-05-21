@@ -45,7 +45,7 @@
   };
 
   // populate inputs from hydrated state (or fallback)
-  displayNameInput.value = state.profile?.displayName || fallbackProfile?.displayName || "Commander";
+  displayNameInput.value = state.profile?.displayName || state.commanderName || fallbackProfile?.displayName || "Commander";
   emailInput.value = state.profile?.email || fallbackProfile?.email || "commander@aegis.dev";
   applyTheme(state.settings.theme);
   applyFontScale(state.settings.fontScale);
@@ -54,7 +54,9 @@
   updateStorageSize();
 
   saveProfileBtn.addEventListener("click", () => {
-    state.profile.displayName = displayNameInput.value.trim() || fallbackProfile?.displayName || "Commander";
+    const nextDisplayName = displayNameInput.value.trim() || fallbackProfile?.displayName || "Commander";
+    state.profile.displayName = nextDisplayName;
+    state.commanderName = nextDisplayName;
     state.profile.email = emailInput.value.trim() || fallbackProfile?.email || "commander@aegis.dev";
     window.Aegis.save();
     updateStorageSize();

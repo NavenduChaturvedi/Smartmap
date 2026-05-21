@@ -19,11 +19,11 @@
 <!-- TOP NAV BAR -->
 <aegis-topbar title="" subtitle=""></aegis-topbar>
 <!-- MAIN CONTENT -->
-<main class="ml-64 pt-24 p-margin grid grid-cols-12 gap-gutter">
+<main class="lg:ml-64 pt-16 sm:pt-20 lg:pt-24 px-4 sm:px-6 lg:p-margin grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-gutter">
 <!-- LEFT COLUMN (2/3) -->
-<div class="col-span-8 space-y-margin">
+<div class="col-span-1 lg:col-span-8 space-y-4 sm:space-y-margin">
 <!-- PROFILE CARD -->
-<section class="glass-panel p-margin rounded-xl flex flex-col gap-margin border-t border-l border-white/5">
+<section class="glass-panel p-margin rounded-xl flex flex-col gap-4 sm:gap-margin border-t border-l border-white/5">
 <div class="flex items-center justify-between border-b border-outline-variant/20 pb-4">
 <div class="flex items-center gap-2">
 <span class="font-label-mono text-primary">[TASK_001]</span>
@@ -31,7 +31,7 @@
 </div>
 <span class="material-symbols-outlined text-white/30" data-icon="person">person</span>
 </div>
-<div class="flex gap-margin">
+<div class="flex flex-col gap-4 sm:gap-margin lg:flex-row">
 <div class="flex flex-col items-center gap-4">
 <div class="w-32 h-32 rounded-full bg-surface-container-highest border-2 border-dashed border-white/20 flex items-center justify-center relative group overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.02)]">
 <span class="material-symbols-outlined text-4xl text-on-surface-variant/30" data-icon="account_circle">account_circle</span>
@@ -41,14 +41,14 @@
 </div>
 <button class="text-body-sm font-label-mono text-white/60 hover:text-white hover:underline transition-all">Change Avatar</button>
 </div>
-<div class="flex-1 grid grid-cols-2 gap-margin">
+<div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-margin">
 <div class="space-y-unit">
 <label class="font-label-caps text-[10px] text-on-surface-variant uppercase opacity-70">Display Name</label>
-<input class="w-full bg-transparent border-b border-outline-variant/50 px-0 py-2 text-on-surface font-body-md input-scan-focus transition-all" id="display-name-input" type="text" value="Commander"/>
+<input class="w-full bg-transparent border-b border-outline-variant/50 px-0 py-2 text-on-surface font-body-md input-scan-focus transition-all" id="display-name-input" type="text" value="Commander" placeholder="Commander" aria-label="Display name"/>
 </div>
 <div class="space-y-unit">
 <label class="font-label-caps text-[10px] text-on-surface-variant uppercase opacity-70">Email Address</label>
-<input class="w-full bg-transparent border-b border-outline-variant/50 px-0 py-2 text-on-surface font-body-md input-scan-focus transition-all" id="email-input" type="email" value="commander@aegis.dev"/>
+<input class="w-full bg-transparent border-b border-outline-variant/50 px-0 py-2 text-on-surface font-body-md input-scan-focus transition-all" id="email-input" type="email" value="commander@aegis.dev" placeholder="commander@aegis.dev" aria-label="Email address"/>
 </div>
 <div class="col-span-2 pt-4">
 <button class="clip-angled bg-white text-background px-10 py-4 font-label-caps text-label-mono font-bold uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.15)]" id="save-profile-btn" type="button">
@@ -59,7 +59,7 @@
 </div>
 </section>
 <!-- APPEARANCE CARD -->
-<section class="glass-panel p-margin rounded-xl flex flex-col gap-margin border-t border-l border-white/5">
+<section class="glass-panel p-margin rounded-xl flex flex-col gap-4 sm:gap-margin border-t border-l border-white/5">
 <div class="flex items-center justify-between border-b border-outline-variant/20 pb-4">
 <div class="flex items-center gap-2">
 <span class="font-label-mono text-primary">[TASK_002]</span>
@@ -67,8 +67,8 @@
 </div>
 <span class="material-symbols-outlined text-white/30" data-icon="palette">palette</span>
 </div>
-<div class="grid grid-cols-2 gap-margin">
-<div class="space-y-margin">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-margin">
+<div class="space-y-4 sm:space-y-margin">
 <div class="flex items-center justify-between">
 <span class="font-body-md text-on-surface">Theme Mode</span>
 <div class="flex bg-surface-container rounded-lg p-unit border border-outline-variant/20">
@@ -79,10 +79,10 @@
 <div class="flex items-center justify-between">
 <span class="font-body-md text-on-surface">Color Accent</span>
 <div class="flex gap-4">
-<button class="w-6 h-6 rounded-full bg-white ring-2 ring-white ring-offset-2 ring-offset-background shadow-[0_0_15px_rgba(255,255,255,0.6)]"></button>
-<button class="w-6 h-6 rounded-full bg-tertiary-fixed-dim hover:scale-110 transition-transform shadow-[0_0_10px_rgba(198,198,198,0.3)]"></button>
-<button class="w-6 h-6 rounded-full bg-on-primary-container hover:scale-110 transition-transform"></button>
-<button class="w-6 h-6 rounded-full bg-error hover:scale-110 transition-transform"></button>
+<button class="w-6 h-6 rounded-full bg-white ring-2 ring-white ring-offset-2 ring-offset-background shadow-[0_0_15px_rgba(255,255,255,0.6)]" title="White accent" aria-label="White accent"></button>
+<button class="w-6 h-6 rounded-full bg-tertiary-fixed-dim hover:scale-110 transition-transform shadow-[0_0_10px_rgba(198,198,198,0.3)]" title="Silver accent" aria-label="Silver accent"></button>
+<button class="w-6 h-6 rounded-full bg-on-primary-container hover:scale-110 transition-transform" title="Cyan accent" aria-label="Cyan accent"></button>
+<button class="w-6 h-6 rounded-full bg-error hover:scale-110 transition-transform" title="Red accent" aria-label="Red accent"></button>
 </div>
 </div>
 <div class="space-y-4">
@@ -90,25 +90,25 @@
 <span class="font-body-md text-on-surface">Font Size</span>
 <span class="font-label-mono text-white/80" id="font-size-label">Medium</span>
 </div>
-<input class="w-full accent-white h-1 bg-surface-container rounded-full appearance-none cursor-pointer" id="font-size-range" max="120" min="90" type="range" value="100"/>
+<input class="w-full accent-white h-1 bg-surface-container rounded-full appearance-none cursor-pointer" id="font-size-range" max="120" min="90" type="range" value="100" aria-label="Font size"/>
 </div>
 </div>
-<div class="space-y-4 border-l border-outline-variant/20 pl-margin">
+<div class="space-y-4 border-l border-outline-variant/20 pl-0 sm:pl-margin">
 <div class="flex items-center justify-between py-1">
 <span class="font-body-md text-on-surface">Enable Scanlines</span>
-<button class="w-12 h-6 bg-white/10 rounded-full relative border border-white/20" data-toggle="scanlines" type="button">
+<button class="w-12 h-6 bg-white/10 rounded-full relative border border-white/20" data-toggle="scanlines" type="button" title="Toggle scanlines" aria-label="Toggle scanlines">
 <div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.8)]"></div>
 </button>
 </div>
 <div class="flex items-center justify-between py-1">
 <span class="font-body-md text-on-surface">Enable Sound Effects</span>
-<button class="w-12 h-6 bg-white/10 rounded-full relative border border-white/20" data-toggle="soundEffects" type="button">
+<button class="w-12 h-6 bg-white/10 rounded-full relative border border-white/20" data-toggle="soundEffects" type="button" title="Toggle sound effects" aria-label="Toggle sound effects">
 <div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.8)]"></div>
 </button>
 </div>
 <div class="flex items-center justify-between py-1">
 <span class="font-body-md text-on-surface">Enable Animations</span>
-<button class="w-12 h-6 bg-white/10 rounded-full relative border border-white/20" data-toggle="animations" type="button">
+<button class="w-12 h-6 bg-white/10 rounded-full relative border border-white/20" data-toggle="animations" type="button" title="Toggle animations" aria-label="Toggle animations">
 <div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.8)]"></div>
 </button>
 </div>
@@ -116,7 +116,7 @@
 </div>
 </section>
 <!-- NOTIFICATIONS CARD -->
-<section class="glass-panel p-margin rounded-xl flex flex-col gap-margin border-t border-l border-white/5">
+<section class="glass-panel p-margin rounded-xl flex flex-col gap-4 sm:gap-margin border-t border-l border-white/5">
 <div class="flex items-center justify-between border-b border-outline-variant/20 pb-4">
 <div class="flex items-center gap-2">
 <span class="font-label-mono text-primary">[TASK_003]</span>
@@ -124,7 +124,7 @@
 </div>
 <span class="material-symbols-outlined text-white/30" data-icon="notifications">notifications</span>
 </div>
-<div class="grid grid-cols-3 gap-margin">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-margin">
 <div class="space-y-2 bg-surface-container/30 p-4 rounded-lg border border-white/5">
 <div class="flex justify-between items-center">
 <span class="font-label-caps text-[10px] text-on-surface-variant">Daily Reminder</span>
@@ -147,7 +147,7 @@
 <p class="font-body-md text-on-surface">Global</p>
 </div>
 </div>
-<div class="flex items-center justify-between bg-white/5 p-margin rounded-lg border-l-2 border-white">
+<div class="flex flex-col gap-3 bg-white/5 p-margin rounded-lg border-l-2 border-white sm:flex-row sm:items-center sm:justify-between">
 <div class="flex items-center gap-4">
 <span class="material-symbols-outlined text-white" data-icon="schedule">schedule</span>
 <div>
@@ -162,9 +162,9 @@
 </section>
 </div>
 <!-- RIGHT COLUMN (1/3) -->
-<div class="col-span-4 space-y-margin">
+<div class="col-span-1 lg:col-span-4 space-y-4 sm:space-y-margin">
 <!-- DATA MANAGEMENT -->
-<section class="glass-panel p-margin rounded-xl flex flex-col gap-margin border-t border-l border-white/5">
+<section class="glass-panel p-margin rounded-xl flex flex-col gap-4 sm:gap-margin border-t border-l border-white/5">
 <div class="flex items-center justify-between border-b border-outline-variant/20 pb-4">
 <div class="flex items-center gap-2">
 <span class="font-label-mono text-primary">[SYS_DATA]</span>
@@ -205,7 +205,7 @@
 </button>
 </section>
 <!-- ABOUT CARD -->
-<section class="glass-panel p-margin rounded-xl flex flex-col gap-margin border-t border-l border-white/5 bg-gradient-to-br from-surface-container/40 to-surface-container-highest/20">
+<section class="glass-panel p-margin rounded-xl flex flex-col gap-4 sm:gap-margin border-t border-l border-white/5 bg-gradient-to-br from-surface-container/40 to-surface-container-highest/20">
 <div class="flex items-center justify-between border-b border-outline-variant/20 pb-4">
 <div class="flex items-center gap-2">
 <span class="font-label-mono text-primary">[INFO]</span>

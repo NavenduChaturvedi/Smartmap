@@ -20,21 +20,21 @@
 <!-- TopNavBar -->
 <aegis-topbar title="A.I. MISSION_CONTROL" subtitle=""></aegis-topbar>
 <!-- Main Content -->
-<main class="ml-64 mt-20 p-margin h-[calc(100vh-80px)] overflow-y-auto">
+<main class="lg:ml-64 mt-16 sm:mt-20 px-4 sm:px-6 lg:p-margin h-[calc(100vh-64px)] sm:h-[calc(100vh-80px)] overflow-y-auto">
 <div class="max-w-container-max mx-auto space-y-10">
 <!-- Header Section -->
-<div class="flex flex-col lg:flex-row justify-between items-start gap-10">
-<div class="space-y-6">
+<div class="flex flex-col lg:flex-row justify-between items-start gap-6 sm:gap-10">
+<div class="space-y-4 sm:space-y-6">
 <div class="relative inline-block px-6 py-2">
 <div class="corner-bracket-tl"></div>
 <div class="corner-bracket-tr"></div>
-<h2 class="font-h1 text-h1 font-bold text-primary tracking-tight">ACHIEVEMENT VAULT</h2>
+<h2 class="font-h1 text-3xl sm:text-h1 font-bold text-primary tracking-tight">ACHIEVEMENT VAULT</h2>
 <div class="corner-bracket-bl"></div>
 <div class="corner-bracket-br"></div>
 </div>
 <p class="font-label-caps text-label-caps text-on-surface-variant tracking-[0.3em]">COMMENDATIONS EARNED</p>
 <!-- Global Progress -->
-<div class="w-[400px] space-y-2">
+<div class="w-full max-w-[400px] space-y-2">
 <div class="flex justify-between items-end">
 <span class="font-label-caps text-label-caps text-on-surface-variant opacity-60">VAULT COMPLETION</span>
 <span class="font-h3 text-h3 text-primary"><span id="vault-unlocked-count">12</span> <span class="text-body-sm opacity-40">/ <span id="vault-total-count">30</span></span></span>
@@ -50,7 +50,7 @@
 </div>
 </div>
 <!-- Player Card -->
-<div class="glass-panel p-6 w-full lg:w-96 relative overflow-hidden group border-white/10">
+<div class="glass-panel p-4 sm:p-6 w-full lg:w-96 relative overflow-hidden group border-white/10">
 <div class="absolute -top-4 -right-4 p-4 opacity-5 pointer-events-none">
 <span class="material-symbols-outlined text-[120px]" data-icon="shield">shield</span>
 </div>
@@ -86,7 +86,7 @@
 <button class="achievement-filter px-4 py-2 border border-outline-variant text-on-surface-variant font-label-caps text-[10px] tracking-widest uppercase hover:text-primary hover:border-primary/40" data-filter="locked" type="button">Locked</button>
 </section>
 <!-- Main Achievement Grid -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter" id="achievement-grid">
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-gutter" id="achievement-grid">
 <!-- UNLOCKED: Rare 1 -->
 <div class="achievement-card glass-panel p-6 relative border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.05)] group hover:border-white/40 transition-all cursor-pointer" data-description="Achieve 100 successful mission deployments." data-rarity="rare" data-title="Century Mark" data-xp="+200 XP">
 <div class="absolute top-3 right-3 font-label-mono text-[10px] text-primary border border-white/20 px-2 py-0.5 uppercase">Rare</div>

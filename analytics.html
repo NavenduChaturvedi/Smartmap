@@ -15,6 +15,7 @@
 			rel="stylesheet"
 		/>
 		<script src="js/tailwind-config.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 		<link rel="stylesheet" href="css/base.css" />
 		<script type="module" src="js/supabase-client.js"></script>
 		<script src="js/app.js"></script>
@@ -24,40 +25,40 @@
 		<div class="fixed inset-0 scanlines opacity-[0.05] z-50 pointer-events-none"></div>
 		<aegis-sidebar></aegis-sidebar>
 
-		<main class="ml-64 min-h-screen flex flex-col">
+		<main class="lg:ml-64 min-h-screen flex flex-col">
 			<aegis-topbar title="MISSION_ANALYTICS" subtitle="Performance Signal Grid"></aegis-topbar>
 
-			<div class="p-margin space-y-margin">
+			<div class="px-4 py-4 sm:px-6 sm:py-6 lg:p-margin space-y-6 sm:space-y-margin">
 				<section class="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6">
 					<div>
 						<p class="font-label-caps text-label-caps text-on-surface-variant mb-1 tracking-[0.4em] font-bold">PERFORMANCE ANALYTICS</p>
-						<h1 class="font-h1 text-h1 text-on-surface uppercase tracking-tighter font-extrabold italic leading-none">MISSION_LOG</h1>
+						<h1 class="font-h1 text-3xl sm:text-h1 text-on-surface uppercase tracking-tighter font-extrabold italic leading-none">MISSION_LOG</h1>
 					</div>
-					<div class="glass-panel px-6 py-3 rounded-full flex items-center gap-gutter cursor-pointer border border-outline-variant/20 hover:border-primary/50 transition-all group">
+					<div class="glass-panel px-4 py-2 sm:px-6 sm:py-3 rounded-full flex items-center gap-gutter cursor-pointer border border-outline-variant/20 hover:border-primary/50 transition-all group">
 						<span class="font-label-caps text-xs text-on-surface-variant group-hover:text-primary transition-colors uppercase font-bold tracking-widest">TIMEFRAME: 30D_RETRO</span>
 						<span class="material-symbols-outlined text-primary text-[18px]">tune</span>
 					</div>
 				</section>
 
 				<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
-					<div class="glass-panel glass-panel-accent p-6 rounded-xl data-bracket transition-all hover:translate-y-[-2px] monochrome-glow group">
+					<div class="glass-panel glass-panel-accent p-4 sm:p-6 rounded-xl data-bracket transition-all hover:translate-y-[-2px] monochrome-glow group">
 						<p class="font-label-caps text-[10px] text-on-surface-variant mb-4 tracking-[0.2em] font-bold uppercase group-hover:text-primary transition-colors">[TASK_METRICS]</p>
 						<p class="font-h2 text-h2 text-primary mb-1" id="analytics-task-metrics">0</p>
 						<p class="font-body-sm text-on-surface-variant/80 flex items-center gap-1 uppercase tracking-tight">
 							Completed <span class="text-on-surface font-bold" id="analytics-weekly-delta">+0 WK_TOTAL</span>
 						</p>
 					</div>
-					<div class="glass-panel glass-panel-accent p-6 rounded-xl data-bracket transition-all hover:translate-y-[-2px] monochrome-glow group">
+					<div class="glass-panel glass-panel-accent p-4 sm:p-6 rounded-xl data-bracket transition-all hover:translate-y-[-2px] monochrome-glow group">
 						<p class="font-label-caps text-[10px] text-on-surface-variant mb-4 tracking-[0.2em] font-bold uppercase group-hover:text-primary transition-colors">[XP_QUOTA]</p>
 						<p class="font-h2 text-h2 text-primary mb-1" id="analytics-xp">0</p>
 						<p class="font-body-sm text-on-surface-variant/80 uppercase tracking-tight">CUMULATIVE_GAIN</p>
 					</div>
-					<div class="glass-panel glass-panel-accent p-6 rounded-xl data-bracket transition-all hover:translate-y-[-2px] monochrome-glow group">
+					<div class="glass-panel glass-panel-accent p-4 sm:p-6 rounded-xl data-bracket transition-all hover:translate-y-[-2px] monochrome-glow group">
 						<p class="font-label-caps text-[10px] text-on-surface-variant mb-4 tracking-[0.2em] font-bold uppercase group-hover:text-primary transition-colors">[OPS_RATING]</p>
 						<p class="font-h2 text-h2 text-primary mb-1" id="analytics-throughput">0.0</p>
 						<p class="font-body-sm text-on-surface-variant/80 uppercase tracking-tight">DAILY_THROUGHPUT</p>
 					</div>
-					<div class="glass-panel glass-panel-accent p-6 rounded-xl data-bracket transition-all hover:translate-y-[-2px] monochrome-glow group">
+					<div class="glass-panel glass-panel-accent p-4 sm:p-6 rounded-xl data-bracket transition-all hover:translate-y-[-2px] monochrome-glow group">
 						<p class="font-label-caps text-[10px] text-on-surface-variant mb-4 tracking-[0.2em] font-bold uppercase group-hover:text-primary transition-colors">[STREAK_VAL]</p>
 						<div class="flex items-center justify-between">
 							<p class="font-h2 text-h2 text-primary" id="analytics-streak">0</p>
@@ -67,14 +68,19 @@
 					</div>
 				</section>
 
-				<section class="glass-panel glass-panel-accent p-margin rounded-xl border-outline-variant/10 monochrome-glow">
-					<div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6 mb-10">
+				<section class="glass-panel glass-panel-accent p-4 sm:p-margin rounded-xl border-outline-variant/10 monochrome-glow">
+					<div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 sm:gap-6 mb-6 sm:mb-10">
 						<h3 class="font-h3 text-h3 text-on-surface flex items-center gap-4 uppercase italic">
 							<span class="material-symbols-outlined text-primary text-[32px]">analytics</span>
 							Performance Tracking
 						</h3>
 					</div>
-					<p class="text-on-surface-variant text-sm">Chart visualization coming soon. Your stats are calculated in real-time from your tasks.</p>
+					<div class="space-y-4">
+						<p class="text-on-surface-variant text-sm">Completed tasks over the last 7 days, grouped by task creation date.</p>
+						<div class="h-80 md:h-96 rounded-xl border border-outline-variant/20 bg-surface-container-high/40 p-4">
+							<canvas id="analytics-activity-chart"></canvas>
+						</div>
+					</div>
 				</section>
 			</div>
 		</main>

@@ -21,14 +21,20 @@ const renderTasks = () => {
   const list = document.getElementById("objectives-list");
   if (!list) return;
 
-  list.innerHTML = state.tasks.map((task) => {
+  // Show only top-level tasks (no parent) on the dashboard
+  const topLevelTasks = state.tasks.filter((task) => !task.parent_task_id && !(typeof task.tag === 'string' && task.tag.includes('PARENT:')));
+
+  list.innerHTML = topLevelTasks.map((task) => {
     const base = "glass-panel p-4 flex items-center gap-4 transition-all cursor-pointer";
     const doneClass = task.done ? "border-l-4 border-primary aegis-glow" : "border-l-4 border-outline-variant hover:border-primary group";
     const icon = task.done ? "check_circle" : "circle";
     const titleClass = task.done ? "font-body-md text-on-surface opacity-40 line-through" : "font-body-md text-on-surface";
     const xpClass = task.done ? "font-label-mono text-primary text-xs" : "font-label-mono text-on-surface-variant text-xs group-hover:text-primary";
     const iconClass = task.done ? "material-symbols-outlined text-primary" : "material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors";
-    const roadmapLabel = task.roadmap_id ? `RM:${String(task.roadmap_id).slice(0,8)}` : (task.tag || '');
+    const roadmapLookup = new Map((state.roadmaps || []).map((roadmap) => [roadmap.id, roadmap.name]));
+    const roadmapLabel = task.roadmap_id
+      ? (roadmapLookup.get(task.roadmap_id) || task.roadmap_id)
+      : (task.tag || '');
     return `
       <button class="${base} ${doneClass}" data-task-id="${task.id}" type="button">
         <span class="${iconClass}">${icon}</span>
@@ -44,16 +50,9 @@ const renderTasks = () => {
   list.querySelectorAll("[data-task-id]").forEach((button) => {
     button.addEventListener("click", () => {
       const taskId = button.dataset.taskId;
-      const stateRef = window.Aegis.state;
-      stateRef.tasks = stateRef.tasks.map((task) => {
-        if (task.id !== taskId) return task;
-        const nextDone = !task.done;
-        stateRef.totalXp += nextDone ? task.xp : -task.xp;
-        return { ...task, done: nextDone };
-      });
-      window.Aegis.save();
-      renderStats();
-      renderTasks();
+      const task = window.Aegis.state.tasks.find((item) => item.id === taskId);
+      if (!task || !window.Aegis?.updateTask) return;
+      window.Aegis.updateTask(taskId, !task.done);
     });
   });
 };
@@ -61,13 +60,18 @@ const renderTasks = () => {
 const getRoadmapStats = () => {
   const state = window.Aegis.state;
   const roadmapMap = new Map();
+  const roadmapLookup = new Map((state.roadmaps || []).map((roadmap) => [roadmap.id, roadmap]));
+
+  (state.roadmaps || []).forEach((roadmap) => {
+    roadmapMap.set(roadmap.id, { id: roadmap.id, name: roadmap.name, total: 0, completed: 0 });
+  });
 
   state.tasks.forEach((task) => {
     let key = null;
     let displayName = null;
     if (task.roadmap_id) {
       key = task.roadmap_id;
-      displayName = null;
+      displayName = roadmapLookup.get(task.roadmap_id)?.name || null;
     } else if (task.tag && typeof task.tag === "string" && task.tag.startsWith("RM:")) {
       key = task.tag.replace("RM:", "").trim();
       displayName = key;
@@ -86,7 +90,7 @@ const getRoadmapStats = () => {
     name: row.name || String(row.id).slice(0, 8),
     total: row.total,
     completed: row.completed,
-    percentage: Math.round((row.completed / row.total) * 100),
+    percentage: row.total === 0 ? 0 : Math.round((row.completed / row.total) * 100),
     id: row.id
   }));
 };

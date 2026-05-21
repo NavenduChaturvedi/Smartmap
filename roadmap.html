@@ -26,14 +26,14 @@
 		<div class="fixed inset-0 scanlines opacity-[0.05] z-50 pointer-events-none"></div>
 		<aegis-sidebar></aegis-sidebar>
 
-		<main class="ml-64 min-h-screen flex flex-col pr-0 lg:pr-[420px]">
+		<main class="lg:ml-64 min-h-screen flex flex-col pr-0 lg:pr-[420px]">
 			<aegis-topbar title="MISSION_ROADMAP" subtitle="Path to Integration"></aegis-topbar>
 
-			<div class="p-margin space-y-margin">
+			<div class="px-4 py-4 sm:px-6 sm:py-6 lg:p-margin space-y-6 sm:space-y-margin">
 				<header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 border-b border-outline-variant/30 pb-6">
 					<div>
 						<p class="font-label-caps text-label-caps text-on-surface-variant mb-1 tracking-[0.4em] font-bold">STRATEGIC NAVIGATION</p>
-						<h1 class="font-h1 text-h1 text-on-surface uppercase tracking-tighter font-extrabold italic leading-none" id="roadmap-title">ROADMAPS</h1>
+						<h1 class="font-h1 text-3xl sm:text-h1 text-on-surface uppercase tracking-tighter font-extrabold italic leading-none" id="roadmap-title">ROADMAPS</h1>
 					</div>
 					<div class="flex items-center gap-3 flex-wrap">
 						<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="mission-count">0 ACTIVE</span>
@@ -46,9 +46,9 @@
 					</div>
 				</header>
 
-				<section class="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-gutter">
-					<div class="space-y-gutter">
-						<div class="glass-panel p-margin rounded-xl border border-outline-variant/20">
+				<section class="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr] lg:gap-gutter">
+					<div class="space-y-4 sm:space-y-gutter">
+						<div class="glass-panel p-4 sm:p-margin rounded-xl border border-outline-variant/20">
 							<div class="flex items-center justify-between gap-4">
 								<div>
 									<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter" id="primary-panel-title">Roadmap Overview</h2>
@@ -61,16 +61,16 @@
 								<div class="flex items-center justify-between gap-4 mb-6">
 									<div>
 										<p class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-[0.25em]">Selected Roadmap</p>
-										<h3 class="font-h2 text-h2 text-on-surface uppercase tracking-tighter" id="detail-roadmap-title">ROADMAP</h3>
+										<h3 class="font-h2 text-2xl sm:text-h2 text-on-surface uppercase tracking-tighter" id="detail-roadmap-title">ROADMAP</h3>
 									</div>
 									<div class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest" id="detail-roadmap-count">0 TASKS</div>
 								</div>
-								<div class="grid grid-cols-1 lg:grid-cols-[1.4fr_0.9fr] gap-gutter">
+								<div class="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_0.9fr] lg:gap-gutter">
 									<div class="space-y-4">
 										<div id="roadmap-detail-list" class="space-y-3"></div>
 									</div>
 									<div class="space-y-gutter">
-										<div class="glass-panel p-5 rounded-xl border border-outline-variant/20">
+										<div class="glass-panel p-4 sm:p-5 rounded-xl border border-outline-variant/20">
 											<div class="flex items-center gap-4">
 												<div class="relative w-20 h-20 flex-shrink-0">
 													<svg class="w-full h-full -rotate-90">
@@ -86,7 +86,7 @@
 												</div>
 											</div>
 										</div>
-										<div class="glass-panel p-5 rounded-xl border border-outline-variant/20 hidden" id="task-detail-shell">
+										<div class="glass-panel p-4 sm:p-5 rounded-xl border border-outline-variant/20 hidden" id="task-detail-shell">
 											<div class="flex items-start justify-between gap-3">
 												<div>
 													<p class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-[0.2em]">Selected Task</p>
@@ -112,7 +112,7 @@
 			</div>
 		</main>
 
-		<aside id="mission-panel" class="hidden lg:flex fixed right-0 top-0 h-full w-[400px] bg-surface-container-low border-l border-outline-variant/30 px-8 py-margin flex-col shadow-2xl z-40 overflow-y-auto">
+		<aside id="mission-panel" class="hidden lg:flex fixed right-0 top-0 h-full w-[400px] bg-surface-container-low border-l border-outline-variant/30 px-6 py-6 sm:px-8 sm:py-margin flex-col shadow-2xl z-40 overflow-y-auto">
 			<div class="flex items-center justify-between mb-8 pb-4 border-b border-outline-variant/20">
 				<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest">Selected_Target</span>
 				<button id="mission-close-btn" class="material-symbols-outlined text-outline-variant hover:text-primary transition-colors text-[20px] cursor-pointer px-2 bg-transparent border-0 p-0">close</button>

@@ -142,6 +142,11 @@ Each roadmap supports:
 ### Backend (Planned)
 - Firebase **or** Supabase (decision pending)
 
+### AI Integration
+- Gemini API key stays in `.env` as `GEMINI_API_KEY`
+- Local proxy lives in `server.py` and exposes `http://127.0.0.1:8765/api/ai/chat`
+- Dashboard AI panel calls the proxy instead of the Gemini API directly from the browser
+
 ### Hosting (Planned)
 - Netlify **or** Vercel
 
@@ -183,6 +188,17 @@ RoadmapOS/
 │
 └── backend/
     └── firebase-config.js    # Placeholder — backend TBD
+
+---
+
+## 🤖 Gemini Setup
+
+1. Copy `.env.example` to `.env`
+2. Set `GEMINI_API_KEY` to your Gemini API key
+3. Run `npm run ai:proxy`
+4. Open the dashboard and use the AI panel
+
+The browser never sees the Gemini key. Only the local proxy reads it.
 ```
 
 ---

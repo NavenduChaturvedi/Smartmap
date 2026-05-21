@@ -38,3 +38,41 @@
             box-shadow: 0 0 18px rgba(245, 245, 241, 0.18);
             transform: translateY(-2px);
         }
+
+        .p-margin {
+            padding: 1rem;
+        }
+
+        @media (min-width: 640px) {
+            .p-margin {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .p-margin {
+                padding: 2rem;
+            }
+        }
+
+        @media (max-width: 639px) {
+            .glass-panel {
+                padding: 1rem;
+                border-radius: 1rem;
+            }
+
+            .font-h1 {
+                font-size: 2rem;
+                line-height: 1.1;
+            }
+
+            .font-h2 {
+                font-size: 1.5rem;
+                line-height: 1.15;
+            }
+
+            .font-h3 {
+                font-size: 1.125rem;
+                line-height: 1.2;
+            }
+        }

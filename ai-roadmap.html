@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Roadmap Creator | AEGIS COMMAND CENTER</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script src="js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="css/base.css" />
+  <script type="module" src="js/supabase-client.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/components.js"></script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen relative overflow-x-hidden selection:bg-primary selection:text-on-primary">
+  <div class="fixed inset-0 scanlines z-50 pointer-events-none"></div>
+  <div class="fixed inset-0 pointer-events-none z-0 opacity-10">
+    <div class="absolute top-0 left-0 w-48 h-48 border-t border-l border-primary/20 m-margin"></div>
+    <div class="absolute top-0 right-0 w-48 h-48 border-t border-r border-primary/20 m-margin"></div>
+    <div class="absolute bottom-0 left-0 w-48 h-48 border-b border-l border-primary/20 m-margin"></div>
+    <div class="absolute bottom-0 right-0 w-48 h-48 border-b border-r border-primary/20 m-margin"></div>
+  </div>
+
+  <aegis-sidebar></aegis-sidebar>
+
+  <main class="lg:ml-64 min-h-screen flex flex-col">
+    <aegis-topbar title="AI_ROADMAP_CREATOR" subtitle="One command. Full roadmap. Tasks. Subtasks. XP."></aegis-topbar>
+
+    <div class="px-4 py-4 sm:px-6 sm:py-6 lg:p-margin space-y-6 sm:space-y-8">
+      <section class="glass-panel rounded-2xl border border-outline-variant/30 p-4 sm:p-6 lg:p-8 shadow-2xl shadow-black/30 space-y-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div class="space-y-3 max-w-3xl">
+            <p class="font-label-caps text-label-caps uppercase tracking-[0.35em] text-on-surface-variant">AI Command Center</p>
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tighter text-on-surface uppercase">Generate a complete roadmap</h1>
+            <p class="text-sm sm:text-base text-on-surface-variant">Give Gemini one command and it will create the roadmap, tasks, subtasks, and XP values directly in Aegis.</p>
+          </div>
+          <a href="dashboard.html" class="inline-flex items-center gap-2 self-start rounded-full border border-outline-variant/30 px-4 py-2 text-xs uppercase tracking-[0.2em] text-on-surface-variant transition-colors hover:border-primary/40 hover:text-primary">
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+            Back
+          </a>
+        </div>
+
+        <div class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div class="space-y-4">
+            <div class="grid gap-2">
+              <label for="ai-roadmap-prompt" class="font-label-caps text-label-caps uppercase tracking-widest text-on-surface-variant">Command</label>
+              <textarea id="ai-roadmap-prompt" rows="10" class="w-full rounded-2xl border border-outline-variant/40 bg-surface-container-low px-4 py-3 text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Example: Create a 30-day roadmap to launch my portfolio. Include design, content, deployment, and weekly milestones."></textarea>
+            </div>
+
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button id="ai-roadmap-run-btn" type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 font-bold uppercase tracking-[0.2em] text-background transition-opacity hover:opacity-90">
+                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                Run Command
+              </button>
+              <p id="ai-roadmap-status" class="text-xs uppercase tracking-[0.2em] text-on-surface-variant">Uses Gemini via local proxy</p>
+            </div>
+
+            <p id="ai-roadmap-error" class="hidden text-sm text-error whitespace-pre-line"></p>
+
+            <div class="rounded-2xl border border-outline-variant/20 bg-white/3 p-4">
+              <p class="font-label-caps text-label-caps uppercase tracking-[0.25em] text-on-surface-variant">Preview Summary</p>
+              <p id="ai-roadmap-summary" class="mt-2 text-sm text-on-surface-variant">Waiting for your command.</p>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 sm:p-5">
+            <div class="flex items-center justify-between gap-3 pb-3 border-b border-outline-variant/20">
+              <div>
+                <p class="font-label-caps text-label-caps uppercase tracking-[0.25em] text-on-surface-variant">Generated Plan</p>
+                <p class="text-xs text-on-surface-variant mt-1">Review before it is saved.</p>
+              </div>
+              <span class="rounded-full border border-primary/20 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-primary">Live</span>
+            </div>
+            <div id="ai-roadmap-preview" class="mt-4 space-y-3"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/ai-roadmap-creator.js"></script>
+</body>
+</html>

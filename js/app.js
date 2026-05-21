@@ -4,19 +4,69 @@ const AEGIS_STORAGE_KEY = "aegis_state_v1";
 
 const createTaskId = () => (crypto?.randomUUID ? crypto.randomUUID() : `task_${Date.now()}_${Math.random().toString(16).slice(2)}`);
 const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+const getLocalDateString = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getRelativeDateString = (dateString, offsetDays) => {
+  const date = new Date(`${dateString}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setDate(date.getDate() + offsetDays);
+  return getLocalDateString(date);
+};
 const normalizeTasks = (tasks) => tasks.map((task) => ({
   ...task,
   id: isUuid(task.id) ? task.id : createTaskId(),
   xp: Number(task.xp || 0),
-  done: Boolean(task.done)
+  done: Boolean(task.done),
+  completed_at: task.completed_at || (task.done ? task.created_at || null : null)
 }));
+
+const mergeLocalTaskMetadata = (remoteTasks, localTasks) => {
+  const localById = new Map((localTasks || []).map((task) => [task.id, task]));
+  return (remoteTasks || []).map((task) => {
+    const localTask = localById.get(task.id);
+    if (!localTask) return task;
+    return {
+      ...localTask,
+      ...task,
+      created_at: task.created_at || localTask.created_at || null,
+      completed_at: task.completed_at || localTask.completed_at || null
+    };
+  });
+};
 const sumCompletedXp = (tasks) => tasks.reduce((total, task) => total + (task.done ? task.xp : 0), 0);
 const countActiveRoadmaps = (tasks) => new Set(tasks
   .map((task) => task.tag)
   .filter((tag) => typeof tag === "string" && tag.startsWith("RM:"))).size;
 const refreshDerivedState = (state) => {
-  state.roadmapsActive = countActiveRoadmaps(state.tasks || []);
+  state.roadmapsActive = Array.isArray(state.roadmaps) && state.roadmaps.length > 0
+    ? state.roadmaps.length
+    : countActiveRoadmaps(state.tasks || []);
   state.totalXp = sumCompletedXp(state.tasks || []);
+  return state;
+};
+
+const updateStreakOnCompletion = (state, completionDate = new Date()) => {
+  const today = getLocalDateString(completionDate);
+  const lastActiveDate = state.settings?.lastActiveDate || null;
+
+  if (lastActiveDate === today) return state;
+
+  const nextStreak = lastActiveDate === getRelativeDateString(today, -1)
+    ? Number(state.streak || 0) + 1
+    : 1;
+
+  state.streak = nextStreak;
+  state.settings = {
+    ...state.settings,
+    streak: nextStreak,
+    lastActiveDate: today
+  };
+
   return state;
 };
 
@@ -24,6 +74,7 @@ const defaultState = refreshDerivedState({
   roadmapsActive: 0,
   streak: 0,
   totalXp: 0,
+  roadmaps: [],
   tasks: [],
   roadmap: {
     selectedNode: "NODE_01"
@@ -41,7 +92,9 @@ const defaultState = refreshDerivedState({
     fontScale: 100,
     scanlines: true,
     soundEffects: false,
-    animations: true
+    animations: true,
+    streak: 0,
+    lastActiveDate: null
   }
 });
 
@@ -54,6 +107,7 @@ const loadState = () => {
       ...parsed,
       profile: { ...defaultState.profile, ...(parsed.profile || {}) },
       settings: { ...defaultState.settings, ...(parsed.settings || {}) },
+      roadmaps: Array.isArray(parsed.roadmaps) ? parsed.roadmaps : defaultState.roadmaps,
       roadmap: { ...defaultState.roadmap, ...(parsed.roadmap || {}) },
       tasks: normalizeTasks(parsed.tasks || defaultState.tasks)
     });
@@ -93,22 +147,25 @@ const fetchUserState = async (userId) => {
   const supabase = await getSupabase();
   if (!supabase || !userId) return null;
 
-  const [profileRes, settingsRes, roadmapRes, tasksRes] = await Promise.all([
+  const [profileRes, settingsRes, roadmapRes, roadmapsRes, tasksRes] = await Promise.all([
     supabase.from("profiles").select("id, display_name, email").eq("id", userId).maybeSingle(),
-    supabase.from("settings").select("user_id, theme, font_scale, scanlines, sound_effects, animations").eq("user_id", userId).maybeSingle(),
+    supabase.from("settings").select("user_id, theme, font_scale, scanlines, sound_effects, animations, streak, last_active_date").eq("user_id", userId).maybeSingle(),
     supabase.from("roadmap_state").select("user_id, selected_node").eq("user_id", userId).maybeSingle(),
+    supabase.from("roadmaps").select("id, name, description, user_id, created_at").eq("user_id", userId).order("created_at", { ascending: false }),
     supabase.from("tasks").select("id, title, tag, xp, done, roadmap_id, parent_task_id").eq("user_id", userId)
   ]);
 
   const profile = profileRes.data || null;
   const settings = settingsRes.data || null;
   const roadmap = roadmapRes.data || null;
+  const roadmaps = roadmapsRes.data || [];
   const tasks = tasksRes.data || [];
 
   return {
     profile,
     settings,
     roadmap,
+    roadmaps,
     tasks: normalizeTasks(tasks)
   };
 };
@@ -118,7 +175,7 @@ const seedDefaultsForUser = async (user) => {
   if (!supabase || !user?.id) return;
 
   const email = user.email || defaultState.profile.email;
-  const displayName = email.split("@")[0] || defaultState.profile.displayName;
+  const displayName = user.user_metadata?.full_name || user.user_metadata?.name || defaultState.profile.displayName;
   const existingProfileRes = await supabase
     .from("profiles")
     .select("display_name")
@@ -143,7 +200,9 @@ const seedDefaultsForUser = async (user) => {
       font_scale: defaultState.settings.fontScale,
       scanlines: defaultState.settings.scanlines,
       sound_effects: defaultState.settings.soundEffects,
-      animations: defaultState.settings.animations
+      animations: defaultState.settings.animations,
+      streak: defaultState.settings.streak,
+      last_active_date: defaultState.settings.lastActiveDate
     }, { onConflict: "user_id" }),
     supabase.from("roadmap_state").upsert({
       user_id: user.id,
@@ -171,12 +230,14 @@ const hydrateStateFromSupabase = async () => {
 
   if (!remote) return null;
 
-  const normalizedTasks = normalizeTasks(remote.tasks || []);
+  const normalizedTasks = normalizeTasks(mergeLocalTaskMetadata(remote.tasks || [], window.Aegis.state.tasks || []));
+  const profileDisplayName = remote.profile?.display_name || user.user_metadata?.full_name || user.user_metadata?.name || window.Aegis.state.profile.displayName;
   const nextState = refreshDerivedState({
     ...window.Aegis.state,
-    streak: normalizedTasks.length > 0 ? window.Aegis.state.streak : 0,
+    streak: remote.settings?.streak ?? window.Aegis.state.streak ?? 0,
+    commanderName: profileDisplayName,
     profile: {
-      displayName: remote.profile?.display_name || window.Aegis.state.profile.displayName,
+      displayName: profileDisplayName,
       email: remote.profile?.email || window.Aegis.state.profile.email
     },
     settings: {
@@ -184,11 +245,14 @@ const hydrateStateFromSupabase = async () => {
       fontScale: remote.settings?.font_scale ?? window.Aegis.state.settings.fontScale,
       scanlines: remote.settings?.scanlines ?? window.Aegis.state.settings.scanlines,
       soundEffects: remote.settings?.sound_effects ?? window.Aegis.state.settings.soundEffects,
-      animations: remote.settings?.animations ?? window.Aegis.state.settings.animations
+      animations: remote.settings?.animations ?? window.Aegis.state.settings.animations,
+      streak: remote.settings?.streak ?? window.Aegis.state.settings.streak ?? 0,
+      lastActiveDate: remote.settings?.last_active_date ?? window.Aegis.state.settings.lastActiveDate ?? null
     },
     roadmap: {
       selectedNode: remote.roadmap?.selected_node || window.Aegis.state.roadmap.selectedNode
     },
+    roadmaps: Array.isArray(remote.roadmaps) ? remote.roadmaps : [],
     tasks: normalizedTasks
   });
 
@@ -228,7 +292,9 @@ const syncStateToSupabase = async () => {
       font_scale: state.settings.fontScale,
       scanlines: state.settings.scanlines,
       sound_effects: state.settings.soundEffects,
-      animations: state.settings.animations
+      animations: state.settings.animations,
+      streak: state.settings.streak ?? state.streak ?? 0,
+      last_active_date: state.settings.lastActiveDate || null
     }, { onConflict: "user_id" }),
     supabase.from("roadmap_state").upsert({
       user_id: user.id,
@@ -244,6 +310,7 @@ const resetLocalState = () => refreshDerivedState({
   profile: { ...defaultState.profile },
   settings: { ...defaultState.settings },
   roadmap: { ...defaultState.roadmap },
+  roadmaps: [],
   tasks: []
 });
 
@@ -268,17 +335,71 @@ window.Aegis = {
     window.location.href = "index.html";
   },
   updateTask: function(taskId, isDone) {
+    let transitionedToDone = [];
+
+    // Update the target task
     this.state.tasks = this.state.tasks.map(task => {
       if (task.id === taskId) {
-        // Adjust XP
-        const currentlyDone = task.done;
+        const currentlyDone = Boolean(task.done);
         if (currentlyDone !== isDone) {
           this.state.totalXp += isDone ? task.xp : -task.xp;
+          if (!currentlyDone && isDone) transitionedToDone.push(task.id);
         }
-        return { ...task, done: isDone };
+        return {
+          ...task,
+          done: isDone,
+          completed_at: isDone ? (task.completed_at || new Date().toISOString()) : null
+        };
       }
       return task;
     });
+
+    // Helper: get children of a task id
+    const getChildren = (parentId) => this.state.tasks.filter(t => t.parent_task_id === parentId);
+
+    // Propagate upwards: if all siblings of a parent are done -> mark parent done.
+    const tryPropagateUp = (childTaskId) => {
+      // find immediate parent
+      const child = this.state.tasks.find(t => t.id === childTaskId);
+      if (!child || !child.parent_task_id) return;
+      let parentId = child.parent_task_id;
+      while (parentId) {
+        const parent = this.state.tasks.find(t => t.id === parentId);
+        if (!parent) break;
+
+        const children = getChildren(parentId);
+        const allDone = children.length > 0 && children.every(c => Boolean(c.done));
+
+        if (allDone && !parent.done) {
+          // mark parent done
+          parent.done = true;
+          parent.completed_at = parent.completed_at || new Date().toISOString();
+          this.state.totalXp += parent.xp || 0;
+          transitionedToDone.push(parent.id);
+        } else if (!allDone && parent.done) {
+          // some child undone -> unset parent
+          parent.done = false;
+          parent.completed_at = null;
+          this.state.totalXp -= parent.xp || 0;
+        }
+
+        // continue to next level up
+        parentId = parent.parent_task_id;
+      }
+    };
+
+    // If we just marked a task done, try to promote its parents
+    tryPropagateUp(taskId);
+
+    // If we just marked a task undone, ensure parents are unset
+    // (tryPropagateUp already handles both directions because it checks children states)
+
+    // Update streak for each newly completed task (only tasks that transitioned to done)
+    if (transitionedToDone.length > 0) {
+      // update streak once for this batch of completions
+      updateStreakOnCompletion(this.state);
+    }
+
     this.save();
   },
   addTask: function(title, tag = "", xp = 0, roadmap_id = null, parent_task_id = null) {
@@ -289,7 +410,9 @@ window.Aegis = {
       xp: Number(xp),
       done: false,
       roadmap_id: roadmap_id || null,
-      parent_task_id: parent_task_id || null
+      parent_task_id: parent_task_id || null,
+      created_at: new Date().toISOString(),
+      completed_at: null
     };
     this.state.tasks.push(newTask);
     this.save();
@@ -303,7 +426,9 @@ window.Aegis = {
       xp: Number(data.xp || 0),
       done: false,
       roadmap_id: data.roadmap_id || null,
-      parent_task_id: data.parent_task_id || null
+      parent_task_id: data.parent_task_id || null,
+      created_at: data.created_at || new Date().toISOString(),
+      completed_at: null
     }));
     this.state.tasks.push(...newTasks);
     this.save();

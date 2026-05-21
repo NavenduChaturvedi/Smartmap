@@ -14,15 +14,15 @@
 <body class="bg-background text-on-surface min-h-screen flex items-center justify-center p-6">
   <div class="fixed inset-0 scanlines z-50"></div>
 
-  <main class="relative z-10 w-full max-w-md">
-    <div class="glass-panel rounded-lg p-8">
+  <main class="relative z-10 w-full max-w-sm sm:max-w-md">
+    <div class="glass-panel rounded-lg p-6 sm:p-8">
       <div class="text-center mb-8">
-        <h1 class="text-4xl font-extrabold tracking-tight text-primary">PROJECT AEGIS</h1>
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-primary">PROJECT AEGIS</h1>
         <p class="mt-2 text-xs tracking-[0.2em] uppercase text-on-surface-variant">Roadmap Command Center</p>
       </div>
 
       <form class="space-y-6" id="login-form">
-        <div id="name-field" style="display:none;">
+        <div class="hidden" id="name-field">
           <label class="block text-xs uppercase tracking-widest text-on-surface-variant mb-2">Full Name</label>
           <input class="w-full bg-transparent border-0 border-b border-outline-variant focus:border-primary focus:ring-0 px-0 py-2" id="login-name" type="text" placeholder="YOUR NAME" />
         </div>

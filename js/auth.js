@@ -55,7 +55,7 @@ const setMode = (nextMode) => {
       : "Create an account first, then use the same credentials to sign in.";
   }
   // show name input for signup mode
-  if (nameField) nameField.style.display = authMode === "signup" ? "block" : "none";
+  if (nameField) nameField.classList.toggle("hidden", authMode !== "signup");
 };
 
 const restoreSession = async () => {
@@ -97,6 +97,12 @@ form?.addEventListener("submit", async (event) => {
     const user = authResponse?.data?.user;
     if (user && displayName) {
       try {
+        await supabase.auth.updateUser({
+          data: {
+            full_name: displayName,
+            name: displayName
+          }
+        });
         await supabase.from('profiles').upsert({ id: user.id, display_name: displayName, email });
       } catch (e) {
         // non-blocking
