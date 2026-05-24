@@ -1,4 +1,16 @@
-const AEGIS_AI_ENDPOINT = "http://127.0.0.1:8765/api/ai/chat";
+const LOCAL_AEGIS_AI_ENDPOINT = "http://127.0.0.1:8765/api/ai/chat";
+const DEPLOYED_AEGIS_AI_ENDPOINT = "/api/ai/chat";
+
+const resolveAegisAiEndpoint = () => {
+  const hostname = window.location.hostname || "";
+  if (window.location.protocol === "file:" || hostname === "localhost" || hostname === "127.0.0.1" || hostname === "") {
+    return LOCAL_AEGIS_AI_ENDPOINT;
+  }
+
+  return DEPLOYED_AEGIS_AI_ENDPOINT;
+};
+
+const AEGIS_AI_ENDPOINT = resolveAegisAiEndpoint();
 
 const buildAegisAiContext = () => {
   const state = window.Aegis?.state || {};
@@ -74,7 +86,11 @@ const initAegisAiAssistant = () => {
     submitButton.classList.toggle("opacity-60", isBusy);
     submitButton.classList.toggle("cursor-wait", isBusy);
     if (statusLabel) {
-      statusLabel.textContent = isBusy ? "Thinking with Gemini..." : "Uses GEMINI_API_KEY via local proxy";
+      statusLabel.textContent = isBusy
+        ? "Thinking with Gemini..."
+        : AEGIS_AI_ENDPOINT === LOCAL_AEGIS_AI_ENDPOINT
+          ? "Uses GEMINI_API_KEY via local proxy"
+          : "Uses GEMINI_API_KEY via Vercel API";
     }
   };
 
