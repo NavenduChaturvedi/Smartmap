@@ -4,15 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "check:js": "node scripts/check-js.js",
-    "test": "npm run check:js",
     "ai:proxy": "python server.py"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.105.4"
-  }
+  "type": "commonjs"
 }

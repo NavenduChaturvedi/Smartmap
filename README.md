@@ -4,7 +4,7 @@ A roadmap and task tracker with XP, streaks, and progress tracking — build a r
 
 ## Current Status
 
-The live frontend is **`react-app/`** — a React + TypeScript + Tailwind app backed by real Supabase auth and data. The original vanilla-JS pages at the repo root (`index.html`, `dashboard.html`, `roadmap.html`, etc.) are legacy: superseded by `react-app/`, kept in git history, no longer part of the deployed site.
+The live frontend is **`react-app/`** — a React + TypeScript + Tailwind app backed by real Supabase auth and data. The original vanilla-JS pages (`index.html`, `dashboard.html`, `roadmap.html`, etc., plus `css/` and `js/`) have been removed now that the cutover is live; they're still in git history if anything needs cross-checking.
 
 - **Auth**: real signup/login/session restore via Supabase Auth
 - **Data**: roadmaps, tasks, subtasks, XP, and streaks are stored in Postgres (Supabase), not localStorage
@@ -44,8 +44,7 @@ Smartmap/
 │   └── README.md
 ├── api/
 │   └── ai/chat.js            # Gemini proxy (Vercel serverless function)
-├── server.py                 # Local-dev equivalent of the AI proxy
-└── *.html, css/, js/          # Legacy vanilla-JS frontend (superseded, not deployed)
+└── server.py                 # Local-dev equivalent of the AI proxy
 ```
 
 ## License
