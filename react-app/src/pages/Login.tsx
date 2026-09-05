@@ -1,21 +1,37 @@
 import { ShieldHalf } from "lucide-react"
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input, Label } from "@/components/ui/field"
+import { useAuth } from "@/lib/auth-context"
 
 function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { session, loading, signIn, signUp } = useAuth()
+
   const [mode, setMode] = useState<"login" | "signup">("login")
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const [info, setInfo] = useState("")
+  const [submitting, setSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const redirectTo =
+    (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/"
+
+  useEffect(() => {
+    if (!loading && session) navigate(redirectTo, { replace: true })
+  }, [loading, session, navigate, redirectTo])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError("")
+    setInfo("")
+
     if (!email.trim() || !password.trim()) {
       setError("Email and password are required.")
       return
@@ -24,8 +40,28 @@ function Login() {
       setError("Full name is required to create an account.")
       return
     }
-    setError("")
-    navigate("/")
+
+    setSubmitting(true)
+    if (mode === "login") {
+      const { error: signInError } = await signIn(email.trim(), password)
+      if (signInError) setError(signInError)
+      // On success, the session update triggers the redirect effect above.
+    } else {
+      const { error: signUpError, needsEmailConfirm } = await signUp(
+        email.trim(),
+        password,
+        name.trim(),
+      )
+      if (signUpError) {
+        setError(signUpError)
+      } else if (needsEmailConfirm) {
+        setInfo("Check your email to confirm your account, then sign in.")
+        setMode("login")
+      }
+      // If no confirmation is needed, signUp already returns a session and
+      // the redirect effect above handles navigation.
+    }
+    setSubmitting(false)
   }
 
   return (
@@ -69,9 +105,16 @@ function Login() {
           </div>
 
           {error && <p className="text-[12.5px] text-coral-text">{error}</p>}
+          {info && <p className="text-[12.5px] text-sage-text">{info}</p>}
 
-          <Button type="submit" className="mt-1">
-            {mode === "login" ? "Sign In" : "Create Account"}
+          <Button type="submit" className="mt-1" disabled={submitting}>
+            {submitting
+              ? mode === "login"
+                ? "Signing in..."
+                : "Creating account..."
+              : mode === "login"
+                ? "Sign In"
+                : "Create Account"}
           </Button>
         </form>
 
@@ -80,6 +123,7 @@ function Login() {
           onClick={() => {
             setMode((m) => (m === "login" ? "signup" : "login"))
             setError("")
+            setInfo("")
           }}
           className="mt-4 w-full text-center text-[12.5px] font-medium text-ink-muted hover:text-ink"
         >
