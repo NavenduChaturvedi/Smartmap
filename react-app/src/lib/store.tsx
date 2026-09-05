@@ -202,7 +202,20 @@ function StoreProvider({ children }: { children: ReactNode }) {
   const legacyNormalizedRef = useRef<AppState | null>(null)
 
   useEffect(() => {
-    if (loading || !user?.id || state.roadmaps.length > 0) return
+    if (loading || !user?.id) return
+
+    if (state.roadmaps.length > 0) {
+      // Real data now exists - e.g. the user created a roadmap manually
+      // instead of acting on the banner. Withdraw any pending offer rather
+      // than leave it showing (confirmLegacyImport also re-checks this at
+      // click time as a second line of defense).
+      if (legacyNormalizedRef.current) {
+        legacyNormalizedRef.current = null
+        setPendingImport(null)
+      }
+      return
+    }
+
     if (isLegacyMigrated(user.id)) return
     const legacy = readLegacyState()
     if (!legacy || !hasImportableData(legacy)) return
@@ -645,11 +658,20 @@ function StoreProvider({ children }: { children: ReactNode }) {
 
   const confirmLegacyImport = useCallback(async () => {
     if (!user || !legacyNormalizedRef.current) return
+    // Re-check at click time, not just when the offer first appeared: if the
+    // user created a roadmap manually while the banner was still up (instead
+    // of dismissing it), importState's restore-semantics delete-then-insert
+    // would wipe that real data out. Refuse rather than risk it.
+    if (state.roadmaps.length > 0) {
+      legacyNormalizedRef.current = null
+      setPendingImport(null)
+      return
+    }
     await importState(legacyNormalizedRef.current)
     markLegacyMigrated(user.id)
     legacyNormalizedRef.current = null
     setPendingImport(null)
-  }, [user, importState])
+  }, [user, importState, state.roadmaps.length])
 
   const dismissLegacyImport = useCallback(() => {
     if (user) markLegacyMigrated(user.id)
