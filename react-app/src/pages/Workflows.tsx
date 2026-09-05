@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input, Label, Textarea } from "@/components/ui/field"
 import { StatusPill } from "@/components/ui/status-pill"
+import { generateRoadmapPlan, type AiContext, type GeneratedPlan } from "@/lib/ai-generator"
 import { usePageHeader } from "@/lib/page-header"
 import { useStore } from "@/lib/store"
 import { cn } from "@/lib/utils"
@@ -17,45 +18,13 @@ interface PhaseRow {
   label: string
 }
 
-interface GeneratedTask {
-  title: string
-  xp: number
-  subtasks: { title: string; xp: number }[]
-}
-
-interface GeneratedPlan {
-  name: string
-  description: string
-  tasks: GeneratedTask[]
-}
-
 function newPhase(): PhaseRow {
   return { id: Math.random().toString(36).slice(2, 8), title: "", xp: 20, label: "" }
 }
 
-function mockGeneratePlan(prompt: string): GeneratedPlan {
-  const firstLine = prompt.split(/[.\n]/)[0]?.trim().slice(0, 60)
-  const name = firstLine || "AI Generated Roadmap"
-  const templates = [
-    { title: "Research & Planning", subs: ["Define scope and success criteria", "Gather reference material"] },
-    { title: "Foundational Skills", subs: ["Complete core tutorials", "Set up practice environment"] },
-    { title: "Applied Practice", subs: ["Build first project increment", "Get feedback and iterate"] },
-    { title: "Review & Level Up", subs: ["Run a retrospective", "Plan the next milestone"] },
-  ]
-  return {
-    name,
-    description: `Generated plan for: ${prompt.slice(0, 140)}${prompt.length > 140 ? "…" : ""}`,
-    tasks: templates.map((t) => ({
-      title: t.title,
-      xp: 30 + Math.round(Math.random() * 20),
-      subtasks: t.subs.map((s) => ({ title: s, xp: 10 + Math.round(Math.random() * 10) })),
-    })),
-  }
-}
-
 function Workflows() {
   const navigate = useNavigate()
-  const { addRoadmap, addTasksBulk } = useStore()
+  const { state, totalXp, addRoadmap, addTasksBulk } = useStore()
   const [mode, setMode] = useState<"manual" | "ai">("manual")
 
   usePageHeader(["RoadmapOS", "Workflows & Triggers"])
@@ -96,15 +65,35 @@ function Workflows() {
   const [prompt, setPrompt] = useState("")
   const [generating, setGenerating] = useState(false)
   const [plan, setPlan] = useState<GeneratedPlan | null>(null)
+  const [generateError, setGenerateError] = useState("")
 
-  const runGenerate = () => {
+  const buildAiContext = (): AiContext => ({
+    page: "Workflows & Triggers",
+    displayName: state.profile.displayName || "User",
+    stats: {
+      streak: state.streak,
+      totalXp,
+      roadmapsActive: state.roadmaps.length,
+      pendingTasks: state.tasks.filter((t) => !t.done).length,
+    },
+    roadmaps: state.roadmaps
+      .slice(0, 6)
+      .map((r) => ({ id: r.id, name: r.name, description: r.description })),
+  })
+
+  const runGenerate = async () => {
     if (!prompt.trim() || generating) return
     setGenerating(true)
+    setGenerateError("")
     setPlan(null)
-    window.setTimeout(() => {
-      setPlan(mockGeneratePlan(prompt.trim()))
+    try {
+      const result = await generateRoadmapPlan(prompt.trim(), buildAiContext())
+      setPlan(result)
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : "Couldn't generate a roadmap. Try again.")
+    } finally {
       setGenerating(false)
-    }, 900)
+    }
   }
 
   const handleAiLaunch = async () => {
@@ -232,15 +221,19 @@ function Workflows() {
                 placeholder="Describe the roadmap you want, e.g. 'Build me a 6-week roadmap to learn ethical hacking fundamentals'"
                 rows={8}
                 onKeyDown={(e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") runGenerate()
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") void runGenerate()
                 }}
               />
             </div>
             <p className="text-[11px] text-ink-muted">
-              Generation runs as a local simulation in this build — connect a live model endpoint to
-              generate real plans.
+              Uses Gemini via the AI proxy. Complex requests can take up to 30 seconds.
             </p>
-            <Button onClick={runGenerate} disabled={!prompt.trim() || generating} className="self-start">
+            {generateError && <p className="text-[12.5px] text-coral-text">{generateError}</p>}
+            <Button
+              onClick={() => void runGenerate()}
+              disabled={!prompt.trim() || generating}
+              className="self-start"
+            >
               <Wand2 className="size-3.5" />
               {generating ? "Generating..." : "Run Command"}
             </Button>
@@ -253,9 +246,14 @@ function Workflows() {
                 Drafting stages…
               </div>
             )}
-            {!generating && !plan && (
+            {!generating && !plan && !generateError && (
               <div className="flex h-40 items-center justify-center text-center text-[13px] text-ink-muted">
                 Run a command to preview the generated roadmap here.
+              </div>
+            )}
+            {!generating && !plan && generateError && (
+              <div className="flex h-40 items-center justify-center text-center text-[13px] text-ink-muted">
+                No plan yet — fix the error and try again.
               </div>
             )}
             {!generating && plan && (

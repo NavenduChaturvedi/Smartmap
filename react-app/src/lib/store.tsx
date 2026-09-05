@@ -470,6 +470,13 @@ function StoreProvider({ children }: { children: ReactNode }) {
 
       // Client-generated ids so subtasks can reference their parent without
       // depending on Postgres returning rows in insert order (unguaranteed).
+      // created_at is also set explicitly and staggered by 1ms per row: a
+      // multi-row INSERT evaluates now() once for the whole statement, so
+      // every row in a batch would otherwise get the identical timestamp -
+      // fine for most things, but it makes `.order("created_at")` ambiguous
+      // for exactly the ordered "Stage 1/2/3/4" content this function is
+      // used for (AI-generated roadmaps, the manual phase builder).
+      const baseTime = Date.now()
       const rootIds = items.map(() => crypto.randomUUID())
       const rootRows = items.map((item, i) => ({
         id: rootIds[i],
@@ -479,27 +486,33 @@ function StoreProvider({ children }: { children: ReactNode }) {
         title: item.title,
         xp: item.xp,
         done: false,
+        created_at: new Date(baseTime + i).toISOString(),
       }))
       const { error: rootError } = await supabase.from("tasks").insert(rootRows)
       if (rootError) throw rootError
 
+      let subtaskOffset = 0
       const subtaskRows = items.flatMap((item, i) =>
-        (item.subtasks ?? []).map((sub) => ({
-          id: crypto.randomUUID(),
-          user_id: user.id,
-          roadmap_id: roadmapId,
-          parent_task_id: rootIds[i],
-          title: sub.title,
-          xp: sub.xp,
-          done: false,
-        })),
+        (item.subtasks ?? []).map((sub) => {
+          const row = {
+            id: crypto.randomUUID(),
+            user_id: user.id,
+            roadmap_id: roadmapId,
+            parent_task_id: rootIds[i],
+            title: sub.title,
+            xp: sub.xp,
+            done: false,
+            created_at: new Date(baseTime + rootRows.length + subtaskOffset).toISOString(),
+          }
+          subtaskOffset += 1
+          return row
+        }),
       )
       if (subtaskRows.length > 0) {
         const { error: subError } = await supabase.from("tasks").insert(subtaskRows)
         if (subError) throw subError
       }
 
-      const nowIso = new Date().toISOString()
       const newTasks: Task[] = [...rootRows, ...subtaskRows].map((r) => ({
         id: r.id,
         title: r.title,
@@ -507,7 +520,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
         done: false,
         roadmapId: r.roadmap_id,
         parentTaskId: r.parent_task_id,
-        createdAt: nowIso,
+        createdAt: r.created_at,
         completedAt: null,
       }))
       setState((prev) => ({ ...prev, tasks: [...prev.tasks, ...newTasks] }))
