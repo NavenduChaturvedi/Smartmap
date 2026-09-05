@@ -120,7 +120,6 @@ export type Database = {
           id: string
           parent_task_id: string | null
           roadmap_id: string | null
-          tag: string | null
           title: string | null
           user_id: string | null
           xp: number | null
@@ -132,7 +131,6 @@ export type Database = {
           id?: string
           parent_task_id?: string | null
           roadmap_id?: string | null
-          tag?: string | null
           title?: string | null
           user_id?: string | null
           xp?: number | null
@@ -144,7 +142,6 @@ export type Database = {
           id?: string
           parent_task_id?: string | null
           roadmap_id?: string | null
-          tag?: string | null
           title?: string | null
           user_id?: string | null
           xp?: number | null
