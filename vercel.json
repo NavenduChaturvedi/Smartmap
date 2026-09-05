@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd react-app && npm install && npm run build",
+  "outputDirectory": "react-app/dist",
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}
