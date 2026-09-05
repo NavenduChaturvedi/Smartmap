@@ -8,6 +8,10 @@ import {
   type ReactNode,
 } from "react"
 
+import { useAuth } from "./auth-context"
+import { supabase } from "./supabase"
+import type { Tables } from "./database.types"
+
 interface Task {
   id: string
   title: string
@@ -54,196 +58,131 @@ interface AppState {
   lastActiveDate: string | null
   profile: Profile
   settings: Settings
-  achievements: Achievement[]
 }
 
-const STORAGE_KEY = "aegis_ui_state_v2"
-
-function uid(prefix: string) {
-  return `${prefix}_${Math.random().toString(36).slice(2, 9)}`
+const EMPTY_STATE: AppState = {
+  roadmaps: [],
+  tasks: [],
+  streak: 0,
+  lastActiveDate: null,
+  profile: { displayName: "", email: "" },
+  settings: { fontScale: 100, soundEffects: true, reducedMotion: false, compactDensity: false },
 }
 
-function daysAgoIso(days: number) {
-  const d = new Date()
-  d.setDate(d.getDate() - days)
-  return d.toISOString()
-}
+type TaskRow = Tables<"tasks">
+type RoadmapRow = Tables<"roadmaps">
+type ProfileRow = Tables<"profiles">
+type SettingsRow = Tables<"settings">
 
-function buildSeedState(): AppState {
-  const rmPython = uid("rm")
-  const rmMma = uid("rm")
-  const rmHacking = uid("rm")
-
-  const tasks: Task[] = []
-
-  const addRoot = (
-    roadmapId: string,
-    title: string,
-    xp: number,
-    done: boolean,
-    daysAgo: number,
-  ) => {
-    const id = uid("t")
-    tasks.push({
-      id,
-      title,
-      xp,
-      done,
-      roadmapId,
-      parentTaskId: null,
-      createdAt: daysAgoIso(daysAgo + 3),
-      completedAt: done ? daysAgoIso(daysAgo) : null,
-    })
-    return id
-  }
-
-  const addSub = (
-    roadmapId: string,
-    parentId: string,
-    title: string,
-    xp: number,
-    done: boolean,
-    daysAgo: number,
-  ) => {
-    tasks.push({
-      id: uid("t"),
-      title,
-      xp,
-      done,
-      roadmapId,
-      parentTaskId: parentId,
-      createdAt: daysAgoIso(daysAgo + 2),
-      completedAt: done ? daysAgoIso(daysAgo) : null,
-    })
-  }
-
-  // Python roadmap
-  const p1 = addRoot(rmPython, "API Data Ingestion Basics", 40, true, 6)
-  addSub(rmPython, p1, "Set up virtual environment", 10, true, 6)
-  addSub(rmPython, p1, "Write requests.get() wrapper", 15, true, 6)
-  const p2 = addRoot(rmPython, "AI Categorization & Extraction", 60, true, 4)
-  addSub(rmPython, p2, "Train classifier on sample set", 20, true, 4)
-  addSub(rmPython, p2, "Evaluate precision/recall", 20, true, 4)
-  const p3 = addRoot(rmPython, "Risk Analysis Threshold Logic", 50, false, 0)
-  addSub(rmPython, p3, "Define threshold rules", 15, true, 2)
-  addSub(rmPython, p3, "Route flagged records for review", 20, false, 0)
-  addRoot(rmPython, "Automated Notification & DB Commit", 45, false, 0)
-
-  // MMA roadmap
-  const m1 = addRoot(rmMma, "Base Conditioning Block", 30, true, 8)
-  addSub(rmMma, m1, "3x roadwork sessions", 15, true, 8)
-  const m2 = addRoot(rmMma, "Striking Fundamentals", 40, true, 3)
-  addRoot(rmMma, "Grappling Live Rounds", 55, false, 0)
-  addRoot(rmMma, "Fight Camp Taper", 35, false, 0)
-  void m2
-
-  // Hacking roadmap
-  const h1 = addRoot(rmHacking, "Recon & Enumeration", 35, true, 1)
-  addSub(rmHacking, h1, "Nmap sweep of lab range", 15, true, 1)
-  addSub(rmHacking, h1, "Service fingerprinting", 20, false, 0)
-  addRoot(rmHacking, "Exploit Development Primer", 60, false, 0)
-  addRoot(rmHacking, "Privilege Escalation Drills", 45, false, 0)
-
+function taskFromRow(row: TaskRow): Task {
   return {
-    roadmaps: [
-      {
-        id: rmPython,
-        name: "API Data Pipeline (Python)",
-        description:
-          "Build an end-to-end ingestion, categorization and notification pipeline.",
-        createdAt: daysAgoIso(14),
-      },
-      {
-        id: rmMma,
-        name: "MMA Fight Camp",
-        description: "12-week conditioning, striking and grappling progression.",
-        createdAt: daysAgoIso(20),
-      },
-      {
-        id: rmHacking,
-        name: "Ethical Hacking Fundamentals",
-        description: "Lab-based offensive security skill tree.",
-        createdAt: daysAgoIso(9),
-      },
-    ],
-    tasks,
-    streak: 6,
-    lastActiveDate: new Date().toISOString().slice(0, 10),
-    profile: {
-      displayName: "Navendu",
-      email: "navenduchaturvedi0718@gmail.com",
-    },
-    settings: {
-      fontScale: 100,
-      soundEffects: true,
-      reducedMotion: false,
-      compactDensity: false,
-    },
-    achievements: [
-      { id: "a1", title: "First Contact", description: "Complete your first task.", rarity: "common", xp: 20, unlocked: true },
-      { id: "a2", title: "Base Camp", description: "Complete every task in a roadmap's first stage.", rarity: "common", xp: 10, unlocked: true },
-      { id: "a3", title: "Quick Start", description: "Complete 10 tasks total.", rarity: "common", xp: 50, unlocked: true },
-      { id: "a4", title: "Cartographer", description: "Create 3 roadmaps.", rarity: "common", xp: 40, unlocked: true },
-      { id: "a5", title: "Data Analyst", description: "View the analytics page 5 times.", rarity: "common", xp: 60, unlocked: false },
-      { id: "a6", title: "Night Watch", description: "Complete a task after midnight.", rarity: "common", xp: 80, unlocked: false },
-      { id: "a7", title: "Century Mark", description: "Earn 200 XP in a single roadmap.", rarity: "rare", xp: 200, unlocked: false },
-      { id: "a8", title: "Perfectionist", description: "Finish a roadmap with zero pending tasks.", rarity: "rare", xp: 150, unlocked: false },
-      { id: "a9", title: "Locked Achievement", description: "Keep progressing to unlock this achievement.", rarity: "locked", xp: 0, unlocked: false },
-      { id: "a10", title: "Locked Achievement", description: "Keep progressing to unlock this achievement.", rarity: "locked", xp: 0, unlocked: false },
-      { id: "a11", title: "Locked Achievement", description: "Keep progressing to unlock this achievement.", rarity: "locked", xp: 0, unlocked: false },
-      { id: "a12", title: "Locked Achievement", description: "Keep progressing to unlock this achievement.", rarity: "locked", xp: 0, unlocked: false },
-    ],
+    id: row.id,
+    title: row.title ?? "",
+    xp: row.xp ?? 0,
+    done: row.done ?? false,
+    roadmapId: row.roadmap_id ?? "",
+    parentTaskId: row.parent_task_id,
+    createdAt: row.created_at,
+    completedAt: row.completed_at,
   }
 }
 
-function loadState(): AppState {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw) as AppState
-  } catch {
-    // fall through to seed
+function roadmapFromRow(row: RoadmapRow): Roadmap {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description ?? "",
+    createdAt: row.created_at ?? new Date().toISOString(),
   }
-  return buildSeedState()
+}
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10)
 }
 
 interface StoreApi {
   state: AppState
+  loading: boolean
   totalXp: number
+  achievements: Achievement[]
   rootTasks: (roadmapId: string) => Task[]
   subtasks: (parentId: string) => Task[]
   roadmapProgress: (roadmapId: string) => { completed: number; total: number }
-  toggleTask: (taskId: string) => void
-  addRoadmap: (name: string, description: string) => Roadmap
-  updateRoadmap: (id: string, name: string, description: string) => void
-  deleteRoadmap: (id: string) => void
+  refresh: () => Promise<void>
+  toggleTask: (taskId: string) => Promise<void>
+  addRoadmap: (name: string, description: string) => Promise<Roadmap>
+  updateRoadmap: (id: string, name: string, description: string) => Promise<void>
+  deleteRoadmap: (id: string) => Promise<void>
   addTask: (
     roadmapId: string,
     title: string,
     xp: number,
     parentTaskId?: string | null,
-  ) => void
+  ) => Promise<void>
   addTasksBulk: (
     roadmapId: string,
     items: { title: string; xp: number; subtasks?: { title: string; xp: number }[] }[],
-  ) => void
-  updateProfile: (profile: Profile) => void
-  updateSettings: (settings: Partial<Settings>) => void
-  resetProgress: () => void
-  importState: (data: AppState) => void
+  ) => Promise<void>
+  updateProfile: (profile: Profile) => Promise<void>
+  updateSettings: (settings: Partial<Settings>) => Promise<void>
+  resetProgress: () => Promise<void>
+  importState: (data: AppState) => Promise<void>
 }
 
 const StoreContext = createContext<StoreApi | null>(null)
 
 function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AppState>(loadState)
+  const { user } = useAuth()
+  const [state, setState] = useState<AppState>(EMPTY_STATE)
+  const [loading, setLoading] = useState(true)
+
+  const loadAll = useCallback(async (userId: string) => {
+    setLoading(true)
+    const [profileRes, settingsRes, roadmapsRes, tasksRes] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+      supabase.from("settings").select("*").eq("user_id", userId).maybeSingle(),
+      supabase.from("roadmaps").select("*").eq("user_id", userId).order("created_at"),
+      supabase.from("tasks").select("*").eq("user_id", userId).order("created_at"),
+    ])
+
+    const profileRow = profileRes.data as ProfileRow | null
+    const settingsRow = settingsRes.data as SettingsRow | null
+    const preferences = (settingsRow?.preferences ?? {}) as {
+      reducedMotion?: boolean
+      compactDensity?: boolean
+    }
+
+    setState({
+      roadmaps: (roadmapsRes.data ?? []).map(roadmapFromRow),
+      tasks: (tasksRes.data ?? []).map(taskFromRow),
+      streak: settingsRow?.streak ?? 0,
+      lastActiveDate: settingsRow?.last_active_date ?? null,
+      profile: {
+        displayName: profileRow?.display_name ?? "",
+        email: profileRow?.email ?? "",
+      },
+      settings: {
+        fontScale: settingsRow?.font_scale ?? 100,
+        soundEffects: settingsRow?.sound_effects ?? true,
+        reducedMotion: preferences.reducedMotion ?? false,
+        compactDensity: preferences.compactDensity ?? false,
+      },
+    })
+    setLoading(false)
+  }, [])
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-    } catch {
-      // ignore quota errors
+    if (user?.id) {
+      void loadAll(user.id)
+    } else {
+      setState(EMPTY_STATE)
+      setLoading(false)
     }
-  }, [state])
+  }, [user?.id, loadAll])
+
+  const refresh = useCallback(async () => {
+    if (user?.id) await loadAll(user.id)
+  }, [user?.id, loadAll])
 
   const totalXp = useMemo(
     () => state.tasks.filter((t) => t.done).reduce((sum, t) => sum + t.xp, 0),
@@ -269,61 +208,195 @@ function StoreProvider({ children }: { children: ReactNode }) {
     [state.tasks],
   )
 
-  const toggleTask = useCallback((taskId: string) => {
-    setState((prev) => {
-      const tasks = [...prev.tasks]
-      const idx = tasks.findIndex((t) => t.id === taskId)
-      if (idx === -1) return prev
-      const target = tasks[idx]
+  const achievements = useMemo<Achievement[]>(() => {
+    const completedCount = state.tasks.filter((t) => t.done).length
+    const xpByRoadmap = new Map<string, number>()
+    for (const t of state.tasks) {
+      if (!t.done) continue
+      xpByRoadmap.set(t.roadmapId, (xpByRoadmap.get(t.roadmapId) ?? 0) + t.xp)
+    }
+    const maxRoadmapXp = Math.max(0, ...xpByRoadmap.values())
+    const hasPerfectRoadmap = state.roadmaps.some((r) => {
+      const p = roadmapProgress(r.id)
+      return p.total > 0 && p.completed === p.total
+    })
+
+    return [
+      {
+        id: "first-contact",
+        title: "First Contact",
+        description: "Complete your first task.",
+        rarity: "common",
+        xp: 20,
+        unlocked: completedCount >= 1,
+      },
+      {
+        id: "base-camp",
+        title: "Base Camp",
+        description: "Create your first roadmap.",
+        rarity: "common",
+        xp: 10,
+        unlocked: state.roadmaps.length >= 1,
+      },
+      {
+        id: "quick-start",
+        title: "Quick Start",
+        description: "Complete 10 tasks total.",
+        rarity: "common",
+        xp: 50,
+        unlocked: completedCount >= 10,
+      },
+      {
+        id: "cartographer",
+        title: "Cartographer",
+        description: "Create 5 different roadmaps.",
+        rarity: "common",
+        xp: 40,
+        unlocked: state.roadmaps.length >= 5,
+      },
+      {
+        id: "data-analyst",
+        title: "Data Analyst",
+        description: "View the analytics page.",
+        rarity: "common",
+        xp: 60,
+        unlocked: false,
+      },
+      {
+        id: "night-watch",
+        title: "Night Watch",
+        description: "Complete a task after midnight.",
+        rarity: "common",
+        xp: 80,
+        unlocked: state.tasks.some((t) => t.completedAt && new Date(t.completedAt).getHours() === 0),
+      },
+      {
+        id: "century-mark",
+        title: "Century Mark",
+        description: "Earn 200 XP in a single roadmap.",
+        rarity: "rare",
+        xp: 200,
+        unlocked: maxRoadmapXp >= 200,
+      },
+      {
+        id: "perfectionist",
+        title: "Perfectionist",
+        description: "Finish a roadmap with zero pending tasks.",
+        rarity: "rare",
+        xp: 150,
+        unlocked: hasPerfectRoadmap,
+      },
+      ...Array.from({ length: 4 }, (_, i) => ({
+        id: `locked-${i}`,
+        title: "Locked Achievement",
+        description: "Keep progressing to unlock this achievement.",
+        rarity: "locked" as const,
+        xp: 0,
+        unlocked: false,
+      })),
+    ]
+  }, [state.tasks, state.roadmaps, roadmapProgress])
+
+  const toggleTask = useCallback(
+    async (taskId: string) => {
+      if (!user) return
+      const target = state.tasks.find((t) => t.id === taskId)
+      if (!target) return
+
       const nowDone = !target.done
-      tasks[idx] = {
-        ...target,
-        done: nowDone,
-        completedAt: nowDone ? new Date().toISOString() : null,
+      const completedAt = nowDone ? new Date().toISOString() : null
+
+      const { error } = await supabase
+        .from("tasks")
+        .update({ done: nowDone, completed_at: completedAt })
+        .eq("id", taskId)
+      if (error) {
+        console.error("Failed to update task", error)
+        return
       }
 
-      // propagate up to parent: if all siblings done, auto-complete parent
+      let parentUpdate: { id: string; done: boolean; completedAt: string | null } | null = null
       if (target.parentTaskId) {
-        const siblings = tasks.filter((t) => t.parentTaskId === target.parentTaskId)
-        const parentIdx = tasks.findIndex((t) => t.id === target.parentTaskId)
-        if (parentIdx !== -1) {
+        const parent = state.tasks.find((t) => t.id === target.parentTaskId)
+        const siblings = state.tasks
+          .filter((t) => t.parentTaskId === target.parentTaskId)
+          .map((t) => (t.id === taskId ? { ...t, done: nowDone } : t))
+        if (parent) {
           const allDone = siblings.every((t) => t.done)
-          const parent = tasks[parentIdx]
-          if (allDone && !parent.done) {
-            tasks[parentIdx] = { ...parent, done: true, completedAt: new Date().toISOString() }
-          } else if (!allDone && parent.done) {
-            tasks[parentIdx] = { ...parent, done: false, completedAt: null }
+          if (allDone !== parent.done) {
+            const parentCompletedAt = allDone ? new Date().toISOString() : null
+            const { error: parentError } = await supabase
+              .from("tasks")
+              .update({ done: allDone, completed_at: parentCompletedAt })
+              .eq("id", parent.id)
+            if (!parentError) {
+              parentUpdate = { id: parent.id, done: allDone, completedAt: parentCompletedAt }
+            }
           }
         }
       }
 
-      const today = new Date().toISOString().slice(0, 10)
-      let streak = prev.streak
-      if (nowDone && prev.lastActiveDate !== today) {
+      const today = todayIso()
+      let nextStreak = state.streak
+      let nextLastActive = state.lastActiveDate
+      if (nowDone && state.lastActiveDate !== today) {
         const yesterday = new Date()
         yesterday.setDate(yesterday.getDate() - 1)
-        const wasYesterday = prev.lastActiveDate === yesterday.toISOString().slice(0, 10)
-        streak = wasYesterday ? prev.streak + 1 : 1
+        const wasYesterday = state.lastActiveDate === yesterday.toISOString().slice(0, 10)
+        nextStreak = wasYesterday ? state.streak + 1 : 1
+        nextLastActive = today
+        await supabase
+          .from("settings")
+          .update({ streak: nextStreak, last_active_date: nextLastActive })
+          .eq("user_id", user.id)
       }
 
-      return { ...prev, tasks, streak, lastActiveDate: nowDone ? today : prev.lastActiveDate }
-    })
-  }, [])
+      setState((prev) => ({
+        ...prev,
+        tasks: prev.tasks.map((t) => {
+          if (t.id === taskId) return { ...t, done: nowDone, completedAt }
+          if (parentUpdate && t.id === parentUpdate.id) {
+            return { ...t, done: parentUpdate.done, completedAt: parentUpdate.completedAt }
+          }
+          return t
+        }),
+        streak: nextStreak,
+        lastActiveDate: nextLastActive,
+      }))
+    },
+    [state.tasks, state.streak, state.lastActiveDate, user],
+  )
 
-  const addRoadmap = useCallback((name: string, description: string) => {
-    const roadmap: Roadmap = { id: uid("rm"), name, description, createdAt: new Date().toISOString() }
-    setState((prev) => ({ ...prev, roadmaps: [...prev.roadmaps, roadmap] }))
-    return roadmap
-  }, [])
+  const addRoadmap = useCallback(
+    async (name: string, description: string) => {
+      if (!user) throw new Error("Not authenticated")
+      const { data, error } = await supabase
+        .from("roadmaps")
+        .insert({ user_id: user.id, name, description })
+        .select()
+        .single()
+      if (error || !data) throw error ?? new Error("Failed to create roadmap")
+      const roadmap = roadmapFromRow(data)
+      setState((prev) => ({ ...prev, roadmaps: [...prev.roadmaps, roadmap] }))
+      return roadmap
+    },
+    [user],
+  )
 
-  const updateRoadmap = useCallback((id: string, name: string, description: string) => {
+  const updateRoadmap = useCallback(async (id: string, name: string, description: string) => {
+    const { error } = await supabase.from("roadmaps").update({ name, description }).eq("id", id)
+    if (error) throw error
     setState((prev) => ({
       ...prev,
       roadmaps: prev.roadmaps.map((r) => (r.id === id ? { ...r, name, description } : r)),
     }))
   }, [])
 
-  const deleteRoadmap = useCallback((id: string) => {
+  const deleteRoadmap = useCallback(async (id: string) => {
+    const { error: taskError } = await supabase.from("tasks").delete().eq("roadmap_id", id)
+    if (taskError) throw taskError
+    const { error } = await supabase.from("roadmaps").delete().eq("id", id)
+    if (error) throw error
     setState((prev) => ({
       ...prev,
       roadmaps: prev.roadmaps.filter((r) => r.id !== id),
@@ -332,87 +405,205 @@ function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const addTask = useCallback(
-    (roadmapId: string, title: string, xp: number, parentTaskId: string | null = null) => {
-      setState((prev) => ({
-        ...prev,
-        tasks: [
-          ...prev.tasks,
-          {
-            id: uid("t"),
-            title,
-            xp,
-            done: false,
-            roadmapId,
-            parentTaskId,
-            createdAt: new Date().toISOString(),
-            completedAt: null,
-          },
-        ],
-      }))
+    async (roadmapId: string, title: string, xp: number, parentTaskId: string | null = null) => {
+      if (!user) throw new Error("Not authenticated")
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert({
+          user_id: user.id,
+          roadmap_id: roadmapId,
+          parent_task_id: parentTaskId,
+          title,
+          xp,
+          done: false,
+        })
+        .select()
+        .single()
+      if (error || !data) throw error ?? new Error("Failed to create task")
+      const task = taskFromRow(data)
+      setState((prev) => ({ ...prev, tasks: [...prev.tasks, task] }))
     },
-    [],
+    [user],
   )
 
   const addTasksBulk = useCallback(
-    (
+    async (
       roadmapId: string,
       items: { title: string; xp: number; subtasks?: { title: string; xp: number }[] }[],
     ) => {
-      setState((prev) => {
-        const newTasks: Task[] = []
-        for (const item of items) {
-          const rootId = uid("t")
-          newTasks.push({
-            id: rootId,
-            title: item.title,
-            xp: item.xp,
-            done: false,
-            roadmapId,
-            parentTaskId: null,
-            createdAt: new Date().toISOString(),
-            completedAt: null,
-          })
-          for (const sub of item.subtasks ?? []) {
-            newTasks.push({
-              id: uid("t"),
-              title: sub.title,
-              xp: sub.xp,
-              done: false,
-              roadmapId,
-              parentTaskId: rootId,
-              createdAt: new Date().toISOString(),
-              completedAt: null,
-            })
-          }
-        }
-        return { ...prev, tasks: [...prev.tasks, ...newTasks] }
-      })
+      if (!user) throw new Error("Not authenticated")
+
+      // Client-generated ids so subtasks can reference their parent without
+      // depending on Postgres returning rows in insert order (unguaranteed).
+      const rootIds = items.map(() => crypto.randomUUID())
+      const rootRows = items.map((item, i) => ({
+        id: rootIds[i],
+        user_id: user.id,
+        roadmap_id: roadmapId,
+        parent_task_id: null,
+        title: item.title,
+        xp: item.xp,
+        done: false,
+      }))
+      const { error: rootError } = await supabase.from("tasks").insert(rootRows)
+      if (rootError) throw rootError
+
+      const subtaskRows = items.flatMap((item, i) =>
+        (item.subtasks ?? []).map((sub) => ({
+          id: crypto.randomUUID(),
+          user_id: user.id,
+          roadmap_id: roadmapId,
+          parent_task_id: rootIds[i],
+          title: sub.title,
+          xp: sub.xp,
+          done: false,
+        })),
+      )
+      if (subtaskRows.length > 0) {
+        const { error: subError } = await supabase.from("tasks").insert(subtaskRows)
+        if (subError) throw subError
+      }
+
+      const nowIso = new Date().toISOString()
+      const newTasks: Task[] = [...rootRows, ...subtaskRows].map((r) => ({
+        id: r.id,
+        title: r.title,
+        xp: r.xp,
+        done: false,
+        roadmapId: r.roadmap_id,
+        parentTaskId: r.parent_task_id,
+        createdAt: nowIso,
+        completedAt: null,
+      }))
+      setState((prev) => ({ ...prev, tasks: [...prev.tasks, ...newTasks] }))
     },
-    [],
+    [user],
   )
 
-  const updateProfile = useCallback((profile: Profile) => {
-    setState((prev) => ({ ...prev, profile }))
-  }, [])
+  const updateProfile = useCallback(
+    async (profile: Profile) => {
+      if (!user) throw new Error("Not authenticated")
+      const { error } = await supabase
+        .from("profiles")
+        .upsert({ id: user.id, display_name: profile.displayName, email: profile.email })
+      if (error) throw error
+      setState((prev) => ({ ...prev, profile }))
+    },
+    [user],
+  )
 
-  const updateSettings = useCallback((settings: Partial<Settings>) => {
-    setState((prev) => ({ ...prev, settings: { ...prev.settings, ...settings } }))
-  }, [])
+  const updateSettings = useCallback(
+    async (settings: Partial<Settings>) => {
+      if (!user) throw new Error("Not authenticated")
+      const next = { ...state.settings, ...settings }
+      const { error } = await supabase.from("settings").upsert({
+        user_id: user.id,
+        font_scale: next.fontScale,
+        sound_effects: next.soundEffects,
+        preferences: { reducedMotion: next.reducedMotion, compactDensity: next.compactDensity },
+      })
+      if (error) throw error
+      setState((prev) => ({ ...prev, settings: next }))
+    },
+    [user, state.settings],
+  )
 
-  const resetProgress = useCallback(() => {
-    setState(buildSeedState())
-  }, [])
+  const resetProgress = useCallback(async () => {
+    if (!user) return
+    await supabase.from("tasks").delete().eq("user_id", user.id)
+    await supabase.from("roadmaps").delete().eq("user_id", user.id)
+    await supabase.from("settings").update({ streak: 0, last_active_date: null }).eq("user_id", user.id)
+    setState((prev) => ({ ...prev, roadmaps: [], tasks: [], streak: 0, lastActiveDate: null }))
+  }, [user])
 
-  const importState = useCallback((data: AppState) => {
-    setState(data)
-  }, [])
+  const importState = useCallback(
+    async (data: AppState) => {
+      if (!user) return
+
+      await supabase.from("tasks").delete().eq("user_id", user.id)
+      await supabase.from("roadmaps").delete().eq("user_id", user.id)
+
+      const roadmapIdMap = new Map<string, string>()
+      for (const r of data.roadmaps) roadmapIdMap.set(r.id, crypto.randomUUID())
+
+      const roadmapRows = data.roadmaps.map((r) => ({
+        id: roadmapIdMap.get(r.id)!,
+        user_id: user.id,
+        name: r.name,
+        description: r.description,
+      }))
+      if (roadmapRows.length > 0) {
+        const { error } = await supabase.from("roadmaps").insert(roadmapRows)
+        if (error) throw error
+      }
+
+      const taskIdMap = new Map<string, string>()
+      for (const t of data.tasks) taskIdMap.set(t.id, crypto.randomUUID())
+
+      const rootTaskRows = data.tasks
+        .filter((t) => !t.parentTaskId)
+        .map((t) => ({
+          id: taskIdMap.get(t.id)!,
+          user_id: user.id,
+          roadmap_id: roadmapIdMap.get(t.roadmapId) ?? null,
+          parent_task_id: null,
+          title: t.title,
+          xp: t.xp,
+          done: t.done,
+          completed_at: t.completedAt,
+        }))
+      const childTaskRows = data.tasks
+        .filter((t) => t.parentTaskId)
+        .map((t) => ({
+          id: taskIdMap.get(t.id)!,
+          user_id: user.id,
+          roadmap_id: roadmapIdMap.get(t.roadmapId) ?? null,
+          parent_task_id: taskIdMap.get(t.parentTaskId!) ?? null,
+          title: t.title,
+          xp: t.xp,
+          done: t.done,
+          completed_at: t.completedAt,
+        }))
+
+      // Roots must exist before children so the parent_task_id FK resolves.
+      if (rootTaskRows.length > 0) {
+        const { error } = await supabase.from("tasks").insert(rootTaskRows)
+        if (error) throw error
+      }
+      if (childTaskRows.length > 0) {
+        const { error } = await supabase.from("tasks").insert(childTaskRows)
+        if (error) throw error
+      }
+
+      await supabase.from("settings").upsert({
+        user_id: user.id,
+        font_scale: data.settings.fontScale,
+        sound_effects: data.settings.soundEffects,
+        preferences: {
+          reducedMotion: data.settings.reducedMotion,
+          compactDensity: data.settings.compactDensity,
+        },
+        streak: data.streak,
+        last_active_date: data.lastActiveDate,
+      })
+      await supabase
+        .from("profiles")
+        .upsert({ id: user.id, display_name: data.profile.displayName, email: data.profile.email })
+
+      await loadAll(user.id)
+    },
+    [user, loadAll],
+  )
 
   const value: StoreApi = {
     state,
+    loading,
     totalXp,
+    achievements,
     rootTasks,
     subtasks,
     roadmapProgress,
+    refresh,
     toggleTask,
     addRoadmap,
     updateRoadmap,

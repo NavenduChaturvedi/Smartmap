@@ -4,14 +4,17 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { StatusPill } from "@/components/ui/status-pill"
 import { usePageHeaderApi } from "@/lib/page-header"
+import { useStore } from "@/lib/store"
 
 function TopHeader() {
   const { meta } = usePageHeaderApi()
+  const { refresh } = useStore()
   const [syncing, setSyncing] = useState(false)
 
-  const handleSync = () => {
+  const handleSync = async () => {
     setSyncing(true)
-    window.setTimeout(() => setSyncing(false), 900)
+    await refresh()
+    setSyncing(false)
   }
 
   return (

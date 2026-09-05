@@ -21,13 +21,13 @@ const RARITY_CONFIG: Record<
 
 function Achievements() {
   usePageHeader(["RoadmapOS", "Achievements"])
-  const { state, totalXp } = useStore()
+  const { state, totalXp, achievements } = useStore()
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all")
   const [selected, setSelected] = useState<Achievement | null>(null)
 
-  const unlockedCount = state.achievements.filter((a) => a.unlocked).length
+  const unlockedCount = achievements.filter((a) => a.unlocked).length
   const visible =
-    filter === "all" ? state.achievements : state.achievements.filter((a) => a.rarity === filter)
+    filter === "all" ? achievements : achievements.filter((a) => a.rarity === filter)
 
   return (
     <>
@@ -49,13 +49,13 @@ function Achievements() {
         <div className="flex items-center justify-between text-[12.5px]">
           <span className="font-medium text-ink">Completion</span>
           <span className="text-ink-muted tabular-nums">
-            {unlockedCount}/{state.achievements.length}
+            {unlockedCount}/{achievements.length}
           </span>
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
           <div
             className="h-full rounded-full bg-sage-text"
-            style={{ width: `${(unlockedCount / state.achievements.length) * 100}%` }}
+            style={{ width: `${(unlockedCount / achievements.length) * 100}%` }}
           />
         </div>
       </Card>

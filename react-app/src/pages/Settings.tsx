@@ -1,5 +1,5 @@
 import { AlertTriangle, Bell, Database, Download, Upload, User } from "lucide-react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -15,17 +15,31 @@ function Settings() {
 
   const [displayName, setDisplayName] = useState(state.profile.displayName)
   const [email, setEmail] = useState(state.profile.email)
+  const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
+  const [resetting, setResetting] = useState(false)
+  const [importError, setImportError] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const storageBytes = new Blob([JSON.stringify(state)]).size
-  const storageKb = (storageBytes / 1024).toFixed(1)
+  // Local inputs start blank until the real profile finishes loading.
+  useEffect(() => {
+    setDisplayName(state.profile.displayName)
+    setEmail(state.profile.email)
+  }, [state.profile.displayName, state.profile.email])
 
-  const handleSaveProfile = () => {
-    updateProfile({ displayName: displayName.trim(), email: email.trim() })
-    setSaved(true)
-    window.setTimeout(() => setSaved(false), 1500)
+  const dataBytes = new Blob([JSON.stringify(state)]).size
+  const dataKb = (dataBytes / 1024).toFixed(1)
+
+  const handleSaveProfile = async () => {
+    setSaving(true)
+    try {
+      await updateProfile({ displayName: displayName.trim(), email: email.trim() })
+      setSaved(true)
+      window.setTimeout(() => setSaved(false), 1500)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleExport = () => {
@@ -33,7 +47,7 @@ function Settings() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = "project-aegis-export.json"
+    a.download = "roadmapos-export.json"
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -43,17 +57,30 @@ function Settings() {
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    setImportError("")
     const reader = new FileReader()
     reader.onload = () => {
-      try {
-        const data = JSON.parse(String(reader.result)) as AppState
-        importState(data)
-      } catch {
-        // ignore malformed file
-      }
+      void (async () => {
+        try {
+          const data = JSON.parse(String(reader.result)) as AppState
+          await importState(data)
+        } catch {
+          setImportError("Couldn't import that file — check it's a valid export.")
+        }
+      })()
     }
     reader.readAsText(file)
     e.target.value = ""
+  }
+
+  const handleReset = async () => {
+    setResetting(true)
+    try {
+      await resetProgress()
+      setResetOpen(false)
+    } finally {
+      setResetting(false)
+    }
   }
 
   const fontLabel = state.settings.fontScale < 97 ? "Small" : state.settings.fontScale > 108 ? "Large" : "Medium"
@@ -77,8 +104,8 @@ function Settings() {
                 <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
               </div>
             </div>
-            <Button size="sm" className="self-start" onClick={handleSaveProfile}>
-              {saved ? "Saved" : "Save Changes"}
+            <Button size="sm" className="self-start" onClick={handleSaveProfile} disabled={saving}>
+              {saving ? "Saving..." : saved ? "Saved" : "Save Changes"}
             </Button>
           </Card>
 
@@ -95,7 +122,7 @@ function Settings() {
                 min={90}
                 max={120}
                 value={state.settings.fontScale}
-                onChange={(e) => updateSettings({ fontScale: Number(e.target.value) })}
+                onChange={(e) => void updateSettings({ fontScale: Number(e.target.value) })}
                 className="w-full accent-[#0c0c0d]"
               />
             </div>
@@ -112,7 +139,7 @@ function Settings() {
                 </div>
                 <Toggle
                   checked={state.settings[row.key]}
-                  onChange={(value) => updateSettings({ [row.key]: value })}
+                  onChange={(value) => void updateSettings({ [row.key]: value })}
                   label={row.label}
                 />
               </div>
@@ -147,11 +174,11 @@ function Settings() {
             </div>
             <Button variant="outline" size="sm" onClick={handleExport}>
               <Download className="size-3.5" />
-              Export Cloud Data
+              Export Your Data
             </Button>
             <Button variant="outline" size="sm" onClick={handleImportClick}>
               <Upload className="size-3.5" />
-              Import System Backup
+              Import Backup
             </Button>
             <input
               ref={fileInputRef}
@@ -160,18 +187,8 @@ function Settings() {
               className="hidden"
               onChange={handleImportFile}
             />
-            <div>
-              <div className="mb-1.5 flex items-center justify-between text-[11.5px] text-ink-muted">
-                <span>Local Storage</span>
-                <span>{storageKb} KB / 10,000 KB</span>
-              </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
-                <div
-                  className="h-full rounded-full bg-ink-strong"
-                  style={{ width: `${Math.min(100, (storageBytes / 1024 / 10000) * 100)}%` }}
-                />
-              </div>
-            </div>
+            {importError && <p className="text-[12px] text-coral-text">{importError}</p>}
+            <p className="text-[11.5px] text-ink-muted">Current data size: {dataKb} KB</p>
             <Button
               size="sm"
               className="bg-coral-text hover:bg-coral-text/90"
@@ -194,7 +211,7 @@ function Settings() {
         open={resetOpen}
         onClose={() => setResetOpen(false)}
         title="Reset All Progress"
-        description="This restores the demo dataset and discards every roadmap, task, and achievement change. This cannot be undone."
+        description="This permanently deletes every roadmap and task in your account. This cannot be undone."
       >
         <div className="flex justify-end gap-2">
           <Button variant="outline" size="sm" onClick={() => setResetOpen(false)}>
@@ -203,12 +220,10 @@ function Settings() {
           <Button
             size="sm"
             className="bg-coral-text hover:bg-coral-text/90"
-            onClick={() => {
-              resetProgress()
-              setResetOpen(false)
-            }}
+            onClick={handleReset}
+            disabled={resetting}
           >
-            Reset Everything
+            {resetting ? "Resetting..." : "Reset Everything"}
           </Button>
         </div>
       </Modal>

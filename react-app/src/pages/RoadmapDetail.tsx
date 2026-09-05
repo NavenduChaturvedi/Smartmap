@@ -52,6 +52,7 @@ function RoadmapDetail() {
   const [subXp, setSubXp] = useState(10)
   const [editName, setEditName] = useState(roadmap?.name ?? "")
   const [editDescription, setEditDescription] = useState(roadmap?.description ?? "")
+  const [saving, setSaving] = useState(false)
 
   usePageHeader(["RoadmapOS", "Interactive Roadmap Canvas", roadmap?.name ?? "Not Found"], {
     label: "Add Task",
@@ -97,32 +98,52 @@ function RoadmapDetail() {
     }
   })
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (!taskTitle.trim()) return
-    addTask(roadmap.id, taskTitle.trim(), taskXp || 0)
-    setTaskTitle("")
-    setTaskXp(20)
-    setAddTaskOpen(false)
+    setSaving(true)
+    try {
+      await addTask(roadmap.id, taskTitle.trim(), taskXp || 0)
+      setTaskTitle("")
+      setTaskXp(20)
+      setAddTaskOpen(false)
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const handleAddSubtask = () => {
+  const handleAddSubtask = async () => {
     if (!subTitle.trim() || !selectedTask) return
-    addTask(roadmap.id, subTitle.trim(), subXp || 0, selectedTask.id)
-    setSubTitle("")
-    setSubXp(10)
-    setAddSubOpen(false)
+    setSaving(true)
+    try {
+      await addTask(roadmap.id, subTitle.trim(), subXp || 0, selectedTask.id)
+      setSubTitle("")
+      setSubXp(10)
+      setAddSubOpen(false)
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const handleEditSave = () => {
+  const handleEditSave = async () => {
     if (!editName.trim()) return
-    updateRoadmap(roadmap.id, editName.trim(), editDescription.trim())
-    setEditOpen(false)
+    setSaving(true)
+    try {
+      await updateRoadmap(roadmap.id, editName.trim(), editDescription.trim())
+      setEditOpen(false)
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const handleDelete = () => {
-    deleteRoadmap(roadmap.id)
-    setDeleteOpen(false)
-    navigate("/roadmap")
+  const handleDelete = async () => {
+    setSaving(true)
+    try {
+      await deleteRoadmap(roadmap.id)
+      setDeleteOpen(false)
+      navigate("/roadmap")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -271,8 +292,8 @@ function RoadmapDetail() {
             <Button variant="outline" size="sm" onClick={() => setAddTaskOpen(false)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleAddTask} disabled={!taskTitle.trim()}>
-              Add Task
+            <Button size="sm" onClick={handleAddTask} disabled={!taskTitle.trim() || saving}>
+              {saving ? "Adding..." : "Add Task"}
             </Button>
           </div>
         </div>
@@ -297,8 +318,8 @@ function RoadmapDetail() {
             <Button variant="outline" size="sm" onClick={() => setAddSubOpen(false)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleAddSubtask} disabled={!subTitle.trim()}>
-              Add Subtask
+            <Button size="sm" onClick={handleAddSubtask} disabled={!subTitle.trim() || saving}>
+              {saving ? "Adding..." : "Add Subtask"}
             </Button>
           </div>
         </div>
@@ -322,8 +343,8 @@ function RoadmapDetail() {
             <Button variant="outline" size="sm" onClick={() => setEditOpen(false)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleEditSave} disabled={!editName.trim()}>
-              Save Changes
+            <Button size="sm" onClick={handleEditSave} disabled={!editName.trim() || saving}>
+              {saving ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </div>
@@ -343,8 +364,9 @@ function RoadmapDetail() {
             size="sm"
             className="bg-coral-text hover:bg-coral-text/90"
             onClick={handleDelete}
+            disabled={saving}
           >
-            Delete Permanently
+            {saving ? "Deleting..." : "Delete Permanently"}
           </Button>
         </div>
       </Modal>

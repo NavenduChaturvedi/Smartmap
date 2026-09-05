@@ -16,19 +16,29 @@ function RoadmapOverview() {
   const [modalOpen, setModalOpen] = useState(false)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState("")
 
   usePageHeader(["RoadmapOS", "Interactive Roadmap Canvas"], {
     label: "New Roadmap",
     onClick: () => setModalOpen(true),
   })
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!name.trim()) return
-    const roadmap = addRoadmap(name.trim(), description.trim())
-    setModalOpen(false)
-    setName("")
-    setDescription("")
-    navigate(`/roadmap/${roadmap.id}`)
+    setCreating(true)
+    setError("")
+    try {
+      const roadmap = await addRoadmap(name.trim(), description.trim())
+      setModalOpen(false)
+      setName("")
+      setDescription("")
+      navigate(`/roadmap/${roadmap.id}`)
+    } catch {
+      setError("Couldn't create the roadmap. Try again.")
+    } finally {
+      setCreating(false)
+    }
   }
 
   return (
@@ -119,12 +129,13 @@ function RoadmapOverview() {
               rows={3}
             />
           </div>
+          {error && <p className="text-[12.5px] text-coral-text">{error}</p>}
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" size="sm" onClick={() => setModalOpen(false)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleCreate} disabled={!name.trim()}>
-              Create Roadmap
+            <Button size="sm" onClick={handleCreate} disabled={!name.trim() || creating}>
+              {creating ? "Creating..." : "Create Roadmap"}
             </Button>
           </div>
         </div>

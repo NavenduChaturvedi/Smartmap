@@ -63,24 +63,33 @@ function Workflows() {
   // Manual builder state
   const [manualName, setManualName] = useState("")
   const [phases, setPhases] = useState<PhaseRow[]>([newPhase()])
+  const [launching, setLaunching] = useState(false)
+  const [launchError, setLaunchError] = useState("")
 
   const updatePhase = (id: string, patch: Partial<PhaseRow>) =>
     setPhases((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
   const removePhase = (id: string) =>
     setPhases((prev) => (prev.length > 1 ? prev.filter((p) => p.id !== id) : prev))
 
-  const handleManualLaunch = () => {
+  const handleManualLaunch = async () => {
     const validPhases = phases.filter((p) => p.title.trim())
     if (!manualName.trim() || validPhases.length === 0) return
-    const roadmap = addRoadmap(manualName.trim(), "Created with the manual workflow builder.")
-    addTasksBulk(
-      roadmap.id,
-      validPhases.map((p) => ({
-        title: p.label.trim() ? `${p.label.trim()}: ${p.title.trim()}` : p.title.trim(),
-        xp: p.xp || 0,
-      })),
-    )
-    navigate(`/roadmap/${roadmap.id}`)
+    setLaunching(true)
+    setLaunchError("")
+    try {
+      const roadmap = await addRoadmap(manualName.trim(), "Created with the manual workflow builder.")
+      await addTasksBulk(
+        roadmap.id,
+        validPhases.map((p) => ({
+          title: p.label.trim() ? `${p.label.trim()}: ${p.title.trim()}` : p.title.trim(),
+          xp: p.xp || 0,
+        })),
+      )
+      navigate(`/roadmap/${roadmap.id}`)
+    } catch {
+      setLaunchError("Couldn't create the roadmap. Try again.")
+      setLaunching(false)
+    }
   }
 
   // AI generator state
@@ -98,11 +107,18 @@ function Workflows() {
     }, 900)
   }
 
-  const handleAiLaunch = () => {
+  const handleAiLaunch = async () => {
     if (!plan) return
-    const roadmap = addRoadmap(plan.name, plan.description)
-    addTasksBulk(roadmap.id, plan.tasks)
-    navigate(`/roadmap/${roadmap.id}`)
+    setLaunching(true)
+    setLaunchError("")
+    try {
+      const roadmap = await addRoadmap(plan.name, plan.description)
+      await addTasksBulk(roadmap.id, plan.tasks)
+      navigate(`/roadmap/${roadmap.id}`)
+    } catch {
+      setLaunchError("Couldn't create the roadmap. Try again.")
+      setLaunching(false)
+    }
   }
 
   return (
@@ -195,12 +211,13 @@ function Workflows() {
             </div>
           </div>
 
+          {launchError && <p className="text-[12.5px] text-coral-text">{launchError}</p>}
           <div className="flex justify-end">
             <Button
               onClick={handleManualLaunch}
-              disabled={!manualName.trim() || !phases.some((p) => p.title.trim())}
+              disabled={!manualName.trim() || !phases.some((p) => p.title.trim()) || launching}
             >
-              Launch Roadmap
+              {launching ? "Launching..." : "Launch Roadmap"}
             </Button>
           </div>
         </Card>
@@ -265,8 +282,9 @@ function Workflows() {
                     </div>
                   ))}
                 </div>
-                <Button onClick={handleAiLaunch} className="self-end">
-                  Launch Roadmap
+                {launchError && <p className="text-[12.5px] text-coral-text">{launchError}</p>}
+                <Button onClick={handleAiLaunch} className="self-end" disabled={launching}>
+                  {launching ? "Launching..." : "Launch Roadmap"}
                 </Button>
               </>
             )}
