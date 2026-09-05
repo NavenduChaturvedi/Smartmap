@@ -1,0 +1,280 @@
+import { Plus, Sparkles, Trash2, Wand2, Workflow as WorkflowIcon } from "lucide-react"
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Input, Label, Textarea } from "@/components/ui/field"
+import { StatusPill } from "@/components/ui/status-pill"
+import { usePageHeader } from "@/lib/page-header"
+import { useStore } from "@/lib/store"
+import { cn } from "@/lib/utils"
+
+interface PhaseRow {
+  id: string
+  title: string
+  xp: number
+  label: string
+}
+
+interface GeneratedTask {
+  title: string
+  xp: number
+  subtasks: { title: string; xp: number }[]
+}
+
+interface GeneratedPlan {
+  name: string
+  description: string
+  tasks: GeneratedTask[]
+}
+
+function newPhase(): PhaseRow {
+  return { id: Math.random().toString(36).slice(2, 8), title: "", xp: 20, label: "" }
+}
+
+function mockGeneratePlan(prompt: string): GeneratedPlan {
+  const firstLine = prompt.split(/[.\n]/)[0]?.trim().slice(0, 60)
+  const name = firstLine || "AI Generated Roadmap"
+  const templates = [
+    { title: "Research & Planning", subs: ["Define scope and success criteria", "Gather reference material"] },
+    { title: "Foundational Skills", subs: ["Complete core tutorials", "Set up practice environment"] },
+    { title: "Applied Practice", subs: ["Build first project increment", "Get feedback and iterate"] },
+    { title: "Review & Level Up", subs: ["Run a retrospective", "Plan the next milestone"] },
+  ]
+  return {
+    name,
+    description: `Generated plan for: ${prompt.slice(0, 140)}${prompt.length > 140 ? "…" : ""}`,
+    tasks: templates.map((t) => ({
+      title: t.title,
+      xp: 30 + Math.round(Math.random() * 20),
+      subtasks: t.subs.map((s) => ({ title: s, xp: 10 + Math.round(Math.random() * 10) })),
+    })),
+  }
+}
+
+function Workflows() {
+  const navigate = useNavigate()
+  const { addRoadmap, addTasksBulk } = useStore()
+  const [mode, setMode] = useState<"manual" | "ai">("manual")
+
+  usePageHeader(["RoadmapOS", "Workflows & Triggers"])
+
+  // Manual builder state
+  const [manualName, setManualName] = useState("")
+  const [phases, setPhases] = useState<PhaseRow[]>([newPhase()])
+
+  const updatePhase = (id: string, patch: Partial<PhaseRow>) =>
+    setPhases((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
+  const removePhase = (id: string) =>
+    setPhases((prev) => (prev.length > 1 ? prev.filter((p) => p.id !== id) : prev))
+
+  const handleManualLaunch = () => {
+    const validPhases = phases.filter((p) => p.title.trim())
+    if (!manualName.trim() || validPhases.length === 0) return
+    const roadmap = addRoadmap(manualName.trim(), "Created with the manual workflow builder.")
+    addTasksBulk(
+      roadmap.id,
+      validPhases.map((p) => ({
+        title: p.label.trim() ? `${p.label.trim()}: ${p.title.trim()}` : p.title.trim(),
+        xp: p.xp || 0,
+      })),
+    )
+    navigate(`/roadmap/${roadmap.id}`)
+  }
+
+  // AI generator state
+  const [prompt, setPrompt] = useState("")
+  const [generating, setGenerating] = useState(false)
+  const [plan, setPlan] = useState<GeneratedPlan | null>(null)
+
+  const runGenerate = () => {
+    if (!prompt.trim() || generating) return
+    setGenerating(true)
+    setPlan(null)
+    window.setTimeout(() => {
+      setPlan(mockGeneratePlan(prompt.trim()))
+      setGenerating(false)
+    }, 900)
+  }
+
+  const handleAiLaunch = () => {
+    if (!plan) return
+    const roadmap = addRoadmap(plan.name, plan.description)
+    addTasksBulk(roadmap.id, plan.tasks)
+    navigate(`/roadmap/${roadmap.id}`)
+  }
+
+  return (
+    <>
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
+        <div>
+          <h1 className="text-sm font-semibold text-ink-strong">Workflows & Triggers</h1>
+          <p className="text-[12px] text-ink-muted">
+            Build a new roadmap by hand, or describe it and let AI draft the stages.
+          </p>
+        </div>
+        <div className="flex items-center gap-1 rounded-lg bg-surface-muted p-1">
+          <button
+            type="button"
+            onClick={() => setMode("manual")}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-medium transition-colors",
+              mode === "manual" ? "bg-surface shadow-crisp text-ink-strong" : "text-ink-muted",
+            )}
+          >
+            <WorkflowIcon className="size-3.5" />
+            Manual Builder
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("ai")}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-medium transition-colors",
+              mode === "ai" ? "bg-surface shadow-crisp text-ink-strong" : "text-ink-muted",
+            )}
+          >
+            <Sparkles className="size-3.5" />
+            AI Generator
+          </button>
+        </div>
+      </Card>
+
+      {mode === "manual" ? (
+        <Card className="flex flex-col gap-4 p-5">
+          <div>
+            <Label>Roadmap Name</Label>
+            <Input
+              value={manualName}
+              onChange={(e) => setManualName(e.target.value)}
+              placeholder="e.g. Ethical Hacking Fundamentals"
+            />
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <Label className="mb-0">Roadmap Phases</Label>
+              <Button variant="subtle" size="sm" onClick={() => setPhases((p) => [...p, newPhase()])}>
+                <Plus className="size-3.5" />
+                Add Phase
+              </Button>
+            </div>
+            <div className="flex flex-col gap-2">
+              {phases.map((phase, i) => (
+                <div
+                  key={phase.id}
+                  className="grid grid-cols-1 gap-2 rounded-lg border border-line p-3 sm:grid-cols-[1fr_140px_100px_auto]"
+                >
+                  <Input
+                    value={phase.title}
+                    onChange={(e) => updatePhase(phase.id, { title: e.target.value })}
+                    placeholder={`Task ${i + 1} title`}
+                  />
+                  <Input
+                    value={phase.label}
+                    onChange={(e) => updatePhase(phase.id, { label: e.target.value })}
+                    placeholder="Phase label (optional)"
+                  />
+                  <Input
+                    type="number"
+                    value={phase.xp}
+                    onChange={(e) => updatePhase(phase.id, { xp: Number(e.target.value) })}
+                    placeholder="XP"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removePhase(phase.id)}
+                    disabled={phases.length === 1}
+                    aria-label="Remove phase"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              onClick={handleManualLaunch}
+              disabled={!manualName.trim() || !phases.some((p) => p.title.trim())}
+            >
+              Launch Roadmap
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Card className="flex flex-col gap-3 p-5">
+            <div>
+              <Label>Command</Label>
+              <Textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe the roadmap you want, e.g. 'Build me a 6-week roadmap to learn ethical hacking fundamentals'"
+                rows={8}
+                onKeyDown={(e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") runGenerate()
+                }}
+              />
+            </div>
+            <p className="text-[11px] text-ink-muted">
+              Generation runs as a local simulation in this build — connect a live model endpoint to
+              generate real plans.
+            </p>
+            <Button onClick={runGenerate} disabled={!prompt.trim() || generating} className="self-start">
+              <Wand2 className="size-3.5" />
+              {generating ? "Generating..." : "Run Command"}
+            </Button>
+          </Card>
+
+          <Card className="flex flex-col gap-3 p-5">
+            <h2 className="text-sm font-semibold text-ink-strong">Generated Plan</h2>
+            {generating && (
+              <div className="flex h-40 items-center justify-center text-[13px] text-ink-muted">
+                Drafting stages…
+              </div>
+            )}
+            {!generating && !plan && (
+              <div className="flex h-40 items-center justify-center text-center text-[13px] text-ink-muted">
+                Run a command to preview the generated roadmap here.
+              </div>
+            )}
+            {!generating && plan && (
+              <>
+                <div className="rounded-lg border border-line bg-surface-muted/50 p-3">
+                  <p className="text-[13px] font-semibold text-ink-strong">{plan.name}</p>
+                  <p className="mt-0.5 text-[12px] text-ink-muted">{plan.description}</p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {plan.tasks.map((t) => (
+                    <div key={t.title} className="rounded-lg border border-line p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[13px] font-medium text-ink">{t.title}</span>
+                        <StatusPill tone="sage">+{t.xp} XP</StatusPill>
+                      </div>
+                      <div className="mt-2 flex flex-col gap-1">
+                        {t.subtasks.map((s) => (
+                          <div key={s.title} className="flex items-center justify-between pl-3 text-[12px] text-ink-muted">
+                            <span>{s.title}</span>
+                            <span>+{s.xp} XP</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button onClick={handleAiLaunch} className="self-end">
+                  Launch Roadmap
+                </Button>
+              </>
+            )}
+          </Card>
+        </div>
+      )}
+    </>
+  )
+}
+
+export { Workflows }

@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Surfaces */
+  --color-canvas: #f4f4f6;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f9fafb;
+  --color-surface-dark: #0c0c0d;
+  --color-surface-dark-hover: #1c1c1f;
+
+  /* Text */
+  --color-ink: #18181b;
+  --color-ink-strong: #0c0c0d;
+  --color-ink-muted: #6b7280;
+  --color-ink-inverse: #f4f4f5;
+
+  /* Borders */
+  --color-line: #e5e5e8;
+
+  /* Status: sage (success / active) */
+  --color-sage-bg: #d1e7dd;
+  --color-sage-solid: #c4dac2;
+  --color-sage-text: #2d5a27;
+
+  /* Status: coral (critical / risk) */
+  --color-coral-bg: #fee2e2;
+  --color-coral-solid: #f89a9a;
+  --color-coral-text: #991b1b;
+
+  /* Status: amber (pending / warning) */
+  --color-amber-bg: #fcefc7;
+  --color-amber-solid: #f5d98b;
+  --color-amber-text: #854d0e;
+
+  --shadow-crisp: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+
+  body {
+    @apply bg-canvas text-ink antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  ::selection {
+    @apply bg-surface-dark text-ink-inverse;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-line rounded-full;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
