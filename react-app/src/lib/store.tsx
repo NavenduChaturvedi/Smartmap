@@ -4,11 +4,19 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react"
 
 import { useAuth } from "./auth-context"
+import {
+  hasImportableData,
+  isLegacyMigrated,
+  markLegacyMigrated,
+  normalizeLegacyState,
+  readLegacyState,
+} from "./legacy-migration"
 import { supabase } from "./supabase"
 import type { Tables } from "./database.types"
 
@@ -127,6 +135,9 @@ interface StoreApi {
   updateSettings: (settings: Partial<Settings>) => Promise<void>
   resetProgress: () => Promise<void>
   importState: (data: AppState) => Promise<void>
+  pendingImport: { roadmapCount: number; taskCount: number } | null
+  confirmLegacyImport: () => Promise<void>
+  dismissLegacyImport: () => void
 }
 
 const StoreContext = createContext<StoreApi | null>(null)
@@ -179,6 +190,30 @@ function StoreProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     }
   }, [user?.id, loadAll])
+
+  // One-time offer to import data left in this browser's localStorage by the
+  // vanilla-JS app (same origin only, i.e. after the Phase 7 cutover). Only
+  // offered when this account has no roadmaps yet in Supabase, so a user who
+  // already synced for real is never at risk of getting duplicates.
+  const [pendingImport, setPendingImport] = useState<{
+    roadmapCount: number
+    taskCount: number
+  } | null>(null)
+  const legacyNormalizedRef = useRef<AppState | null>(null)
+
+  useEffect(() => {
+    if (loading || !user?.id || state.roadmaps.length > 0) return
+    if (isLegacyMigrated(user.id)) return
+    const legacy = readLegacyState()
+    if (!legacy || !hasImportableData(legacy)) return
+    const normalized = normalizeLegacyState(legacy)
+    if (normalized.roadmaps.length === 0 && normalized.tasks.length === 0) return
+    legacyNormalizedRef.current = normalized
+    setPendingImport({
+      roadmapCount: normalized.roadmaps.length,
+      taskCount: normalized.tasks.length,
+    })
+  }, [loading, user?.id, state.roadmaps.length])
 
   const refresh = useCallback(async () => {
     if (user?.id) await loadAll(user.id)
@@ -595,6 +630,20 @@ function StoreProvider({ children }: { children: ReactNode }) {
     [user, loadAll],
   )
 
+  const confirmLegacyImport = useCallback(async () => {
+    if (!user || !legacyNormalizedRef.current) return
+    await importState(legacyNormalizedRef.current)
+    markLegacyMigrated(user.id)
+    legacyNormalizedRef.current = null
+    setPendingImport(null)
+  }, [user, importState])
+
+  const dismissLegacyImport = useCallback(() => {
+    if (user) markLegacyMigrated(user.id)
+    legacyNormalizedRef.current = null
+    setPendingImport(null)
+  }, [user])
+
   const value: StoreApi = {
     state,
     loading,
@@ -614,6 +663,9 @@ function StoreProvider({ children }: { children: ReactNode }) {
     updateSettings,
     resetProgress,
     importState,
+    pendingImport,
+    confirmLegacyImport,
+    dismissLegacyImport,
   }
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
