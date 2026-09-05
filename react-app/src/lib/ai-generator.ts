@@ -18,7 +18,7 @@ function resolveEndpoint() {
   return DEPLOYED_ENDPOINT
 }
 
-const SCHEMA_PROMPT = `You are RoadmapOS Planner. Return ONLY valid JSON with this exact shape:
+const SCHEMA_PROMPT = `You are Smartmap Planner. Return ONLY valid JSON with this exact shape:
 {
   "roadmap": { "name": "string", "description": "string" },
   "tasks": [

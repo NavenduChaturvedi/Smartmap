@@ -17,7 +17,7 @@ interface PageHeaderApi {
   setMeta: (meta: PageMeta) => void
 }
 
-const DEFAULT_META: PageMeta = { crumbs: ["RoadmapOS"] }
+const DEFAULT_META: PageMeta = { crumbs: ["Smartmap"] }
 
 const PageHeaderContext = createContext<PageHeaderApi | null>(null)
 

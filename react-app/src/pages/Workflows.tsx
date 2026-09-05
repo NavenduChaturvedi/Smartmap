@@ -27,7 +27,7 @@ function Workflows() {
   const { state, totalXp, addRoadmap, addTasksBulk } = useStore()
   const [mode, setMode] = useState<"manual" | "ai">("manual")
 
-  usePageHeader(["RoadmapOS", "Workflows & Triggers"])
+  usePageHeader(["Smartmap", "Workflows & Triggers"])
 
   // Manual builder state
   const [manualName, setManualName] = useState("")

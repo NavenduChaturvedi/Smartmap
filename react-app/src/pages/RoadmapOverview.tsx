@@ -19,7 +19,7 @@ function RoadmapOverview() {
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState("")
 
-  usePageHeader(["RoadmapOS", "Interactive Roadmap Canvas"], {
+  usePageHeader(["Smartmap", "Interactive Roadmap Canvas"], {
     label: "New Roadmap",
     onClick: () => setModalOpen(true),
   })

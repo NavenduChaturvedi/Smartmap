@@ -20,7 +20,7 @@ const RARITY_CONFIG: Record<
 }
 
 function Achievements() {
-  usePageHeader(["RoadmapOS", "Achievements"])
+  usePageHeader(["Smartmap", "Achievements"])
   const { state, totalXp, achievements } = useStore()
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all")
   const [selected, setSelected] = useState<Achievement | null>(null)

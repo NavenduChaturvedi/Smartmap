@@ -24,7 +24,7 @@ function humanDuration(startIso: string, endIso: string) {
 }
 
 function Logs() {
-  usePageHeader(["RoadmapOS", "Node Logs"])
+  usePageHeader(["Smartmap", "Node Logs"])
   const { state } = useStore()
   const [roadmapFilter, setRoadmapFilter] = useState<string>("all")
 

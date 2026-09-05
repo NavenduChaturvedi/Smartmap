@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   LogOut,
   Settings,
-  ShieldHalf,
   Terminal,
   Trophy,
   Waypoints,
@@ -70,12 +69,12 @@ function Sidebar() {
   return (
     <aside className="flex h-screen w-16 shrink-0 flex-col items-center justify-between bg-surface-dark py-4">
       <div className="flex flex-col items-center gap-6">
-        <IconTooltip label="RoadmapOS">
+        <IconTooltip label="Smartmap">
           <Link
             to="/"
-            className="flex size-9 items-center justify-center rounded-lg bg-white/10 text-ink-inverse"
+            className="flex size-9 items-center justify-center rounded-lg bg-white/10"
           >
-            <ShieldHalf className="size-5" strokeWidth={1.75} />
+            <img src="/logo-mark.png" alt="Smartmap" className="size-6" />
           </Link>
         </IconTooltip>
 

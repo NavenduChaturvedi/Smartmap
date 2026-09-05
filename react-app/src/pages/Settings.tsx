@@ -10,7 +10,7 @@ import { usePageHeader } from "@/lib/page-header"
 import { type AppState, useStore } from "@/lib/store"
 
 function Settings() {
-  usePageHeader(["RoadmapOS", "Settings"])
+  usePageHeader(["Smartmap", "Settings"])
   const { state, updateProfile, updateSettings, resetProgress, importState } = useStore()
 
   const [displayName, setDisplayName] = useState(state.profile.displayName)
@@ -202,7 +202,7 @@ function Settings() {
           <Card className="flex flex-col gap-2 p-5">
             <h2 className="text-sm font-semibold text-ink-strong">About System</h2>
             <p className="text-[12px] text-ink-muted">Version v1.0.0</p>
-            <p className="text-[12px] text-ink-muted">RoadmapOS · Roadmap Command Center</p>
+            <p className="text-[12px] text-ink-muted">Smartmap · Roadmap Command Center</p>
           </Card>
         </div>
       </div>

@@ -12,7 +12,7 @@ DEFAULT_BACKUP_MODEL = os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 DEFAULT_PORT = int(os.environ.get("AI_PROXY_PORT", "8765"))
 DEFAULT_SYSTEM_PROMPT = os.environ.get(
     "AI_SYSTEM_PROMPT",
-    "You are the roadmap planning assistant for RoadmapOS. Be concise, practical, and grounded in the user's current roadmap state."
+    "You are the roadmap planning assistant for Smartmap. Be concise, practical, and grounded in the user's current roadmap state."
 )
 
 
@@ -105,7 +105,7 @@ def call_gemini(prompt: str, context_block: str, system_prompt: str, model: str,
         },
         "contents": [{
             "role": "user",
-            "parts": [{"text": f"Use the following RoadmapOS context to answer the user's request.\n\nContext:\n{context_block}\n\nUser request:\n{prompt}"}]
+            "parts": [{"text": f"Use the following Smartmap context to answer the user's request.\n\nContext:\n{context_block}\n\nUser request:\n{prompt}"}]
         }],
         "generationConfig": {
             "temperature": 0.0,
@@ -134,7 +134,7 @@ def call_openrouter(prompt: str, context_block: str, system_prompt: str, model: 
             {"role": "system", "content": system_prompt},
             {
                 "role": "user",
-                "content": f"Use the following RoadmapOS context to answer the user's request.\n\nContext:\n{context_block}\n\nUser request:\n{prompt}",
+                "content": f"Use the following Smartmap context to answer the user's request.\n\nContext:\n{context_block}\n\nUser request:\n{prompt}",
             },
         ],
         "temperature": 0.0,
@@ -147,7 +147,7 @@ def call_openrouter(prompt: str, context_block: str, system_prompt: str, model: 
     }
 
     site_url = os.environ.get("OPENROUTER_SITE_URL")
-    app_name = os.environ.get("OPENROUTER_APP_NAME", "RoadmapOS")
+    app_name = os.environ.get("OPENROUTER_APP_NAME", "Smartmap")
     if site_url:
         headers["HTTP-Referer"] = site_url
     headers["X-Title"] = app_name

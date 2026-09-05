@@ -1,4 +1,4 @@
-# RoadmapOS
+# Smartmap
 
 A roadmap and task tracker with XP, streaks, and progress tracking — build a roadmap for any goal, break it into tasks and subtasks, and track completion over time.
 

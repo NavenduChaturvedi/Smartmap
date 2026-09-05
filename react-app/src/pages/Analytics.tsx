@@ -7,7 +7,7 @@ import { usePageHeader } from "@/lib/page-header"
 import { useStore } from "@/lib/store"
 
 function Analytics() {
-  usePageHeader(["RoadmapOS", "Analytics"])
+  usePageHeader(["Smartmap", "Analytics"])
   const { state, totalXp } = useStore()
 
   const completed = state.tasks.filter((t) => t.done)

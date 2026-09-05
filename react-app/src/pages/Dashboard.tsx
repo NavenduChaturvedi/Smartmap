@@ -50,7 +50,7 @@ function Dashboard() {
   const navigate = useNavigate()
   const { state, totalXp, rootTasks, subtasks, roadmapProgress, toggleTask } = useStore()
 
-  usePageHeader(["RoadmapOS", "Command Center"], {
+  usePageHeader(["Smartmap", "Command Center"], {
     label: "New Node / Step",
     onClick: () => navigate("/workflows"),
   })

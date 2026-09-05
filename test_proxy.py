@@ -1,7 +1,7 @@
 ﻿import urllib.request, json, sys, time, re
 
 url = "http://127.0.0.1:8765/api/ai/chat"
-schemaPrompt = """You are RoadmapOS Planner. Return ONLY valid JSON with this exact shape:
+schemaPrompt = """You are Smartmap Planner. Return ONLY valid JSON with this exact shape:
 {
   "roadmap": { "name": "string", "description": "string" },
   "tasks": [

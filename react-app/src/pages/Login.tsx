@@ -1,4 +1,3 @@
-import { ShieldHalf } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
@@ -68,10 +67,10 @@ function Login() {
     <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
       <Card className="w-full max-w-sm p-6">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-surface-dark text-ink-inverse">
-            <ShieldHalf className="size-5" strokeWidth={1.75} />
+          <div className="flex size-11 items-center justify-center rounded-xl bg-surface-dark">
+            <img src="/logo-mark.png" alt="Smartmap" className="size-7" />
           </div>
-          <h1 className="text-[15px] font-semibold text-ink-strong">RoadmapOS</h1>
+          <h1 className="text-[15px] font-semibold text-ink-strong">Smartmap</h1>
           <p className="text-[12.5px] text-ink-muted">
             {mode === "login" ? "Sign in to continue." : "Create a new account."}
           </p>

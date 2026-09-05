@@ -1,6 +1,6 @@
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 const DEFAULT_BACKUP_MODEL = process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
-const DEFAULT_SYSTEM_PROMPT = process.env.AI_SYSTEM_PROMPT || "You are the roadmap planning assistant for RoadmapOS. Be concise, practical, and grounded in the user's current roadmap state.";
+const DEFAULT_SYSTEM_PROMPT = process.env.AI_SYSTEM_PROMPT || "You are the roadmap planning assistant for Smartmap. Be concise, practical, and grounded in the user's current roadmap state.";
 
 function sendJson(res, statusCode, payload) {
   const body = JSON.stringify(payload);
@@ -94,7 +94,7 @@ async function callGemini(prompt, contextBlock, systemPrompt, model, apiKey) {
         role: "user",
         parts: [
           {
-            text: `Use the following RoadmapOS context to answer the user's request.\n\nContext:\n${contextBlock}\n\nUser request:\n${prompt}`,
+            text: `Use the following Smartmap context to answer the user's request.\n\nContext:\n${contextBlock}\n\nUser request:\n${prompt}`,
           },
         ],
       },
@@ -130,7 +130,7 @@ async function callOpenRouter(prompt, contextBlock, systemPrompt, model, apiKey)
       { role: "system", content: systemPrompt },
       {
         role: "user",
-        content: `Use the following RoadmapOS context to answer the user's request.\n\nContext:\n${contextBlock}\n\nUser request:\n${prompt}`,
+        content: `Use the following Smartmap context to answer the user's request.\n\nContext:\n${contextBlock}\n\nUser request:\n${prompt}`,
       },
     ],
     temperature: 0,
@@ -145,7 +145,7 @@ async function callOpenRouter(prompt, contextBlock, systemPrompt, model, apiKey)
   if (process.env.OPENROUTER_SITE_URL) {
     headers["HTTP-Referer"] = process.env.OPENROUTER_SITE_URL;
   }
-  headers["X-Title"] = process.env.OPENROUTER_APP_NAME || "RoadmapOS";
+  headers["X-Title"] = process.env.OPENROUTER_APP_NAME || "Smartmap";
 
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",

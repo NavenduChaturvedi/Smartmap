@@ -56,7 +56,7 @@ function RoadmapDetail() {
   const [saving, setSaving] = useState(false)
   const [savingDueDate, setSavingDueDate] = useState(false)
 
-  usePageHeader(["RoadmapOS", "Interactive Roadmap Canvas", roadmap?.name ?? "Not Found"], {
+  usePageHeader(["Smartmap", "Interactive Roadmap Canvas", roadmap?.name ?? "Not Found"], {
     label: "Add Task",
     onClick: () => setAddTaskOpen(true),
   })

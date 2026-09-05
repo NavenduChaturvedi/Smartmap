@@ -1,6 +1,6 @@
-# RoadmapOS (react-app)
+# Smartmap (react-app)
 
-The React/Tailwind frontend for RoadmapOS — a roadmap and task tracker with
+The React/Tailwind frontend for Smartmap — a roadmap and task tracker with
 XP, streaks, and progress tracking. This is the frontend going forward,
 replacing the vanilla-JS pages at the repo root.
 
