@@ -35,6 +35,7 @@ function RoadmapDetail() {
     roadmapProgress,
     toggleTask,
     addTask,
+    updateTaskDueDate,
     updateRoadmap,
     deleteRoadmap,
   } = useStore()
@@ -53,6 +54,7 @@ function RoadmapDetail() {
   const [editName, setEditName] = useState(roadmap?.name ?? "")
   const [editDescription, setEditDescription] = useState(roadmap?.description ?? "")
   const [saving, setSaving] = useState(false)
+  const [savingDueDate, setSavingDueDate] = useState(false)
 
   usePageHeader(["RoadmapOS", "Interactive Roadmap Canvas", roadmap?.name ?? "Not Found"], {
     label: "Add Task",
@@ -132,6 +134,15 @@ function RoadmapDetail() {
       setEditOpen(false)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDueDateChange = async (taskId: string, value: string) => {
+    setSavingDueDate(true)
+    try {
+      await updateTaskDueDate(taskId, value || null)
+    } finally {
+      setSavingDueDate(false)
     }
   }
 
@@ -227,6 +238,26 @@ function RoadmapDetail() {
                 >
                   {selectedTask.done ? "Mark Undone" : "Mark Done"}
                 </Button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="mb-0 shrink-0">Due Date</Label>
+                <Input
+                  type="date"
+                  className="w-auto"
+                  value={selectedTask.dueDate ?? ""}
+                  disabled={savingDueDate}
+                  onChange={(e) => handleDueDateChange(selectedTask.id, e.target.value)}
+                />
+                {selectedTask.dueDate && (
+                  <button
+                    type="button"
+                    className="text-[11.5px] font-medium text-ink-muted hover:text-ink"
+                    onClick={() => handleDueDateChange(selectedTask.id, "")}
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
 
               <div className="flex flex-col gap-1">

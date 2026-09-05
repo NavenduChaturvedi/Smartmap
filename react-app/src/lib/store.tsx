@@ -18,6 +18,7 @@ import {
   readLegacyState,
 } from "./legacy-migration"
 import { supabase } from "./supabase"
+import { assignDueDates } from "./task-scheduling"
 import type { Tables } from "./database.types"
 
 interface Task {
@@ -29,6 +30,8 @@ interface Task {
   parentTaskId: string | null
   createdAt: string
   completedAt: string | null
+  // Top-level tasks only (v1 scope) - null means "unscheduled", not "today".
+  dueDate: string | null
 }
 
 interface Roadmap {
@@ -92,6 +95,7 @@ function taskFromRow(row: TaskRow): Task {
     parentTaskId: row.parent_task_id,
     createdAt: row.created_at,
     completedAt: row.completed_at,
+    dueDate: row.due_date,
   }
 }
 
@@ -131,6 +135,8 @@ interface StoreApi {
     roadmapId: string,
     items: { title: string; xp: number; subtasks?: { title: string; xp: number }[] }[],
   ) => Promise<void>
+  // v1 scope: top-level tasks only - not exposed in the UI for subtasks.
+  updateTaskDueDate: (taskId: string, dueDate: string | null) => Promise<void>
   updateProfile: (profile: Profile) => Promise<void>
   updateSettings: (settings: Partial<Settings>) => Promise<void>
   resetProgress: () => Promise<void>
@@ -491,6 +497,16 @@ function StoreProvider({ children }: { children: ReactNode }) {
       // used for (AI-generated roadmaps, the manual phase builder).
       const baseTime = Date.now()
       const rootIds = items.map(() => crypto.randomUUID())
+      // Auto-schedule top-level tasks by detecting a "Day N" / "Week N"
+      // pattern across every title (AI-generated plans and the manual
+      // builder's phase labels both commonly have one) and spreading them
+      // evenly across the implied duration, starting today. A roadmap with
+      // no clear day/week structure gets null due dates across the board -
+      // that's "unscheduled", not an error.
+      const dueDates = assignDueDates(
+        items.map((item) => item.title),
+        new Date(),
+      )
       const rootRows = items.map((item, i) => ({
         id: rootIds[i],
         user_id: user.id,
@@ -500,6 +516,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
         xp: item.xp,
         done: false,
         created_at: new Date(baseTime + i).toISOString(),
+        due_date: dueDates[i],
       }))
       const { error: rootError } = await supabase.from("tasks").insert(rootRows)
       if (rootError) throw rootError
@@ -516,6 +533,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
             xp: sub.xp,
             done: false,
             created_at: new Date(baseTime + rootRows.length + subtaskOffset).toISOString(),
+            due_date: null as string | null,
           }
           subtaskOffset += 1
           return row
@@ -535,11 +553,21 @@ function StoreProvider({ children }: { children: ReactNode }) {
         parentTaskId: r.parent_task_id,
         createdAt: r.created_at,
         completedAt: null,
+        dueDate: r.due_date,
       }))
       setState((prev) => ({ ...prev, tasks: [...prev.tasks, ...newTasks] }))
     },
     [user],
   )
+
+  const updateTaskDueDate = useCallback(async (taskId: string, dueDate: string | null) => {
+    const { error } = await supabase.from("tasks").update({ due_date: dueDate }).eq("id", taskId)
+    if (error) throw error
+    setState((prev) => ({
+      ...prev,
+      tasks: prev.tasks.map((t) => (t.id === taskId ? { ...t, dueDate } : t)),
+    }))
+  }, [])
 
   const updateProfile = useCallback(
     async (profile: Profile) => {
@@ -612,6 +640,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
           xp: t.xp,
           done: t.done,
           completed_at: t.completedAt,
+          due_date: t.dueDate,
         }))
       const childTaskRows = data.tasks
         .filter((t) => t.parentTaskId)
@@ -624,6 +653,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
           xp: t.xp,
           done: t.done,
           completed_at: t.completedAt,
+          due_date: null as string | null, // v1 scope: subtasks never carry a due date
         }))
 
       // Roots must exist before children so the parent_task_id FK resolves.
@@ -694,6 +724,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
     deleteRoadmap,
     addTask,
     addTasksBulk,
+    updateTaskDueDate,
     updateProfile,
     updateSettings,
     resetProgress,

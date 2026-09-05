@@ -131,6 +131,9 @@ function normalizeLegacyState(legacy: LegacyState): AppState {
       parentTaskId,
       createdAt: t.created_at ?? new Date().toISOString(),
       completedAt: t.completed_at ?? null,
+      // The vanilla app never had due dates - legacy-imported tasks always
+      // start unscheduled.
+      dueDate: null,
     })
   }
 

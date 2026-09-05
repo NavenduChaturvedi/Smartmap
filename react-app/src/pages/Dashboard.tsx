@@ -18,6 +18,7 @@ import { KpiRow } from "@/components/dashboard/KpiRow"
 import type { KpiCardProps } from "@/components/dashboard/KpiCard"
 import type { NodeCardProps } from "@/components/dashboard/NodeCard"
 import { RoadmapCanvas } from "@/components/dashboard/RoadmapCanvas"
+import { TodayView } from "@/components/dashboard/TodayView"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ProgressRing } from "@/components/ui/progress-ring"
@@ -167,6 +168,8 @@ function Dashboard() {
   return (
     <>
       <KpiRow items={kpis} />
+
+      <TodayView />
 
       <RoadmapCanvas
         subtitle={focusRoadmap ? `${focusRoadmap.name} · ${stages.length} linked stages` : "No active roadmap yet"}
