@@ -29,6 +29,16 @@ Row Level Security policies on every table (`profiles`, `roadmaps`, `tasks`,
 Vite + React 19 + TypeScript + Tailwind v4 + shadcn-style components
 (`src/components/ui`) + React Router + Supabase (`src/lib/supabase.ts`).
 
+Auth is real (`src/lib/auth-context.tsx`, `RequireAuth`) — signup, login, and
+session restore all hit the actual Supabase project. Roadmap/task data is
+still local mock state in `src/lib/store.tsx`; that gets replaced with real
+Supabase reads/writes next.
+
+`src/lib/database.types.ts` is generated from the live schema. Regenerate it
+after any migration (via the Supabase MCP `generate_typescript_types` tool,
+or `supabase gen types typescript --project-id <ref>` with the CLI) — don't
+hand-edit it.
+
 ## Scripts
 
 - `npm run dev` — start the dev server
