@@ -13,7 +13,7 @@ const renderStats = () => {
   setText("stat-pending", String(pending).padStart(2, "0"));
   setText("stat-streak", String(state.streak));
   setText("stat-xp", state.totalXp.toLocaleString());
-  setText("objective-status", pending > 0 ? "STATUS: NOMINAL" : "STATUS: CLEAR");
+  setText("objective-status", pending > 0 ? `${pending} pending` : "All caught up");
 };
 
 const renderTasks = () => {
@@ -120,7 +120,7 @@ const renderRoadmaps = () => {
         </div>
         <div class="flex-1">
           <p class="font-body-md font-bold text-on-surface group-hover:text-primary transition-colors">${rm.name}</p>
-          <p class="text-[9px] text-on-surface-variant uppercase tracking-widest">${rm.completed} / ${rm.total} NODES COMPLETED</p>
+          <p class="text-[9px] text-on-surface-variant uppercase tracking-widest">${rm.completed} / ${rm.total} tasks completed</p>
         </div>
         <span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-all">arrow_forward_ios</span>
       </div>

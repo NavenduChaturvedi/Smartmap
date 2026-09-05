@@ -5,7 +5,7 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta content="width=device-width, initial-scale=1.0" name="viewport" />
-		<title>MISSION ROADMAP | AEGIS COMMAND CENTER</title>
+		<title>Roadmap | RoadmapOS</title>
 		<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 		<link
 			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap"
@@ -27,12 +27,12 @@
 		<aegis-sidebar></aegis-sidebar>
 
 		<main class="lg:ml-64 min-h-screen flex flex-col pr-0 lg:pr-[420px]">
-			<aegis-topbar title="MISSION_ROADMAP" subtitle="Path to Integration"></aegis-topbar>
+			<aegis-topbar title="Roadmap" subtitle=""></aegis-topbar>
 
 			<div class="px-4 py-4 sm:px-6 sm:py-6 lg:p-margin space-y-6 sm:space-y-margin">
 				<header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 border-b border-outline-variant/30 pb-6">
 					<div>
-						<p class="font-label-caps text-label-caps text-on-surface-variant mb-1 tracking-[0.4em] font-bold">STRATEGIC NAVIGATION</p>
+						<p class="font-label-caps text-label-caps text-on-surface-variant mb-1 tracking-[0.4em] font-bold">Roadmaps</p>
 						<h1 class="font-h1 text-3xl sm:text-h1 text-on-surface uppercase tracking-tighter font-extrabold italic leading-none" id="roadmap-title">ROADMAPS</h1>
 					</div>
 					<div class="flex items-center gap-3 flex-wrap">
@@ -114,19 +114,19 @@
 
 		<aside id="mission-panel" class="hidden lg:flex fixed right-0 top-0 h-full w-[400px] bg-surface-container-low border-l border-outline-variant/30 px-6 py-6 sm:px-8 sm:py-margin flex-col shadow-2xl z-40 overflow-y-auto">
 			<div class="flex items-center justify-between mb-8 pb-4 border-b border-outline-variant/20">
-				<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest">Selected_Target</span>
+				<span class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest">Selected Task</span>
 				<button id="mission-close-btn" class="material-symbols-outlined text-outline-variant hover:text-primary transition-colors text-[20px] cursor-pointer px-2 bg-transparent border-0 p-0">close</button>
 			</div>
-			<p class="font-h2 text-h2 text-primary mb-2" id="mission-title">Mission Briefing</p>
+			<p class="font-h2 text-h2 text-primary mb-2" id="mission-title">Task Details</p>
 			<div class="flex items-center gap-2 mb-6">
-				<span class="font-label-mono text-[10px] text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded uppercase">MAIN_QUEST</span>
+				<span class="font-label-mono text-[10px] text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded uppercase">Task</span>
 				<span class="font-label-mono text-[10px] text-on-surface-variant uppercase" id="mission-reward">0 XP</span>
 			</div>
-			<p class="font-body-sm text-on-surface-variant/90 border-l-2 border-primary/50 pl-4 py-1 mb-8" id="mission-description">Select a node</p>
-			<p class="font-label-caps text-xs text-on-surface uppercase mb-4 tracking-widest border-b border-outline-variant/20 pb-2">Sub_Objectives</p>
+			<p class="font-body-sm text-on-surface-variant/90 border-l-2 border-primary/50 pl-4 py-1 mb-8" id="mission-description">Select a task</p>
+			<p class="font-label-caps text-xs text-on-surface uppercase mb-4 tracking-widest border-b border-outline-variant/20 pb-2">Subtasks</p>
 			<div class="space-y-4 mb-auto" id="mission-subnodes"></div>
 			<button id="mission-action-btn" class="mt-8 w-full py-4 bg-primary text-background font-bold tracking-widest uppercase hover:opacity-90 transition-all flex justify-center items-center gap-3">
-				<span id="mission-action">INITIALIZE LOGIC</span>
+				<span id="mission-action">Mark Done</span>
 				<span class="material-symbols-outlined text-[18px]">keyboard_double_arrow_right</span>
 			</button>
 		</aside>
@@ -137,7 +137,7 @@
 				<div class="flex items-center justify-between mb-6">
 					<div>
 						<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">New Task</h2>
-						<p class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Initialize Roadmap Node</p>
+						<p class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Add a task to this roadmap</p>
 					</div>
 					<button id="close-task-modal-btn" type="button" class="material-symbols-outlined text-outline-variant hover:text-primary transition-colors cursor-pointer px-2 bg-transparent border-0 p-0">close</button>
 				</div>
@@ -172,7 +172,7 @@
 				<div class="flex items-center justify-between mb-6">
 					<div>
 						<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">New Subtask</h2>
-						<p class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Append Node</p>
+						<p class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Add a subtask</p>
 					</div>
 					<button id="close-single-subtask-modal-btn" type="button" class="material-symbols-outlined text-outline-variant hover:text-primary transition-colors cursor-pointer px-2 bg-transparent border-0 p-0">close</button>
 				</div>

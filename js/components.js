@@ -39,10 +39,10 @@ class AegisSidebar extends HTMLElement {
       <aside data-aegis-sidebar class="fixed left-0 top-0 z-40 flex h-[100dvh] w-72 max-w-[85vw] -translate-x-full flex-col border-r border-outline-variant bg-surface-container-low/90 px-5 py-6 shadow-2xl backdrop-blur-xl transition-transform duration-300 lg:w-64 lg:translate-x-0 lg:px-gutter lg:py-margin">
         <div class="mb-8 flex items-start justify-between gap-4 px-unit">
           <div class="flex flex-col gap-unit">
-            <h1 class="font-h3 text-2xl sm:text-h3 leading-none tracking-tighter text-primary uppercase">AEGIS_OS</h1>
+            <h1 class="font-h3 text-2xl sm:text-h3 leading-none tracking-tighter text-primary uppercase">RoadmapOS</h1>
             <div class="flex items-center gap-unit">
               <span class="h-1 w-1 rounded-full bg-primary animate-pulse"></span>
-              <p class="font-label-mono text-label-mono uppercase text-on-surface-variant">Secure_Node_Active</p>
+              <p class="font-label-mono text-label-mono uppercase text-on-surface-variant">Online</p>
             </div>
           </div>
           <button type="button" data-aegis-sidebar-close class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant/30 text-on-surface-variant transition-colors hover:border-primary/50 hover:text-primary lg:hidden">
@@ -74,12 +74,12 @@ class AegisSidebar extends HTMLElement {
         <div class="mt-auto border-t border-outline-variant pt-4 sm:pt-margin">
           <div class="flex items-center gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-high p-3">
             <div class="relative">
-              <img alt="Commander Avatar" class="h-10 w-10 rounded-lg border border-outline-variant grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT112ADXw5N73TxuFCH2Gheaylsd5FahTIUkzn1yQqSbZaivWnpZNDIj2Xf8d0paq8RFV8cLjx_m3adYK-IHV0uyXgfmVLmhW-IuFMwMHjuMgLYiiMjhWQasoHtFe8VleUiopn-UPwHWka0cKR25XbpqBy6AmO6F9mnx7usi_AmNjXqCSgcipdU5-QNC1mh6YShWFo-zoWqviRFN0lz9XwWdIc_kaJmmWUt65BcWdkZ7BOpt-9qsEmu4wL56pgdHNBxVwa3zay-oJj"/>
+              <img alt="Profile avatar" class="h-10 w-10 rounded-lg border border-outline-variant grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT112ADXw5N73TxuFCH2Gheaylsd5FahTIUkzn1yQqSbZaivWnpZNDIj2Xf8d0paq8RFV8cLjx_m3adYK-IHV0uyXgfmVLmhW-IuFMwMHjuMgLYiiMjhWQasoHtFe8VleUiopn-UPwHWka0cKR25XbpqBy6AmO6F9mnx7usi_AmNjXqCSgcipdU5-QNC1mh6YShWFo-zoWqviRFN0lz9XwWdIc_kaJmmWUt65BcWdkZ7BOpt-9qsEmu4wL56pgdHNBxVwa3zay-oJj"/>
               <div class="absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-surface-container-high bg-primary"></div>
             </div>
             <div class="overflow-hidden">
-              <p class="truncate font-label-caps text-label-caps text-primary" id="cmp-name">OPERATOR_01</p>
-              <p class="truncate text-[9px] uppercase tracking-tighter text-on-surface-variant" id="cmp-level">L7_CLEARANCE</p>
+              <p class="truncate font-label-caps text-label-caps text-primary" id="cmp-name">User</p>
+              <p class="truncate text-[9px] uppercase tracking-tighter text-on-surface-variant" id="cmp-level">Level 7</p>
             </div>
           </div>
         </div>
@@ -103,8 +103,8 @@ class AegisSidebar extends HTMLElement {
       const nameNode = this.querySelector('#cmp-name');
       const lvlNode = this.querySelector('#cmp-level');
       if (window.Aegis?.state) {
-        if (nameNode) nameNode.textContent = window.Aegis.state.commanderName || 'OPERATOR_01';
-        if (lvlNode) lvlNode.textContent = window.Aegis.state.clearanceLevel || 'LEVEL_07';
+        if (nameNode) nameNode.textContent = window.Aegis.state.commanderName || 'User';
+        if (lvlNode) lvlNode.textContent = window.Aegis.state.clearanceLevel || 'Level 7';
       }
     };
 
@@ -123,8 +123,8 @@ class AegisSidebar extends HTMLElement {
 
 class AegisTopbar extends HTMLElement {
   connectedCallback() {
-    const title = this.getAttribute('title') || 'SYSTEM_NODE';
-    const subtitle = this.getAttribute('subtitle') || 'Data Interface';
+    const title = this.getAttribute('title') || 'RoadmapOS';
+    const subtitle = this.getAttribute('subtitle') || '';
 
     this.innerHTML = `
       <header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-outline-variant bg-surface-dim/80 px-4 backdrop-blur-md sm:h-20 sm:px-margin">
@@ -138,14 +138,14 @@ class AegisTopbar extends HTMLElement {
           </div>
           <div class="hidden items-center gap-4 rounded-full border border-outline-variant/50 bg-surface-container-high px-5 py-2 md:flex">
             <div class="flex items-center gap-2">
-              <span class="font-label-caps text-label-caps text-on-surface-variant" id="cmp-lvl-top">LEVEL_07</span>
+              <span class="font-label-caps text-label-caps text-on-surface-variant" id="cmp-lvl-top">Level 7</span>
               <div class="h-1.5 w-32 overflow-hidden rounded-full bg-surface-variant">
                 <div class="h-full bg-primary aegis-glow transition-all" id="cmp-xp-bar" style="width: 65%;"></div>
               </div>
             </div>
             <div class="flex items-center gap-2 text-primary">
               <span class="material-symbols-outlined text-[16px]">local_fire_department</span>
-              <span class="font-label-mono text-[12px]" id="cmp-streak">12_DAY</span>
+              <span class="font-label-mono text-[12px]" id="cmp-streak">12 days</span>
             </div>
           </div>
         </div>
@@ -170,8 +170,8 @@ class AegisTopbar extends HTMLElement {
       const xpBar = this.querySelector('#cmp-xp-bar');
       const streak = this.querySelector('#cmp-streak');
 
-      if (lvl) lvl.textContent = window.Aegis.state.clearanceLevel || 'LEVEL_07';
-      if (streak) streak.textContent = `${window.Aegis.state.streak || 0}_DAY`;
+      if (lvl) lvl.textContent = window.Aegis.state.clearanceLevel || 'Level 7';
+      if (streak) streak.textContent = `${window.Aegis.state.streak || 0} day${window.Aegis.state.streak === 1 ? '' : 's'}`;
       if (xpBar) {
         const cap = 10000;
         const val = (window.Aegis.state.totalXp || 0) % cap;

@@ -3,7 +3,7 @@
 <html class="dark" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>MISSION CONTROL | AEGIS COMMAND CENTER</title>
+<title>Dashboard | RoadmapOS</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Roboto+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
@@ -27,41 +27,41 @@
 <!-- Main Content Area -->
 <main class="lg:ml-64 min-h-screen flex flex-col">
 <!-- TopNavBar -->
-<aegis-topbar title="MISSION_CONTROL" subtitle="Strategic Operational Interface"></aegis-topbar>
+<aegis-topbar title="Dashboard" subtitle="Overview of your roadmaps"></aegis-topbar>
 <!-- Dashboard Canvas -->
 <div class="px-4 py-4 sm:px-6 sm:py-6 lg:p-margin space-y-6 sm:space-y-8 lg:space-y-10">
 <!-- Stats Row -->
 <div class="grid grid-cols-1 gap-4 md:grid-cols-4 md:gap-gutter">
 <div class="glass-panel p-4 sm:p-6 rounded-xl relative group overflow-hidden">
 <div class="shimmer absolute inset-0 opacity-0 group-hover:opacity-100"></div>
-<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Active_Roadmaps</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Active Roadmaps</p>
 <div class="flex items-baseline gap-2">
 <p class="font-h2 text-h2 text-primary" id="stat-roadmaps">03</p>
-<span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Nodes</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Total</span>
 </div>
 </div>
 <div class="glass-panel p-4 sm:p-6 rounded-xl relative group overflow-hidden">
 <div class="shimmer absolute inset-0 opacity-0 group-hover:opacity-100"></div>
-<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Tasks_Pending</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Tasks Pending</p>
 <div class="flex items-baseline gap-2">
 <p class="font-h2 text-h2 text-primary" id="stat-pending">05</p>
-<span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Op_Today</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Open</span>
 </div>
 </div>
 <div class="glass-panel p-4 sm:p-6 rounded-xl relative group overflow-hidden border-l-4 border-l-primary/30">
 <div class="shimmer absolute inset-0 opacity-0 group-hover:opacity-100"></div>
-<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Active_Streak</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Active Streak</p>
 <div class="flex items-baseline gap-2">
 <p class="font-h2 text-h2 text-primary" id="stat-streak">12</p>
-<span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Days_Cont</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Days</span>
 </div>
 </div>
 <div class="glass-panel p-4 sm:p-6 rounded-xl relative group overflow-hidden">
 <div class="shimmer absolute inset-0 opacity-0 group-hover:opacity-100"></div>
-<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Total_Experience</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Total Experience</p>
 <div class="flex items-baseline gap-2">
 <p class="font-h2 text-h2 text-primary" id="stat-xp">4,250</p>
-<span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Accum_XP</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest">XP</span>
 </div>
 </div>
 </div>
@@ -71,8 +71,8 @@
 <!-- Left Column: Tasks -->
 <div class="lg:col-span-2 space-y-4 sm:space-y-6">
 <div class="flex justify-between items-center border-b border-outline-variant pb-4">
-<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Current_Objectives</h2>
-<span class="font-label-mono text-label-mono text-primary bg-primary/5 px-3 py-1 rounded border border-primary/20" id="objective-status">STATUS: NOMINAL</span>
+<h2 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Current Tasks</h2>
+<span class="font-label-mono text-label-mono text-primary bg-primary/5 px-3 py-1 rounded border border-primary/20" id="objective-status">Up to date</span>
 </div>
 <div class="space-y-3" id="objectives-list"></div>
 </div>
@@ -84,7 +84,7 @@
 <div class="space-y-4" id="roadmaps-list"></div>
 <button id="create-roadmap-btn" class="w-full p-6 border border-dashed border-outline-variant rounded-xl text-on-surface-variant hover:text-primary hover:border-primary/50 hover:bg-white/5 transition-all flex flex-col items-center gap-2 group" type="button">
 <span class="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform">add_circle</span>
-<span class="font-label-caps text-label-caps uppercase tracking-[0.2em]">Create_New_Roadmap</span>
+<span class="font-label-caps text-label-caps uppercase tracking-[0.2em]">Create New Roadmap</span>
 </button>
 </div>
 </div>
@@ -93,11 +93,11 @@
 <footer class="mt-auto p-4 sm:p-margin border-t border-outline-variant/30 bg-surface-container-lowest">
 <div class="flex flex-col md:flex-row justify-between items-center gap-4">
 <p class="font-label-mono text-[10px] text-on-surface-variant tracking-[0.3em] uppercase">
-                    Terminal_ID: AEGIS-7734 // Build_v1.0.4-Stable // Encrypted_Session
+                    RoadmapOS v1.0.4
                 </p>
 <div class="flex gap-6">
-<a class="font-label-mono text-[10px] text-on-surface-variant hover:text-primary transition-colors uppercase" href="analytics.html">Network_Diagnostics</a>
-<a class="font-label-mono text-[10px] text-on-surface-variant hover:text-primary transition-colors uppercase" href="settings.html">System_Logs</a>
+<a class="font-label-mono text-[10px] text-on-surface-variant hover:text-primary transition-colors uppercase" href="analytics.html">Analytics</a>
+<a class="font-label-mono text-[10px] text-on-surface-variant hover:text-primary transition-colors uppercase" href="settings.html">Settings</a>
 </div>
 </div>
 </footer>

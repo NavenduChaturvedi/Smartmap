@@ -35,7 +35,7 @@ const setLoading = (isLoading) => {
   submitBtn.disabled = isLoading;
   submitBtn.textContent = isLoading
     ? (authMode === "login" ? "Connecting..." : "Creating Account...")
-    : (authMode === "login" ? "Initialize Session" : "Create Account");
+    : (authMode === "login" ? "Sign In" : "Create Account");
   if (toggleBtn) {
     toggleBtn.disabled = isLoading;
   }
@@ -44,14 +44,14 @@ const setLoading = (isLoading) => {
 const setMode = (nextMode) => {
   authMode = nextMode;
   if (submitBtn) {
-    submitBtn.textContent = authMode === "login" ? "Initialize Session" : "Create Account";
+    submitBtn.textContent = authMode === "login" ? "Sign In" : "Create Account";
   }
   if (toggleBtn) {
     toggleBtn.textContent = authMode === "login" ? "Create Account" : "Back to Login";
   }
   if (modeHint) {
     modeHint.textContent = authMode === "login"
-      ? "New operatives can create an account from here."
+      ? "New here? Create an account instead."
       : "Create an account first, then use the same credentials to sign in.";
   }
   // show name input for signup mode

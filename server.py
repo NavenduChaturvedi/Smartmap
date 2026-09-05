@@ -12,7 +12,7 @@ DEFAULT_BACKUP_MODEL = os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 DEFAULT_PORT = int(os.environ.get("AI_PROXY_PORT", "8765"))
 DEFAULT_SYSTEM_PROMPT = os.environ.get(
     "AI_SYSTEM_PROMPT",
-    "You are AEGIS, a tactical productivity assistant for RoadmapOS. Be concise, practical, and grounded in the user's current roadmap state."
+    "You are the roadmap planning assistant for RoadmapOS. Be concise, practical, and grounded in the user's current roadmap state."
 )
 
 
@@ -42,7 +42,7 @@ def build_context_block(context: dict | None) -> str:
 
     lines = [
         f"Page: {context.get('page', 'unknown')}",
-        f"Commander: {context.get('commanderName', 'unknown')}",
+        f"User: {context.get('commanderName', 'unknown')}",
         f"Streak: {stats.get('streak', 0)}",
         f"XP: {stats.get('totalXp', 0)}",
         f"Active roadmaps: {stats.get('roadmapsActive', 0)}",

@@ -79,12 +79,12 @@ const defaultState = refreshDerivedState({
   roadmap: {
     selectedNode: "NODE_01"
   },
-  // Commander profile settings
-  commanderName: "COMMANDER_ONE",
-  clearanceLevel: "LEVEL_01",
+  // User profile settings
+  commanderName: "New User",
+  clearanceLevel: "Level 1",
   profile: {
-    displayName: "Commander",
-    email: "commander@aegis.dev"
+    displayName: "",
+    email: ""
   },
   // UI Settings
   settings: {

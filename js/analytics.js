@@ -62,7 +62,7 @@
     }, 0);
 
     document.getElementById("analytics-task-metrics").textContent = String(completedTasks);
-    document.getElementById("analytics-weekly-delta").textContent = `+${weeklyDelta} WK_TOTAL`;
+    document.getElementById("analytics-weekly-delta").textContent = `+${weeklyDelta} this week`;
     document.getElementById("analytics-xp").textContent = Number(state.totalXp || 0).toLocaleString();
     document.getElementById("analytics-throughput").textContent = throughput.toFixed(1);
     document.getElementById("analytics-streak").textContent = String(state.streak || 0);

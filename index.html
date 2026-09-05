@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Project Aegis | Login</title>
+  <title>RoadmapOS | Login</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
@@ -17,8 +17,8 @@
   <main class="relative z-10 w-full max-w-sm sm:max-w-md">
     <div class="glass-panel rounded-lg p-6 sm:p-8">
       <div class="text-center mb-8">
-        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-primary">PROJECT AEGIS</h1>
-        <p class="mt-2 text-xs tracking-[0.2em] uppercase text-on-surface-variant">Roadmap Command Center</p>
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-primary">RoadmapOS</h1>
+        <p class="mt-2 text-xs tracking-[0.2em] uppercase text-on-surface-variant">Sign in to your account</p>
       </div>
 
       <form class="space-y-6" id="login-form">
@@ -27,22 +27,22 @@
           <input class="w-full bg-transparent border-0 border-b border-outline-variant focus:border-primary focus:ring-0 px-0 py-2" id="login-name" type="text" placeholder="YOUR NAME" />
         </div>
         <div>
-          <label class="block text-xs uppercase tracking-widest text-on-surface-variant mb-2">Operative ID</label>
-          <input class="w-full bg-transparent border-0 border-b border-outline-variant focus:border-primary focus:ring-0 px-0 py-2" id="login-email" type="email" placeholder="ENTER EMAIL" required />
+          <label class="block text-xs uppercase tracking-widest text-on-surface-variant mb-2">Email</label>
+          <input class="w-full bg-transparent border-0 border-b border-outline-variant focus:border-primary focus:ring-0 px-0 py-2" id="login-email" type="email" placeholder="you@example.com" required />
         </div>
 
         <div>
-          <label class="block text-xs uppercase tracking-widest text-on-surface-variant mb-2">Access Code</label>
+          <label class="block text-xs uppercase tracking-widest text-on-surface-variant mb-2">Password</label>
           <input class="w-full bg-transparent border-0 border-b border-outline-variant focus:border-primary focus:ring-0 px-0 py-2" id="login-password" type="password" placeholder="••••••••••••" required />
         </div>
 
         <p class="text-xs text-error hidden" id="auth-error"></p>
 
-        <p class="text-[11px] uppercase tracking-[0.18em] text-on-surface-variant/70" id="auth-mode-hint">New operatives can create an account from here.</p>
+        <p class="text-[11px] uppercase tracking-[0.18em] text-on-surface-variant/70" id="auth-mode-hint">New here? Create an account instead.</p>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button class="clip-btn w-full py-3 bg-primary text-black font-bold tracking-widest uppercase hover:opacity-90 transition" id="login-submit" type="submit">
-            Initialize Session
+            Sign In
           </button>
           <button class="clip-btn w-full py-3 border border-outline-variant/40 text-on-surface-variant font-bold tracking-widest uppercase hover:border-primary hover:text-primary transition" id="auth-toggle-btn" type="button">
             Create Account

@@ -1,6 +1,6 @@
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 const DEFAULT_BACKUP_MODEL = process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
-const DEFAULT_SYSTEM_PROMPT = process.env.AI_SYSTEM_PROMPT || "You are AEGIS, a tactical productivity assistant for RoadmapOS. Be concise, practical, and grounded in the user's current roadmap state.";
+const DEFAULT_SYSTEM_PROMPT = process.env.AI_SYSTEM_PROMPT || "You are the roadmap planning assistant for RoadmapOS. Be concise, practical, and grounded in the user's current roadmap state.";
 
 function sendJson(res, statusCode, payload) {
   const body = JSON.stringify(payload);
@@ -24,7 +24,7 @@ function buildContextBlock(context) {
 
   const lines = [
     `Page: ${context.page || "unknown"}`,
-    `Commander: ${context.commanderName || "unknown"}`,
+    `User: ${context.commanderName || "unknown"}`,
     `Streak: ${stats.streak || 0}`,
     `XP: ${stats.totalXp || 0}`,
     `Active roadmaps: ${stats.roadmapsActive || 0}`,

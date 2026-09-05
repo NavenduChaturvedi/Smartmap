@@ -480,7 +480,7 @@
             </div>
             <div class="flex items-center gap-2">
               <button class="task-toggle-subtasks material-symbols-outlined" data-task-id="${task.id}" aria-expanded="false">keyboard_arrow_down</button>
-              <span class="font-label-caps text-[10px] ${task.done ? 'text-primary' : 'text-on-surface-variant'} uppercase">${task.done ? 'SECURED' : 'IN_PROGRESS'}</span>
+              <span class="font-label-caps text-[10px] ${task.done ? 'text-primary' : 'text-on-surface-variant'} uppercase">${task.done ? 'Completed' : 'In Progress'}</span>
             </div>
           </div>
           <button class="w-full text-left task-select-btn" data-task-id="${task.id}" type="button">
@@ -629,7 +629,7 @@
     const percentage = progress.percentage;
     container.innerHTML = `
       <div class="glass-panel p-margin rounded-xl border border-outline-variant/20">
-        <h3 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Mission Progress</h3>
+        <h3 class="font-h3 text-h3 text-on-surface uppercase tracking-tighter">Progress</h3>
         <p class="text-sm text-on-surface-variant mt-4">Click a task to inspect it, then add subtasks from the selected task panel.</p>
         <div class="mt-6 space-y-4">
           <div class="flex items-center justify-between text-xs text-on-surface-variant">

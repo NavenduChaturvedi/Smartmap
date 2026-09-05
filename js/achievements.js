@@ -13,15 +13,15 @@
 
   const renderSummary = () => {
     const state = window.Aegis.state;
-    const profileName = (state.profile?.displayName || "Commander").toUpperCase().replace(/\s+/g, "_");
+    const profileName = state.profile?.displayName || "User";
     const totalXp = Number(state.totalXp || 4250);
     const tasks = state.tasks || [];
     const completedTasks = tasks.filter((task) => task.done).length;
 
-    commanderNameEl.textContent = `COMMANDER_${profileName}`;
+    commanderNameEl.textContent = profileName;
     commanderXpEl.textContent = `${totalXp.toLocaleString()} XP`;
 
-    // Dynamic vault completion based on unlocked (non-locked) cards.
+    // Dynamic completion count based on unlocked (non-locked) cards.
     const unlockedCards = Array.from(achievementCards).filter((card) => card.dataset.rarity !== "locked");
     const dynamicUnlocked = Math.min(unlockedCards.length, Math.max(4, completedTasks + 2));
     unlockedCountEl.textContent = String(dynamicUnlocked);

@@ -3,7 +3,7 @@
 <html class="dark" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>ACHIEVEMENT VAULT - COMMAND_CENTER</title>
+<title>Achievements | RoadmapOS</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script src="js/tailwind-config.js"></script>
@@ -18,7 +18,7 @@
 <!-- SideNavBar -->
 <aegis-sidebar></aegis-sidebar>
 <!-- TopNavBar -->
-<aegis-topbar title="A.I. MISSION_CONTROL" subtitle=""></aegis-topbar>
+<aegis-topbar title="Achievements" subtitle=""></aegis-topbar>
 <!-- Main Content -->
 <main class="lg:ml-64 mt-16 sm:mt-20 px-4 sm:px-6 lg:p-margin h-[calc(100vh-64px)] sm:h-[calc(100vh-80px)] overflow-y-auto">
 <div class="max-w-container-max mx-auto space-y-10">
@@ -28,15 +28,15 @@
 <div class="relative inline-block px-6 py-2">
 <div class="corner-bracket-tl"></div>
 <div class="corner-bracket-tr"></div>
-<h2 class="font-h1 text-3xl sm:text-h1 font-bold text-primary tracking-tight">ACHIEVEMENT VAULT</h2>
+<h2 class="font-h1 text-3xl sm:text-h1 font-bold text-primary tracking-tight">Achievements</h2>
 <div class="corner-bracket-bl"></div>
 <div class="corner-bracket-br"></div>
 </div>
-<p class="font-label-caps text-label-caps text-on-surface-variant tracking-[0.3em]">COMMENDATIONS EARNED</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant tracking-[0.3em]">Earned so far</p>
 <!-- Global Progress -->
 <div class="w-full max-w-[400px] space-y-2">
 <div class="flex justify-between items-end">
-<span class="font-label-caps text-label-caps text-on-surface-variant opacity-60">VAULT COMPLETION</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant opacity-60">Completion</span>
 <span class="font-h3 text-h3 text-primary"><span id="vault-unlocked-count">12</span> <span class="text-body-sm opacity-40">/ <span id="vault-total-count">30</span></span></span>
 </div>
 <div class="h-1.5 w-full bg-surface-container-highest/30 flex gap-1">
@@ -59,21 +59,12 @@
 <span class="material-symbols-outlined text-primary text-3xl" data-icon="person">person</span>
 </div>
 <div class="space-y-1">
-<p class="font-label-caps text-[10px] text-on-surface-variant tracking-widest">COMMANDER STATUS</p>
-<h3 class="font-h3 text-h3 text-primary" id="commander-name">COMMANDER_ALPHA</h3>
+<p class="font-label-caps text-[10px] text-on-surface-variant tracking-widest">Your Progress</p>
+<h3 class="font-h3 text-h3 text-primary" id="commander-name">User</h3>
 <div class="flex gap-4">
 <span class="font-label-mono text-label-mono text-secondary">LVL 07</span>
 <span class="font-label-mono text-label-mono text-on-surface-variant" id="commander-xp">4,250 XP</span>
 </div>
-</div>
-</div>
-<div class="mt-6 pt-6 border-t border-outline-variant/10 flex justify-between items-center">
-<div class="flex flex-col">
-<span class="font-label-caps text-[9px] opacity-40 uppercase tracking-widest">Rank</span>
-<span class="font-body-sm text-body-sm text-primary uppercase tracking-widest italic">PATHFINDER</span>
-</div>
-<div class="bg-white/5 border border-outline-variant px-4 py-1.5">
-<span class="font-label-mono text-[10px] text-primary font-bold tracking-tighter">LEGION_ELITE</span>
 </div>
 </div>
 </div>
@@ -88,103 +79,103 @@
 <!-- Main Achievement Grid -->
 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-gutter" id="achievement-grid">
 <!-- UNLOCKED: Rare 1 -->
-<div class="achievement-card glass-panel p-6 relative border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.05)] group hover:border-white/40 transition-all cursor-pointer" data-description="Achieve 100 successful mission deployments." data-rarity="rare" data-title="Century Mark" data-xp="+200 XP">
+<div class="achievement-card glass-panel p-6 relative border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.05)] group hover:border-white/40 transition-all cursor-pointer" data-description="Complete 100 tasks." data-rarity="rare" data-title="Century Mark" data-xp="+200 XP">
 <div class="absolute top-3 right-3 font-label-mono text-[10px] text-primary border border-white/20 px-2 py-0.5 uppercase">Rare</div>
 <div class="flex flex-col items-center text-center space-y-4">
 <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(255,255,255,0.1)]">💯</div>
 <div>
 <h4 class="font-h3 text-body-md font-bold text-primary uppercase tracking-wider">Century Mark</h4>
-<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Achieve 100 successful mission deployments.</p>
+<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Complete 100 tasks.</p>
 </div>
 <span class="font-label-mono text-label-mono text-primary-fixed-dim">+200 XP</span>
 </div>
 </div>
 <!-- UNLOCKED: Rare 2 -->
-<div class="achievement-card glass-panel p-6 relative border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.05)] group hover:border-white/40 transition-all cursor-pointer" data-description="Complete a complex roadmap with zero errors." data-rarity="rare" data-title="Perfectionist" data-xp="+150 XP">
+<div class="achievement-card glass-panel p-6 relative border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.05)] group hover:border-white/40 transition-all cursor-pointer" data-description="Finish a roadmap with every task completed." data-rarity="rare" data-title="Perfectionist" data-xp="+150 XP">
 <div class="absolute top-3 right-3 font-label-mono text-[10px] text-primary border border-white/20 px-2 py-0.5 uppercase">Rare</div>
 <div class="flex flex-col items-center text-center space-y-4">
 <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(255,255,255,0.1)]">✨</div>
 <div>
 <h4 class="font-h3 text-body-md font-bold text-primary uppercase tracking-wider">Perfectionist</h4>
-<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Complete a complex roadmap with zero errors.</p>
+<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Finish a roadmap with every task completed.</p>
 </div>
 <span class="font-label-mono text-label-mono text-primary-fixed-dim">+150 XP</span>
 </div>
 </div>
 <!-- UNLOCKED: Common 1 -->
-<div class="achievement-card glass-panel p-6 relative border-outline-variant/10 group hover:border-white/20 transition-all cursor-pointer" data-description="Establish link with AI Mission Control." data-rarity="common" data-title="First Contact" data-xp="+20 XP">
+<div class="achievement-card glass-panel p-6 relative border-outline-variant/10 group hover:border-white/20 transition-all cursor-pointer" data-description="Generate your first AI roadmap." data-rarity="common" data-title="First Contact" data-xp="+20 XP">
 <div class="absolute top-3 right-3 font-label-mono text-[10px] text-on-surface-variant/60 border border-white/10 px-2 py-0.5 uppercase">Common</div>
 <div class="flex flex-col items-center text-center space-y-4">
 <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-3xl grayscale opacity-40 group-hover:opacity-80 transition-opacity">🚀</div>
 <div>
 <h4 class="font-h3 text-body-md font-bold text-on-surface uppercase tracking-wider">First Contact</h4>
-<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Establish link with AI Mission Control.</p>
+<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Generate your first AI roadmap.</p>
 </div>
 <span class="font-label-mono text-label-mono text-on-surface-variant opacity-60">+20 XP</span>
 </div>
 </div>
 <!-- UNLOCKED: Common 2 -->
-<div class="achievement-card glass-panel p-6 relative border-outline-variant/10 group hover:border-white/20 transition-all cursor-pointer" data-description="Complete the basic training module." data-rarity="common" data-title="Beta Combatant" data-xp="+50 XP">
+<div class="achievement-card glass-panel p-6 relative border-outline-variant/10 group hover:border-white/20 transition-all cursor-pointer" data-description="Complete your first task." data-rarity="common" data-title="Quick Start" data-xp="+50 XP">
 <div class="absolute top-3 right-3 font-label-mono text-[10px] text-on-surface-variant/60 border border-white/10 px-2 py-0.5 uppercase">Common</div>
 <div class="flex flex-col items-center text-center space-y-4">
 <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-3xl grayscale opacity-40 group-hover:opacity-80 transition-opacity">⚔️</div>
 <div>
-<h4 class="font-h3 text-body-md font-bold text-on-surface uppercase tracking-wider">Beta Combatant</h4>
-<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Complete the basic training module.</p>
+<h4 class="font-h3 text-body-md font-bold text-on-surface uppercase tracking-wider">Quick Start</h4>
+<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Complete your first task.</p>
 </div>
 <span class="font-label-mono text-label-mono text-on-surface-variant opacity-60">+50 XP</span>
 </div>
 </div>
 <!-- UNLOCKED: Common 3 -->
-<div class="achievement-card glass-panel p-6 relative border-outline-variant/10 group hover:border-white/20 transition-all cursor-pointer" data-description="Synchronize your first project node." data-rarity="common" data-title="Base Camp" data-xp="+10 XP">
+<div class="achievement-card glass-panel p-6 relative border-outline-variant/10 group hover:border-white/20 transition-all cursor-pointer" data-description="Create your first roadmap." data-rarity="common" data-title="Base Camp" data-xp="+10 XP">
 <div class="absolute top-3 right-3 font-label-mono text-[10px] text-on-surface-variant/60 border border-white/10 px-2 py-0.5 uppercase">Common</div>
 <div class="flex flex-col items-center text-center space-y-4">
 <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-3xl grayscale opacity-40 group-hover:opacity-80 transition-opacity">🏔️</div>
 <div>
 <h4 class="font-h3 text-body-md font-bold text-on-surface uppercase tracking-wider">Base Camp</h4>
-<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Synchronize your first project node.</p>
+<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Create your first roadmap.</p>
 </div>
 <span class="font-label-mono text-label-mono text-on-surface-variant opacity-60">+10 XP</span>
 </div>
 </div>
 <!-- UNLOCKED: Common 4 -->
-<div class="achievement-card glass-panel p-6 relative border-outline-variant/10 group hover:border-white/20 transition-all cursor-pointer" data-description="Active system usage for 4 hours past midnight." data-rarity="common" data-title="Night Watch" data-xp="+80 XP">
+<div class="achievement-card glass-panel p-6 relative border-outline-variant/10 group hover:border-white/20 transition-all cursor-pointer" data-description="Complete a task after midnight." data-rarity="common" data-title="Night Watch" data-xp="+80 XP">
 <div class="absolute top-3 right-3 font-label-mono text-[10px] text-on-surface-variant/60 border border-white/10 px-2 py-0.5 uppercase">Common</div>
 <div class="flex flex-col items-center text-center space-y-4">
 <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-3xl grayscale opacity-40 group-hover:opacity-80 transition-opacity">🦉</div>
 <div>
 <h4 class="font-h3 text-body-md font-bold text-on-surface uppercase tracking-wider">Night Watch</h4>
-<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Active system usage for 4 hours past midnight.</p>
+<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Complete a task after midnight.</p>
 </div>
 <span class="font-label-mono text-label-mono text-on-surface-variant opacity-60">+80 XP</span>
 </div>
 </div>
 <!-- UNLOCKED: Common 5 -->
-<div class="achievement-card glass-panel p-6 relative border-outline-variant/10 group hover:border-white/20 transition-all cursor-pointer" data-description="Navigate through 10 unique system zones." data-rarity="common" data-title="Cartographer" data-xp="+40 XP">
+<div class="achievement-card glass-panel p-6 relative border-outline-variant/10 group hover:border-white/20 transition-all cursor-pointer" data-description="Create 5 different roadmaps." data-rarity="common" data-title="Cartographer" data-xp="+40 XP">
 <div class="absolute top-3 right-3 font-label-mono text-[10px] text-on-surface-variant/60 border border-white/10 px-2 py-0.5 uppercase">Common</div>
 <div class="flex flex-col items-center text-center space-y-4">
 <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-3xl grayscale opacity-40 group-hover:opacity-80 transition-opacity">🗺️</div>
 <div>
 <h4 class="font-h3 text-body-md font-bold text-on-surface uppercase tracking-wider">Cartographer</h4>
-<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Navigate through 10 unique system zones.</p>
+<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Create 5 different roadmaps.</p>
 </div>
 <span class="font-label-mono text-label-mono text-on-surface-variant opacity-60">+40 XP</span>
 </div>
 </div>
 <!-- UNLOCKED: Common 6 -->
-<div class="achievement-card glass-panel p-6 relative border-outline-variant/10 group hover:border-white/20 transition-all cursor-pointer" data-description="Generate your first efficiency report." data-rarity="common" data-title="Data Analyst" data-xp="+60 XP">
+<div class="achievement-card glass-panel p-6 relative border-outline-variant/10 group hover:border-white/20 transition-all cursor-pointer" data-description="View your analytics page for the first time." data-rarity="common" data-title="Data Analyst" data-xp="+60 XP">
 <div class="absolute top-3 right-3 font-label-mono text-[10px] text-on-surface-variant/60 border border-white/10 px-2 py-0.5 uppercase">Common</div>
 <div class="flex flex-col items-center text-center space-y-4">
 <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-3xl grayscale opacity-40 group-hover:opacity-80 transition-opacity">📊</div>
 <div>
 <h4 class="font-h3 text-body-md font-bold text-on-surface uppercase tracking-wider">Data Analyst</h4>
-<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Generate your first efficiency report.</p>
+<p class="text-xs text-on-surface-variant mt-2 leading-relaxed">View your analytics page for the first time.</p>
 </div>
 <span class="font-label-mono text-label-mono text-on-surface-variant opacity-60">+60 XP</span>
 </div>
 </div>
 <!-- LOCKED Template -->
-<div class="achievement-card glass-panel p-6 relative bg-surface-container-lowest/30 border-white/5 opacity-30 group cursor-not-allowed" data-description="Classified objective. Keep progressing to reveal this mission badge." data-rarity="locked" data-title="Classified Achievement" data-xp="+??? XP">
+<div class="achievement-card glass-panel p-6 relative bg-surface-container-lowest/30 border-white/5 opacity-30 group cursor-not-allowed" data-description="Keep progressing to unlock this achievement." data-rarity="locked" data-title="Locked Achievement" data-xp="+??? XP">
 <div class="absolute inset-0 flex items-center justify-center z-20">
 <span class="material-symbols-outlined text-4xl opacity-10" data-icon="lock">lock</span>
 </div>
@@ -192,13 +183,13 @@
 <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-3xl">❔</div>
 <div>
 <h4 class="font-label-mono text-body-md font-bold text-on-surface uppercase">???</h4>
-<p class="font-label-caps text-[10px] text-on-surface-variant mt-2 tracking-[0.2em]">CLASSIFIED</p>
+<p class="font-label-caps text-[10px] text-on-surface-variant mt-2 tracking-[0.2em]">LOCKED</p>
 </div>
 <span class="font-label-mono text-label-mono text-on-surface-variant">+??? XP</span>
 </div>
 </div>
 <!-- Duplicating Locked placeholders to fill grid -->
-<div class="achievement-card glass-panel p-6 relative bg-surface-container-lowest/30 border-white/5 opacity-30 group cursor-not-allowed" data-description="Classified objective. Keep progressing to reveal this mission badge." data-rarity="locked" data-title="Classified Achievement" data-xp="+??? XP">
+<div class="achievement-card glass-panel p-6 relative bg-surface-container-lowest/30 border-white/5 opacity-30 group cursor-not-allowed" data-description="Keep progressing to unlock this achievement." data-rarity="locked" data-title="Locked Achievement" data-xp="+??? XP">
 <div class="absolute inset-0 flex items-center justify-center z-20">
 <span class="material-symbols-outlined text-4xl opacity-10" data-icon="lock">lock</span>
 </div>
@@ -206,12 +197,12 @@
 <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-3xl">❔</div>
 <div>
 <h4 class="font-label-mono text-body-md font-bold text-on-surface uppercase">???</h4>
-<p class="font-label-caps text-[10px] text-on-surface-variant mt-2 tracking-[0.2em]">CLASSIFIED</p>
+<p class="font-label-caps text-[10px] text-on-surface-variant mt-2 tracking-[0.2em]">LOCKED</p>
 </div>
 <span class="font-label-mono text-label-mono text-on-surface-variant">+??? XP</span>
 </div>
 </div>
-<div class="achievement-card glass-panel p-6 relative bg-surface-container-lowest/30 border-white/5 opacity-30 group cursor-not-allowed" data-description="Classified objective. Keep progressing to reveal this mission badge." data-rarity="locked" data-title="Classified Achievement" data-xp="+??? XP">
+<div class="achievement-card glass-panel p-6 relative bg-surface-container-lowest/30 border-white/5 opacity-30 group cursor-not-allowed" data-description="Keep progressing to unlock this achievement." data-rarity="locked" data-title="Locked Achievement" data-xp="+??? XP">
 <div class="absolute inset-0 flex items-center justify-center z-20">
 <span class="material-symbols-outlined text-4xl opacity-10" data-icon="lock">lock</span>
 </div>
@@ -219,12 +210,12 @@
 <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-3xl">❔</div>
 <div>
 <h4 class="font-label-mono text-body-md font-bold text-on-surface uppercase">???</h4>
-<p class="font-label-caps text-[10px] text-on-surface-variant mt-2 tracking-[0.2em]">CLASSIFIED</p>
+<p class="font-label-caps text-[10px] text-on-surface-variant mt-2 tracking-[0.2em]">LOCKED</p>
 </div>
 <span class="font-label-mono text-label-mono text-on-surface-variant">+??? XP</span>
 </div>
 </div>
-<div class="achievement-card glass-panel p-6 relative bg-surface-container-lowest/30 border-white/5 opacity-30 group cursor-not-allowed" data-description="Classified objective. Keep progressing to reveal this mission badge." data-rarity="locked" data-title="Classified Achievement" data-xp="+??? XP">
+<div class="achievement-card glass-panel p-6 relative bg-surface-container-lowest/30 border-white/5 opacity-30 group cursor-not-allowed" data-description="Keep progressing to unlock this achievement." data-rarity="locked" data-title="Locked Achievement" data-xp="+??? XP">
 <div class="absolute inset-0 flex items-center justify-center z-20">
 <span class="material-symbols-outlined text-4xl opacity-10" data-icon="lock">lock</span>
 </div>
@@ -232,7 +223,7 @@
 <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-3xl">❔</div>
 <div>
 <h4 class="font-label-mono text-body-md font-bold text-on-surface uppercase">???</h4>
-<p class="font-label-caps text-[10px] text-on-surface-variant mt-2 tracking-[0.2em]">CLASSIFIED</p>
+<p class="font-label-caps text-[10px] text-on-surface-variant mt-2 tracking-[0.2em]">LOCKED</p>
 </div>
 <span class="font-label-mono text-label-mono text-on-surface-variant">+??? XP</span>
 </div>
@@ -257,7 +248,7 @@
 <span class="font-label-caps text-[10px] text-primary uppercase tracking-widest">Legendary</span>
 </div>
 <div class="ml-auto text-on-surface-variant opacity-30 text-[9px] font-label-mono tracking-widest uppercase">
-                Vault_Secured_By_Aegis_9.4.2
+                RoadmapOS v1.0.4
             </div>
 </footer>
 </div>
