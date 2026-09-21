@@ -41,6 +41,13 @@ interface Roadmap {
   createdAt: string
 }
 
+// A roadmap is "completed" when it has tasks and every task and subtask is
+// done. It's derived, not stored, so adding a task to a completed roadmap
+// moves it back to active on its own.
+interface CompletedRoadmap extends Roadmap {
+  completedAt: string
+}
+
 interface Settings {
   fontScale: number
   soundEffects: boolean
@@ -120,6 +127,9 @@ interface StoreApi {
   rootTasks: (roadmapId: string) => Task[]
   subtasks: (parentId: string) => Task[]
   roadmapProgress: (roadmapId: string) => { completed: number; total: number }
+  activeRoadmaps: Roadmap[]
+  completedRoadmaps: CompletedRoadmap[]
+  isRoadmapComplete: (roadmapId: string) => boolean
   refresh: () => Promise<void>
   toggleTask: (taskId: string) => Promise<void>
   addRoadmap: (name: string, description: string) => Promise<Roadmap>
@@ -262,6 +272,27 @@ function StoreProvider({ children }: { children: ReactNode }) {
     [state.tasks],
   )
 
+  const { activeRoadmaps, completedRoadmaps } = useMemo(() => {
+    const active: Roadmap[] = []
+    const completed: CompletedRoadmap[] = []
+    for (const r of state.roadmaps) {
+      const tasks = state.tasks.filter((t) => t.roadmapId === r.id)
+      if (tasks.length > 0 && tasks.every((t) => t.done)) {
+        const completedAt = tasks.reduce((max, t) => (t.completedAt && t.completedAt > max ? t.completedAt : max), "")
+        completed.push({ ...r, completedAt: completedAt || r.createdAt })
+      } else {
+        active.push(r)
+      }
+    }
+    completed.sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1))
+    return { activeRoadmaps: active, completedRoadmaps: completed }
+  }, [state.roadmaps, state.tasks])
+
+  const isRoadmapComplete = useCallback(
+    (roadmapId: string) => completedRoadmaps.some((r) => r.id === roadmapId),
+    [completedRoadmaps],
+  )
+
   const achievements = useMemo<Achievement[]>(() => {
     const completedCount = state.tasks.filter((t) => t.done).length
     const xpByRoadmap = new Map<string, number>()
@@ -270,10 +301,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
       xpByRoadmap.set(t.roadmapId, (xpByRoadmap.get(t.roadmapId) ?? 0) + t.xp)
     }
     const maxRoadmapXp = Math.max(0, ...xpByRoadmap.values())
-    const hasPerfectRoadmap = state.roadmaps.some((r) => {
-      const p = roadmapProgress(r.id)
-      return p.total > 0 && p.completed === p.total
-    })
+    const hasPerfectRoadmap = completedRoadmaps.length > 0
 
     return [
       {
@@ -349,7 +377,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
         unlocked: false,
       })),
     ]
-  }, [state.tasks, state.roadmaps, roadmapProgress])
+  }, [state.tasks, state.roadmaps, completedRoadmaps])
 
   const toggleTask = useCallback(
     async (taskId: string) => {
@@ -717,6 +745,9 @@ function StoreProvider({ children }: { children: ReactNode }) {
     rootTasks,
     subtasks,
     roadmapProgress,
+    activeRoadmaps,
+    completedRoadmaps,
+    isRoadmapComplete,
     refresh,
     toggleTask,
     addRoadmap,
@@ -744,4 +775,4 @@ function useStore() {
 }
 
 export { StoreProvider, useStore }
-export type { Task, Roadmap, Settings, Profile, Achievement, AppState }
+export type { Task, Roadmap, CompletedRoadmap, Settings, Profile, Achievement, AppState }

@@ -19,6 +19,7 @@ import { Card } from "@/components/ui/card"
 import { Input, Label, Textarea } from "@/components/ui/field"
 import { Modal } from "@/components/ui/modal"
 import { ProgressRing } from "@/components/ui/progress-ring"
+import { StatusPill } from "@/components/ui/status-pill"
 import { usePageHeader } from "@/lib/page-header"
 import { useStore } from "@/lib/store"
 import { cn } from "@/lib/utils"
@@ -33,6 +34,7 @@ function RoadmapDetail() {
     rootTasks,
     subtasks,
     roadmapProgress,
+    isRoadmapComplete,
     toggleTask,
     addTask,
     updateTaskDueDate,
@@ -166,6 +168,11 @@ function RoadmapDetail() {
             <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-ink-muted">
               {total} nodes
             </span>
+            {isRoadmapComplete(roadmap.id) && (
+              <StatusPill tone="sage" dot={false}>
+                Completed
+              </StatusPill>
+            )}
           </div>
           <p className="mt-0.5 text-[12.5px] text-ink-muted">{roadmap.description}</p>
         </div>

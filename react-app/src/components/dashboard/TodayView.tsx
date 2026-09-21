@@ -53,7 +53,7 @@ function TaskRow({
 }
 
 function TodayView() {
-  const { state, toggleTask } = useStore()
+  const { state, activeRoadmaps, toggleTask } = useStore()
   const [comingUpOpen, setComingUpOpen] = useState(false)
 
   const roadmapName = (roadmapId: string) =>
@@ -65,7 +65,10 @@ function TodayView() {
     comingUpEnd.setDate(comingUpEnd.getDate() + COMING_UP_DAYS)
     const comingUpEndStr = toDateOnlyIso(comingUpEnd)
 
-    const dated = state.tasks.filter((t): t is Task & { dueDate: string } => t.dueDate !== null)
+    const activeIds = new Set(activeRoadmaps.map((r) => r.id))
+    const dated = state.tasks.filter(
+      (t): t is Task & { dueDate: string } => t.dueDate !== null && activeIds.has(t.roadmapId),
+    )
 
     const todayTasks = dated
       .filter((t) => t.dueDate === todayStr)
@@ -80,9 +83,9 @@ function TodayView() {
       .sort((a, b) => (a.dueDate < b.dueDate ? -1 : 1))
 
     return { todayTasks, overdueTasks, comingUpTasks, todayStr }
-  }, [state.tasks])
+  }, [state.tasks, activeRoadmaps])
 
-  if (state.roadmaps.length === 0) return null
+  if (activeRoadmaps.length === 0) return null
 
   return (
     <Card className="flex flex-col gap-5 p-5">

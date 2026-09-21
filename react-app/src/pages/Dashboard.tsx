@@ -48,14 +48,29 @@ function humanDuration(startIso: string, endIso: string) {
 
 function Dashboard() {
   const navigate = useNavigate()
-  const { state, totalXp, rootTasks, subtasks, roadmapProgress, toggleTask } = useStore()
+  const {
+    state,
+    totalXp,
+    rootTasks,
+    subtasks,
+    roadmapProgress,
+    activeRoadmaps,
+    completedRoadmaps,
+    toggleTask,
+  } = useStore()
 
   usePageHeader(["Smartmap", "Command Center"], {
     label: "New Node / Step",
     onClick: () => navigate("/workflows"),
   })
 
-  const pendingTasks = state.tasks.filter((t) => !t.done)
+  // Completed roadmaps and their tasks live on the Roadmaps page, not here.
+  const activeTasks = useMemo(() => {
+    const activeIds = new Set(activeRoadmaps.map((r) => r.id))
+    return state.tasks.filter((t) => activeIds.has(t.roadmapId))
+  }, [activeRoadmaps, state.tasks])
+
+  const pendingTasks = activeTasks.filter((t) => !t.done)
   const last7 = useMemo(() => {
     const days: number[] = []
     for (let i = 6; i >= 0; i--) {
@@ -70,13 +85,15 @@ function Dashboard() {
   const kpis: KpiCardProps[] = [
     {
       label: "Active Roadmaps",
-      value: String(state.roadmaps.length),
-      unit: `/ ${state.tasks.filter((t) => !t.parentTaskId).length} milestones`,
-      subtext: "On track this sprint",
+      value: String(activeRoadmaps.length),
+      unit: `/ ${activeTasks.filter((t) => !t.parentTaskId).length} milestones`,
+      subtext: completedRoadmaps.length
+        ? `${completedRoadmaps.length} completed`
+        : "On track this sprint",
       icon: Waypoints,
       tone: "sage",
-      progress: state.tasks.length
-        ? Math.round((state.tasks.filter((t) => t.done).length / state.tasks.length) * 100)
+      progress: activeTasks.length
+        ? Math.round((activeTasks.filter((t) => t.done).length / activeTasks.length) * 100)
         : 0,
     },
     {
@@ -107,10 +124,10 @@ function Dashboard() {
   ]
 
   const focusRoadmap = useMemo(() => {
-    if (state.roadmaps.length === 0) return null
-    const withActivity = state.roadmaps
+    if (activeRoadmaps.length === 0) return null
+    const withActivity = activeRoadmaps
       .map((r) => {
-        const tasks = state.tasks.filter((t) => t.roadmapId === r.id)
+        const tasks = activeTasks.filter((t) => t.roadmapId === r.id)
         const lastActivity = tasks.reduce<string>((max, t) => {
           const ts = t.completedAt ?? t.createdAt
           return ts > max ? ts : max
@@ -119,7 +136,7 @@ function Dashboard() {
       })
       .sort((a, b) => (a.lastActivity < b.lastActivity ? 1 : -1))
     return withActivity[0]?.roadmap ?? null
-  }, [state.roadmaps, state.tasks])
+  }, [activeRoadmaps, activeTasks])
 
   const stages: NodeCardProps[] = focusRoadmap
     ? rootTasks(focusRoadmap.id).map((task, i) => {
@@ -147,7 +164,7 @@ function Dashboard() {
       })
     : []
 
-  const recentLogs: LogRow[] = state.tasks
+  const recentLogs: LogRow[] = activeTasks
     .filter((t) => t.completedAt)
     .sort((a, b) => (a.completedAt! < b.completedAt! ? 1 : -1))
     .slice(0, 6)
@@ -172,7 +189,13 @@ function Dashboard() {
       <TodayView />
 
       <RoadmapCanvas
-        subtitle={focusRoadmap ? `${focusRoadmap.name} · ${stages.length} linked stages` : "No active roadmap yet"}
+        subtitle={
+          focusRoadmap
+            ? `${focusRoadmap.name} · ${stages.length} linked stages`
+            : state.roadmaps.length > 0
+              ? "All roadmaps completed"
+              : "No active roadmap yet"
+        }
         stages={stages}
         healthy={pendingTasks.length < 6}
       />
@@ -219,7 +242,7 @@ function Dashboard() {
             </Button>
           </div>
           <div className="flex flex-col gap-2">
-            {state.roadmaps.slice(0, 3).map((r) => {
+            {activeRoadmaps.slice(0, 3).map((r) => {
               const { completed, total } = roadmapProgress(r.id)
               const pct = total ? Math.round((completed / total) * 100) : 0
               return (
@@ -251,6 +274,15 @@ function Dashboard() {
               <Plus className="size-3.5" />
               Create New Roadmap
             </button>
+            {completedRoadmaps.length > 0 && (
+              <button
+                type="button"
+                onClick={() => navigate("/roadmap")}
+                className="text-center text-[12px] font-medium text-ink-muted hover:text-ink"
+              >
+                {completedRoadmaps.length} completed — view
+              </button>
+            )}
           </div>
         </Card>
       </div>

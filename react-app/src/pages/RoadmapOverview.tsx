@@ -1,4 +1,4 @@
-import { ChevronRight, Waypoints } from "lucide-react"
+import { CheckCircle2, ChevronRight, Waypoints } from "lucide-react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
@@ -7,12 +7,70 @@ import { Card } from "@/components/ui/card"
 import { Input, Label, Textarea } from "@/components/ui/field"
 import { Modal } from "@/components/ui/modal"
 import { ProgressRing } from "@/components/ui/progress-ring"
+import { StatusPill } from "@/components/ui/status-pill"
 import { usePageHeader } from "@/lib/page-header"
-import { useStore } from "@/lib/store"
+import { useStore, type Roadmap } from "@/lib/store"
+
+function RoadmapCard({
+  roadmap,
+  progress,
+  completedAt,
+  onOpen,
+}: {
+  roadmap: Roadmap
+  progress: { completed: number; total: number }
+  completedAt?: string
+  onOpen: () => void
+}) {
+  const { completed, total } = progress
+  const pct = total ? Math.round((completed / total) * 100) : 0
+  return (
+    <Card
+      className="group cursor-pointer p-5 transition-colors hover:border-ink-muted/30"
+      onClick={onOpen}
+    >
+      <div className="flex items-start gap-3">
+        <ProgressRing
+          percent={pct}
+          size={48}
+          strokeWidth={4}
+          toneClassName={completedAt ? "stroke-sage-text" : undefined}
+        >
+          {completedAt ? (
+            <CheckCircle2 className="size-4 text-sage-text" />
+          ) : (
+            <span className="text-[11px] font-bold text-ink-strong">{pct}%</span>
+          )}
+        </ProgressRing>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-[14px] font-semibold text-ink-strong">{roadmap.name}</h3>
+          <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-ink-muted">
+            {roadmap.description || "No description."}
+          </p>
+        </div>
+        <ChevronRight className="size-4 shrink-0 text-ink-muted opacity-0 transition-opacity group-hover:opacity-100" />
+      </div>
+      <div className="mt-4 flex items-center justify-between text-[11px] text-ink-muted">
+        <span>
+          {completed}/{total} nodes completed
+        </span>
+        {completedAt && (
+          <StatusPill tone="sage" dot={false}>
+            Completed{" "}
+            {new Date(completedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+          </StatusPill>
+        )}
+      </div>
+      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
+        <div className="h-full rounded-full bg-sage-text" style={{ width: `${pct}%` }} />
+      </div>
+    </Card>
+  )
+}
 
 function RoadmapOverview() {
   const navigate = useNavigate()
-  const { state, roadmapProgress, addRoadmap } = useStore()
+  const { state, roadmapProgress, activeRoadmaps, completedRoadmaps, addRoadmap } = useStore()
   const [modalOpen, setModalOpen] = useState(false)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
@@ -47,7 +105,9 @@ function RoadmapOverview() {
         <div>
           <h1 className="text-sm font-semibold text-ink-strong">All Roadmaps</h1>
           <p className="text-[12px] text-ink-muted">
-            {state.roadmaps.length} active pipelines · click one to open its node canvas
+            {activeRoadmaps.length} active
+            {completedRoadmaps.length > 0 && ` · ${completedRoadmaps.length} completed`} · click one
+            to open its node canvas
           </p>
         </div>
         <Button size="sm" onClick={() => setModalOpen(true)}>
@@ -66,42 +126,51 @@ function RoadmapOverview() {
           </Button>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {state.roadmaps.map((r) => {
-            const { completed, total } = roadmapProgress(r.id)
-            const pct = total ? Math.round((completed / total) * 100) : 0
-            return (
-              <Card
-                key={r.id}
-                className="group cursor-pointer p-5 transition-colors hover:border-ink-muted/30"
-                onClick={() => navigate(`/roadmap/${r.id}`)}
-              >
-                <div className="flex items-start gap-3">
-                  <ProgressRing percent={pct} size={48} strokeWidth={4}>
-                    <span className="text-[11px] font-bold text-ink-strong">{pct}%</span>
-                  </ProgressRing>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-[14px] font-semibold text-ink-strong">
-                      {r.name}
-                    </h3>
-                    <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-ink-muted">
-                      {r.description || "No description."}
-                    </p>
-                  </div>
-                  <ChevronRight className="size-4 shrink-0 text-ink-muted opacity-0 transition-opacity group-hover:opacity-100" />
-                </div>
-                <div className="mt-4 flex items-center justify-between text-[11px] text-ink-muted">
-                  <span>
-                    {completed}/{total} nodes completed
-                  </span>
-                </div>
-                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
-                  <div className="h-full rounded-full bg-sage-text" style={{ width: `${pct}%` }} />
-                </div>
-              </Card>
-            )
-          })}
-        </div>
+        <>
+          {activeRoadmaps.length === 0 ? (
+            <Card className="flex flex-col items-center justify-center gap-3 p-10 text-center">
+              <p className="text-[13px] text-ink-muted">
+                Every roadmap is completed. Start a new one to keep going.
+              </p>
+              <Button size="sm" onClick={() => setModalOpen(true)}>
+                New Roadmap
+              </Button>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {activeRoadmaps.map((r) => (
+                <RoadmapCard
+                  key={r.id}
+                  roadmap={r}
+                  progress={roadmapProgress(r.id)}
+                  onOpen={() => navigate(`/roadmap/${r.id}`)}
+                />
+              ))}
+            </div>
+          )}
+
+          {completedRoadmaps.length > 0 && (
+            <section className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 px-1">
+                <h2 className="text-sm font-semibold text-ink-strong">Completed</h2>
+                <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-ink-muted">
+                  {completedRoadmaps.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {completedRoadmaps.map((r) => (
+                  <RoadmapCard
+                    key={r.id}
+                    roadmap={r}
+                    progress={roadmapProgress(r.id)}
+                    completedAt={r.completedAt}
+                    onOpen={() => navigate(`/roadmap/${r.id}`)}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
 
       <Modal
