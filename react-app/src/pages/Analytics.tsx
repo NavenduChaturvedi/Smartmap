@@ -44,7 +44,7 @@ function Analytics() {
     {
       label: "Total XP",
       value: totalXp.toLocaleString(),
-      subtext: "Earned from completed tasks",
+      subtext: "From tasks and achievements",
       icon: Zap,
     },
     {

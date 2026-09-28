@@ -35,6 +35,7 @@ function Dashboard() {
   const {
     state,
     totalXp,
+    weeklyXp,
     streak,
     completedTasks,
     rootTasks,
@@ -57,7 +58,7 @@ function Dashboard() {
   }, [activeRoadmaps, state.tasks])
 
   const pendingTasks = activeTasks.filter((t) => !t.done)
-  // Tasks completed on each of the last 7 local days, plus the XP they earned.
+  // Tasks completed on each of the last 7 local days.
   const last7 = useMemo(() => {
     const keys: string[] = []
     for (let i = 6; i >= 0; i--) {
@@ -66,15 +67,12 @@ function Dashboard() {
       keys.push(localDateKey(d))
     }
     const counts = keys.map(() => 0)
-    let xp = 0
     for (const t of completedTasks) {
       if (!t.completedAt) continue
       const idx = keys.indexOf(localDateKey(new Date(t.completedAt)))
-      if (idx === -1) continue
-      counts[idx] += 1
-      xp += t.xp
+      if (idx !== -1) counts[idx] += 1
     }
-    return { counts, xp }
+    return counts
   }, [completedTasks])
 
   const doneActive = activeTasks.filter((t) => t.done).length
@@ -106,16 +104,16 @@ function Dashboard() {
       subtext: streak > 0 ? "Tasks done, last 7 days" : "Complete a task to start one",
       icon: Flame,
       tone: streak > 0 ? "sage" : "neutral",
-      sparkline: last7.counts,
+      sparkline: last7,
     },
     {
       label: "Total XP",
       value: totalXp.toLocaleString(),
       unit: "XP",
-      subtext: "Lifetime",
+      subtext: "Tasks + achievements",
       icon: Zap,
       tone: "sage",
-      trend: last7.xp > 0 ? { value: `+${last7.xp} this week`, direction: "up" } : undefined,
+      trend: weeklyXp > 0 ? { value: `+${weeklyXp} this week`, direction: "up" } : undefined,
     },
   ]
 

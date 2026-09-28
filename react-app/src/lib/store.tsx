@@ -32,6 +32,7 @@ import {
   normalizeLegacyState,
   readLegacyState,
 } from "./legacy-migration"
+import { addDays, localDateKey } from "./dates"
 import { resolveDisplayName } from "./profile"
 import { computeStreak } from "./streak"
 import { supabase } from "./supabase"
@@ -292,7 +293,11 @@ interface StoreApi {
   guestSync: GuestSync | null
   retryGuestSync: () => Promise<void>
   dismissGuestSync: () => void
+  // The one XP figure every screen shows: completed-task XP plus XP awarded
+  // by unlocked achievements.
   totalXp: number
+  // Same sources, earned in the last 7 local days (today included).
+  weeklyXp: number
   streak: number
   // Every done task, newest first; tasks with no completion time (e.g. from
   // the legacy import) sort last. The single source for activity views and
@@ -516,10 +521,22 @@ function StoreProvider({ children }: { children: ReactNode }) {
     if (user?.id) await loadAll(user.id, metadataName, true)
   }, [user?.id, metadataName, loadAll])
 
-  const totalXp = useMemo(
-    () => state.tasks.filter((t) => t.done).reduce((sum, t) => sum + t.xp, 0),
-    [state.tasks],
-  )
+  const { totalXp, weeklyXp } = useMemo(() => {
+    const weekStart = localDateKey(addDays(new Date(), -6))
+    const inLastWeek = (iso: string | null) => !!iso && localDateKey(new Date(iso)) >= weekStart
+    let total = 0
+    let weekly = 0
+    for (const t of state.tasks) {
+      if (!t.done) continue
+      total += t.xp
+      if (inLastWeek(t.completedAt)) weekly += t.xp
+    }
+    for (const u of Object.values(state.unlocks)) {
+      total += u.xpAwarded
+      if (inLastWeek(u.unlockedAt)) weekly += u.xpAwarded
+    }
+    return { totalXp: total, weeklyXp: weekly }
+  }, [state.tasks, state.unlocks])
 
   const streak = useMemo(() => computeStreak(state.tasks), [state.tasks])
 
@@ -1071,6 +1088,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
     retryGuestSync,
     dismissGuestSync,
     totalXp,
+    weeklyXp,
     streak,
     completedTasks,
     achievements,
