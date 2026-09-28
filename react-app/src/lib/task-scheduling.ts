@@ -6,8 +6,13 @@
 // roadmap has no clear duration/stage structure and every task gets a null
 // due date (falls into "unscheduled", not "today").
 
+// YYYY-MM-DD in the user's local timezone. Not toISOString(), which is UTC:
+// in e.g. IST that files anything done before 05:30 under the previous day.
 function toDateOnlyIso(date: Date): string {
-  return date.toISOString().slice(0, 10)
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, "0")
+  const d = String(date.getDate()).padStart(2, "0")
+  return `${y}-${m}-${d}`
 }
 
 // Returns the total span in days implied by the titles, or null if the

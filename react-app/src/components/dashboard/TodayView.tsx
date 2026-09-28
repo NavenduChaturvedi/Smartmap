@@ -45,7 +45,9 @@ function TaskRow({
       >
         {task.title}
       </span>
-      <span className="text-[11px] text-ink-muted">{roadmapName}</span>
+      <span className="hidden max-w-[30%] truncate text-[11px] text-ink-muted sm:inline">
+        {roadmapName}
+      </span>
       {trailing}
       <StatusPill tone="amber">+{task.xp} XP</StatusPill>
     </button>

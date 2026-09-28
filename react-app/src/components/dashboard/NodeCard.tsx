@@ -1,5 +1,4 @@
 import type { LucideIcon } from "lucide-react"
-import { MoreHorizontal } from "lucide-react"
 import { motion } from "framer-motion"
 
 import { StatusPill } from "@/components/ui/status-pill"
@@ -29,7 +28,8 @@ interface NodeCardProps {
   icon: LucideIcon
   tone: Tone
   statusLabel: string
-  confidence: number
+  // Percent done: subtasks completed, or 0/100 for a task with none.
+  progress: number
   onClick?: () => void
 }
 
@@ -40,7 +40,7 @@ function NodeCard({
   icon: Icon,
   tone,
   statusLabel,
-  confidence,
+  progress,
   onClick,
 }: NodeCardProps) {
   return (
@@ -48,6 +48,18 @@ function NodeCard({
       whileHover={{ y: -2 }}
       transition={{ duration: 0.15 }}
       onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                onClick()
+              }
+            }
+          : undefined
+      }
       className={cn(
         "group relative flex w-[248px] shrink-0 flex-col gap-3 rounded-xl border border-line bg-surface p-4 shadow-crisp transition-colors hover:border-ink-muted/30",
         onClick && "cursor-pointer",
@@ -61,7 +73,7 @@ function NodeCard({
               toneIconBg[tone],
             )}
           >
-            <Icon className="size-4" strokeWidth={2} />
+            <Icon className="size-4" strokeWidth={2} aria-hidden />
           </div>
           <div>
             <p className="text-[10px] font-semibold tracking-wider text-ink-muted uppercase">
@@ -69,13 +81,6 @@ function NodeCard({
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          className="flex size-6 items-center justify-center rounded-md text-ink-muted opacity-0 transition-opacity hover:bg-surface-muted hover:text-ink group-hover:opacity-100"
-          aria-label="Inspect node"
-        >
-          <MoreHorizontal className="size-3.5" />
-        </button>
       </div>
 
       <div>
@@ -90,14 +95,14 @@ function NodeCard({
       <div className="flex items-center justify-between">
         <StatusPill tone={tone}>{statusLabel}</StatusPill>
         <span className="text-[11px] font-medium text-ink-muted tabular-nums">
-          {confidence}% conf.
+          {progress}% done
         </span>
       </div>
 
       <div className="h-1 w-full overflow-hidden rounded-full bg-surface-muted">
         <div
           className={cn("h-full rounded-full", toneBar[tone])}
-          style={{ width: `${confidence}%` }}
+          style={{ width: `${progress}%` }}
         />
       </div>
     </motion.div>

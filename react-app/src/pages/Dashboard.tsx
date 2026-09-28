@@ -11,9 +11,9 @@ import {
   Zap,
 } from "lucide-react"
 import { useMemo } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
-import { EventLogTable, type LogRow } from "@/components/dashboard/EventLogTable"
+import { ActivityTable } from "@/components/dashboard/ActivityTable"
 import { KpiRow } from "@/components/dashboard/KpiRow"
 import type { KpiCardProps } from "@/components/dashboard/KpiCard"
 import type { NodeCardProps } from "@/components/dashboard/NodeCard"
@@ -25,32 +25,18 @@ import { ProgressRing } from "@/components/ui/progress-ring"
 import { StatusPill } from "@/components/ui/status-pill"
 import { usePageHeader } from "@/lib/page-header"
 import { useStore } from "@/lib/store"
+import { toDateOnlyIso } from "@/lib/task-scheduling"
 import { cn } from "@/lib/utils"
 
 const STAGE_ICONS = [Webhook, BrainCircuit, SplitSquareHorizontal, BellRing]
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  })
-}
-
-function humanDuration(startIso: string, endIso: string) {
-  const ms = new Date(endIso).getTime() - new Date(startIso).getTime()
-  const mins = Math.round(ms / 60000)
-  if (mins < 60) return `${Math.max(mins, 1)}m`
-  const hours = Math.round(mins / 60)
-  if (hours < 24) return `${hours}h`
-  return `${Math.round(hours / 24)}d`
-}
 
 function Dashboard() {
   const navigate = useNavigate()
   const {
     state,
     totalXp,
+    streak,
+    completedTasks,
     rootTasks,
     subtasks,
     roadmapProgress,
@@ -59,8 +45,8 @@ function Dashboard() {
     toggleTask,
   } = useStore()
 
-  usePageHeader(["Smartmap", "Command Center"], {
-    label: "New Node / Step",
+  usePageHeader(["Smartmap", "Dashboard"], {
+    label: "New Roadmap",
     onClick: () => navigate("/workflows"),
   })
 
@@ -71,55 +57,65 @@ function Dashboard() {
   }, [activeRoadmaps, state.tasks])
 
   const pendingTasks = activeTasks.filter((t) => !t.done)
+  // Tasks completed on each of the last 7 local days, plus the XP they earned.
   const last7 = useMemo(() => {
-    const days: number[] = []
+    const keys: string[] = []
     for (let i = 6; i >= 0; i--) {
       const d = new Date()
       d.setDate(d.getDate() - i)
-      const key = d.toISOString().slice(0, 10)
-      days.push(state.tasks.filter((t) => t.completedAt?.slice(0, 10) === key).length)
+      keys.push(toDateOnlyIso(d))
     }
-    return days
-  }, [state.tasks])
+    const counts = keys.map(() => 0)
+    let xp = 0
+    for (const t of completedTasks) {
+      if (!t.completedAt) continue
+      const idx = keys.indexOf(toDateOnlyIso(new Date(t.completedAt)))
+      if (idx === -1) continue
+      counts[idx] += 1
+      xp += t.xp
+    }
+    return { counts, xp }
+  }, [completedTasks])
+
+  const doneActive = activeTasks.filter((t) => t.done).length
 
   const kpis: KpiCardProps[] = [
     {
-      label: "Active Roadmaps",
+      label: "Active roadmaps",
       value: String(activeRoadmaps.length),
-      unit: `/ ${activeTasks.filter((t) => !t.parentTaskId).length} milestones`,
-      subtext: completedRoadmaps.length
-        ? `${completedRoadmaps.length} completed`
-        : "On track this sprint",
+      subtext: activeTasks.length
+        ? `${doneActive} of ${activeTasks.length} tasks done`
+        : completedRoadmaps.length
+          ? `${completedRoadmaps.length} completed, none in progress`
+          : "Create one to get started",
       icon: Waypoints,
       tone: "sage",
-      progress: activeTasks.length
-        ? Math.round((activeTasks.filter((t) => t.done).length / activeTasks.length) * 100)
-        : 0,
+      progress: activeTasks.length ? Math.round((doneActive / activeTasks.length) * 100) : undefined,
     },
     {
-      label: "Tasks Pending",
+      label: "Tasks pending",
       value: String(pendingTasks.length),
-      subtext: "Across all roadmaps",
+      subtext: "In active roadmaps",
       icon: ListChecks,
       tone: pendingTasks.length > 0 ? "amber" : "sage",
     },
     {
-      label: "Active Streak",
-      value: String(state.streak),
-      unit: "day streak",
-      subtext: "Keep the momentum",
+      label: "Streak",
+      value: String(streak),
+      unit: streak === 1 ? "day" : "days",
+      subtext: streak > 0 ? "Tasks done, last 7 days" : "Complete a task to start one",
       icon: Flame,
-      tone: "sage",
-      sparkline: last7,
+      tone: streak > 0 ? "sage" : "neutral",
+      sparkline: last7.counts,
     },
     {
-      label: "Total Experience",
+      label: "Total XP",
       value: totalXp.toLocaleString(),
       unit: "XP",
-      subtext: "Lifetime earned",
+      subtext: "Lifetime",
       icon: Zap,
       tone: "sage",
-      trend: { value: `+${last7.reduce((a, b) => a + b, 0)} this wk`, direction: "up" },
+      trend: last7.xp > 0 ? { value: `+${last7.xp} this week`, direction: "up" } : undefined,
     },
   ]
 
@@ -142,7 +138,7 @@ function Dashboard() {
     ? rootTasks(focusRoadmap.id).map((task, i) => {
         const subs = subtasks(task.id)
         const doneSubs = subs.filter((s) => s.done).length
-        const confidence = subs.length
+        const progress = subs.length
           ? Math.round((doneSubs / subs.length) * 100)
           : task.done
             ? 100
@@ -151,31 +147,21 @@ function Dashboard() {
           stage: `Stage ${i + 1}`,
           title: task.title,
           description: subs.length
-            ? `${doneSubs}/${subs.length} sub-steps complete`
+            ? `${doneSubs}/${subs.length} subtasks done`
             : task.done
-              ? "Stage complete"
-              : "Awaiting execution",
+              ? "Done"
+              : "Not started",
           icon: STAGE_ICONS[i % STAGE_ICONS.length],
           tone: task.done ? "sage" : "amber",
-          statusLabel: task.done ? "Active" : subs.length ? `${subs.length - doneSubs} Pending` : "Pending",
-          confidence,
+          statusLabel: task.done ? "Done" : subs.length ? `${subs.length - doneSubs} left` : "To do",
+          progress,
           onClick: () => navigate(`/roadmap/${focusRoadmap.id}`),
         }
       })
     : []
 
-  const recentLogs: LogRow[] = activeTasks
-    .filter((t) => t.completedAt)
-    .sort((a, b) => (a.completedAt! < b.completedAt! ? 1 : -1))
-    .slice(0, 6)
-    .map((t, i) => ({
-      timestamp: formatTime(t.completedAt!),
-      nodeId: `N-${String(100 - i).padStart(3, "0")}`,
-      step: t.title,
-      status: "success",
-      duration: humanDuration(t.createdAt, t.completedAt!),
-      confidence: Math.min(99, 60 + t.xp),
-    }))
+  const roadmapName = (id: string) =>
+    state.roadmaps.find((r) => r.id === id)?.name ?? "Deleted roadmap"
 
   const objectives = pendingTasks
     .filter((t) => !t.parentTaskId)
@@ -189,23 +175,28 @@ function Dashboard() {
       <TodayView />
 
       <RoadmapCanvas
+        title="Current roadmap"
         subtitle={
           focusRoadmap
-            ? `${focusRoadmap.name} · ${stages.length} linked stages`
+            ? `${focusRoadmap.name} · ${stages.length} stage${stages.length === 1 ? "" : "s"}`
             : state.roadmaps.length > 0
               ? "All roadmaps completed"
-              : "No active roadmap yet"
+              : "No roadmap yet"
         }
         stages={stages}
-        healthy={pendingTasks.length < 6}
+        emptyMessage={
+          state.roadmaps.length > 0
+            ? "Every roadmap is finished. Start a new one to see its stages here."
+            : "Create a roadmap to see its stages here."
+        }
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="flex flex-col gap-1 p-5 lg:col-span-2">
           <div className="mb-2 flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-ink-strong">Current Objectives</h2>
-              <p className="text-[12px] text-ink-muted">Top pending tasks across roadmaps</p>
+              <h2 className="text-sm font-semibold text-ink-strong">Up next</h2>
+              <p className="text-[12px] text-ink-muted">Oldest open tasks across your roadmaps</p>
             </div>
           </div>
           {objectives.length === 0 ? (
@@ -224,8 +215,8 @@ function Dashboard() {
                     className="flex items-center gap-3 border-b border-line/70 py-2.5 text-left last:border-0 hover:bg-surface-muted/60"
                   >
                     <Circle className="size-4 shrink-0 text-ink-muted" strokeWidth={1.75} />
-                    <span className="flex-1 text-[13px] font-medium text-ink">{task.title}</span>
-                    <span className="text-[11px] text-ink-muted">{roadmap?.name}</span>
+                    <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">{task.title}</span>
+                    <span className="hidden text-[11px] text-ink-muted sm:inline">{roadmap?.name}</span>
                     <StatusPill tone="amber">+{task.xp} XP</StatusPill>
                   </button>
                 )
@@ -258,7 +249,7 @@ function Dashboard() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] font-medium text-ink">{r.name}</p>
                     <p className="text-[11px] text-ink-muted">
-                      {completed}/{total} nodes completed
+                      {completed}/{total} tasks done
                     </p>
                   </div>
                 </button>
@@ -287,7 +278,22 @@ function Dashboard() {
         </Card>
       </div>
 
-      <EventLogTable logs={recentLogs} />
+      <ActivityTable
+        title="Recent activity"
+        subtitle={`${completedTasks.length} task${completedTasks.length === 1 ? "" : "s"} completed in total`}
+        tasks={completedTasks.slice(0, 6)}
+        roadmapName={roadmapName}
+        action={
+          completedTasks.length > 0 ? (
+            <Link
+              to="/logs"
+              className="shrink-0 text-[12.5px] font-medium text-ink-muted hover:text-ink"
+            >
+              View all
+            </Link>
+          ) : undefined
+        }
+      />
     </>
   )
 }

@@ -1,17 +1,23 @@
+import { ArrowRight } from "lucide-react"
 import { useEffect, useState } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input, Label } from "@/components/ui/field"
 import { useAuth } from "@/lib/auth-context"
+import { useStore } from "@/lib/store"
 
 function Login() {
   const navigate = useNavigate()
   const location = useLocation()
   const { session, loading, signIn, signUp } = useAuth()
+  const { isGuest, state } = useStore()
+  const guestRoadmaps = isGuest ? state.roadmaps.length : 0
 
-  const [mode, setMode] = useState<"login" | "signup">("login")
+  const [mode, setMode] = useState<"login" | "signup">(
+    (location.state as { mode?: string } | null)?.mode === "signup" ? "signup" : "login",
+  )
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -54,7 +60,11 @@ function Login() {
       if (signUpError) {
         setError(signUpError)
       } else if (needsEmailConfirm) {
-        setInfo("Check your email to confirm your account, then sign in.")
+        setInfo(
+          guestRoadmaps > 0
+            ? "Check your email to confirm your account, then sign in. Your roadmaps stay in this browser until then."
+            : "Check your email to confirm your account, then sign in.",
+        )
         setMode("login")
       }
       // If no confirmation is needed, signUp already returns a session and
@@ -64,7 +74,7 @@ function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
+    <div className="flex min-h-dvh items-center justify-center bg-canvas p-4 sm:p-6">
       <Card className="w-full max-w-sm p-6">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
           <div className="flex size-11 items-center justify-center rounded-xl bg-surface-dark">
@@ -72,20 +82,37 @@ function Login() {
           </div>
           <h1 className="text-[15px] font-semibold text-ink-strong">Smartmap</h1>
           <p className="text-[12.5px] text-ink-muted">
-            {mode === "login" ? "Sign in to continue." : "Create a new account."}
+            {mode === "login"
+              ? "Sign in to sync your roadmaps across devices."
+              : "Create an account to keep your roadmaps safe."}
           </p>
         </div>
+
+        {guestRoadmaps > 0 && (
+          <p className="mb-4 rounded-lg bg-sage-bg px-3 py-2 text-[12.5px] text-sage-text">
+            The {guestRoadmaps} roadmap{guestRoadmaps === 1 ? "" : "s"} you made in this browser
+            will be added to your account.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {mode === "signup" && (
             <div>
-              <Label>Full Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+              <Label htmlFor="login-name">Full Name</Label>
+              <Input
+                id="login-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
+                autoFocus
+              />
             </div>
           )}
           <div>
-            <Label>Email</Label>
+            <Label htmlFor="login-email">Email</Label>
             <Input
+              id="login-email"
+              autoComplete="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -94,8 +121,10 @@ function Login() {
             />
           </div>
           <div>
-            <Label>Password</Label>
+            <Label htmlFor="login-password">Password</Label>
             <Input
+              id="login-password"
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -128,6 +157,19 @@ function Login() {
         >
           {mode === "login" ? "Need an account? Create one" : "Already have an account? Sign in"}
         </button>
+
+        <div className="mt-4 border-t border-line pt-4 text-center">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1 text-[12.5px] font-medium text-ink-muted hover:text-ink"
+          >
+            {guestRoadmaps > 0 ? "Back to the app" : "Try it without an account"}
+            <ArrowRight className="size-3.5" aria-hidden />
+          </Link>
+          <p className="mt-1 text-[11.5px] text-ink-muted">
+            Your data is saved in this browser until you sign in.
+          </p>
+        </div>
       </Card>
     </div>
   )

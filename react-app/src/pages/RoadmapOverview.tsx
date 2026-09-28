@@ -52,7 +52,7 @@ function RoadmapCard({
       </div>
       <div className="mt-4 flex items-center justify-between text-[11px] text-ink-muted">
         <span>
-          {completed}/{total} nodes completed
+          {completed}/{total} tasks done
         </span>
         {completedAt && (
           <StatusPill tone="sage" dot={false}>
@@ -77,7 +77,7 @@ function RoadmapOverview() {
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState("")
 
-  usePageHeader(["Smartmap", "Interactive Roadmap Canvas"], {
+  usePageHeader(["Smartmap", "Roadmaps"], {
     label: "New Roadmap",
     onClick: () => setModalOpen(true),
   })
@@ -106,8 +106,7 @@ function RoadmapOverview() {
           <h1 className="text-sm font-semibold text-ink-strong">All Roadmaps</h1>
           <p className="text-[12px] text-ink-muted">
             {activeRoadmaps.length} active
-            {completedRoadmaps.length > 0 && ` · ${completedRoadmaps.length} completed`} · click one
-            to open its node canvas
+            {completedRoadmaps.length > 0 && ` · ${completedRoadmaps.length} completed`}
           </p>
         </div>
         <Button size="sm" onClick={() => setModalOpen(true)}>
@@ -119,7 +118,7 @@ function RoadmapOverview() {
         <Card className="flex flex-col items-center justify-center gap-3 p-12 text-center">
           <Waypoints className="size-8 text-ink-muted" strokeWidth={1.5} />
           <p className="text-[13px] text-ink-muted">
-            No roadmaps yet. Create your first one to start building a node pipeline.
+            No roadmaps yet. Create your first one to start tracking progress.
           </p>
           <Button size="sm" onClick={() => setModalOpen(true)}>
             New Roadmap
@@ -177,12 +176,13 @@ function RoadmapOverview() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         title="New Roadmap"
-        description="Give your pipeline a name and a short description."
+        description="Give your roadmap a name and a short description."
       >
         <div className="flex flex-col gap-4">
           <div>
-            <Label>Roadmap Name</Label>
+            <Label htmlFor="new-roadmap-name">Roadmap Name</Label>
             <Input
+              id="new-roadmap-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Ethical Hacking Fundamentals"
@@ -190,8 +190,9 @@ function RoadmapOverview() {
             />
           </div>
           <div>
-            <Label>Description</Label>
+            <Label htmlFor="new-roadmap-description">Description</Label>
             <Textarea
+              id="new-roadmap-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What is this roadmap for?"

@@ -1,5 +1,6 @@
-import { AlertTriangle, Bell, Database, Download, Upload, User } from "lucide-react"
+import { AlertTriangle, Database, Download, Upload, User } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
+import { Link } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -11,7 +12,7 @@ import { type AppState, useStore } from "@/lib/store"
 
 function Settings() {
   usePageHeader(["Smartmap", "Settings"])
-  const { state, updateProfile, updateSettings, resetProgress, importState } = useStore()
+  const { state, isGuest, updateProfile, updateSettings, resetProgress, importState } = useStore()
 
   const [displayName, setDisplayName] = useState(state.profile.displayName)
   const [email, setEmail] = useState(state.profile.email)
@@ -47,7 +48,7 @@ function Settings() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = "roadmapos-export.json"
+    a.download = "smartmap-export.json"
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -94,15 +95,31 @@ function Settings() {
               <User className="size-4 text-ink-muted" />
               <h2 className="text-sm font-semibold text-ink-strong">Profile Settings</h2>
             </div>
+            {isGuest && (
+              <p className="rounded-lg bg-surface-muted px-3 py-2 text-[12.5px] text-ink-muted">
+                You're using Smartmap as a guest, so everything is saved in this browser only.{" "}
+                <Link to="/login" className="font-medium text-ink underline underline-offset-2">
+                  Sign in or create an account
+                </Link>{" "}
+                to keep it. What you've made here comes with you.
+              </p>
+            )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <Label>Display Name</Label>
-                <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+                <Label htmlFor="settings-display-name">Display Name</Label>
+                <Input id="settings-display-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
               </div>
-              <div>
-                <Label>Email</Label>
-                <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
-              </div>
+              {!isGuest && (
+                <div>
+                  <Label htmlFor="settings-email">Email</Label>
+                  <Input
+                    id="settings-email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    type="email"
+                  />
+                </div>
+              )}
             </div>
             <Button size="sm" className="self-start" onClick={handleSaveProfile} disabled={saving}>
               {saving ? "Saving..." : saved ? "Saved" : "Save Changes"}
@@ -114,10 +131,13 @@ function Settings() {
 
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <Label className="mb-0">Font Size</Label>
+                <Label htmlFor="settings-font-size" className="mb-0">
+                  Font Size
+                </Label>
                 <span className="text-[12px] text-ink-muted">{fontLabel}</span>
               </div>
               <input
+                id="settings-font-size"
                 type="range"
                 min={90}
                 max={120}
@@ -146,24 +166,6 @@ function Settings() {
             ))}
           </Card>
 
-          <Card className="flex flex-col gap-4 p-5">
-            <div className="flex items-center gap-2">
-              <Bell className="size-4 text-ink-muted" />
-              <h2 className="text-sm font-semibold text-ink-strong">Notifications</h2>
-            </div>
-            <div className="flex flex-col divide-y divide-line">
-              {[
-                { label: "Daily Reminder", value: "08:00 AM" },
-                { label: "Streak Warning", value: "Enabled" },
-                { label: "Achievement Alerts", value: "Global" },
-              ].map((row) => (
-                <div key={row.label} className="flex items-center justify-between py-2.5 text-[13px]">
-                  <span className="text-ink">{row.label}</span>
-                  <span className="text-ink-muted">{row.value}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
         </div>
 
         <div className="flex flex-col gap-4">
@@ -211,7 +213,11 @@ function Settings() {
         open={resetOpen}
         onClose={() => setResetOpen(false)}
         title="Reset All Progress"
-        description="This permanently deletes every roadmap and task in your account. This cannot be undone."
+        description={
+          isGuest
+            ? "This permanently deletes every roadmap and task saved in this browser. This cannot be undone."
+            : "This permanently deletes every roadmap and task in your account. This cannot be undone."
+        }
       >
         <div className="flex justify-end gap-2">
           <Button variant="outline" size="sm" onClick={() => setResetOpen(false)}>

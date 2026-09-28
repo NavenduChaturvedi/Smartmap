@@ -140,8 +140,6 @@ function normalizeLegacyState(legacy: LegacyState): AppState {
   return {
     roadmaps: [...roadmapById.values(), ...roadmapByTagName.values()],
     tasks,
-    streak: legacy.streak ?? 0,
-    lastActiveDate: legacy.settings?.lastActiveDate ?? null,
     profile: {
       displayName: legacy.profile?.displayName || legacy.commanderName || "",
       email: legacy.profile?.email || "",
@@ -152,6 +150,7 @@ function normalizeLegacyState(legacy: LegacyState): AppState {
       reducedMotion: false,
       compactDensity: false,
     },
+    viewedAnalytics: false,
   }
 }
 

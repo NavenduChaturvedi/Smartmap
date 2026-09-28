@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Modal } from "@/components/ui/modal"
 import { StatusPill } from "@/components/ui/status-pill"
 import { usePageHeader } from "@/lib/page-header"
+import { getInitials } from "@/lib/profile"
 import { type Achievement, useStore } from "@/lib/store"
 import { cn } from "@/lib/utils"
 
@@ -34,7 +35,7 @@ function Achievements() {
       <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
         <div className="flex items-center gap-4">
           <div className="flex size-12 items-center justify-center rounded-full bg-surface-dark text-[13px] font-semibold text-ink-inverse">
-            {state.profile.displayName.slice(0, 2).toUpperCase()}
+            {getInitials(state.profile.displayName)}
           </div>
           <div>
             <p className="text-[14px] font-semibold text-ink-strong">

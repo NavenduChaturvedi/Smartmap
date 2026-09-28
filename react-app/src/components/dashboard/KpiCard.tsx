@@ -54,12 +54,10 @@ function KpiCard({
 }: KpiCardProps) {
   return (
     <Card className="flex flex-col gap-3 p-4">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[11px] font-semibold tracking-wide text-ink-muted uppercase">
-            {label}
-          </p>
-          <div className="mt-1.5 flex items-baseline gap-1">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[12px] font-medium text-ink-muted">{label}</p>
+          <div className="mt-1.5 flex flex-wrap items-baseline gap-x-1">
             <span className="text-2xl font-bold text-ink-strong tabular-nums">
               {value}
             </span>
@@ -76,7 +74,7 @@ function KpiCard({
             toneIconBg[tone],
           )}
         >
-          <Icon className="size-4" strokeWidth={2} />
+          <Icon className="size-4" strokeWidth={2} aria-hidden />
         </div>
       </div>
 

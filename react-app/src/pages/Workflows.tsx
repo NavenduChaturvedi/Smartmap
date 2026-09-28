@@ -24,10 +24,10 @@ function newPhase(): PhaseRow {
 
 function Workflows() {
   const navigate = useNavigate()
-  const { state, totalXp, addRoadmap, addTasksBulk } = useStore()
+  const { state, totalXp, streak, addRoadmap, addTasksBulk } = useStore()
   const [mode, setMode] = useState<"manual" | "ai">("manual")
 
-  usePageHeader(["Smartmap", "Workflows & Triggers"])
+  usePageHeader(["Smartmap", "New roadmap"])
 
   // Manual builder state
   const [manualName, setManualName] = useState("")
@@ -68,10 +68,10 @@ function Workflows() {
   const [generateError, setGenerateError] = useState("")
 
   const buildAiContext = (): AiContext => ({
-    page: "Workflows & Triggers",
+    page: "New roadmap",
     displayName: state.profile.displayName || "User",
     stats: {
-      streak: state.streak,
+      streak,
       totalXp,
       roadmapsActive: state.roadmaps.length,
       pendingTasks: state.tasks.filter((t) => !t.done).length,
@@ -114,9 +114,9 @@ function Workflows() {
     <>
       <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
         <div>
-          <h1 className="text-sm font-semibold text-ink-strong">Workflows & Triggers</h1>
+          <h1 className="text-sm font-semibold text-ink-strong">New roadmap</h1>
           <p className="text-[12px] text-ink-muted">
-            Build a new roadmap by hand, or describe it and let AI draft the stages.
+            Build a roadmap by hand, or describe it and let AI draft the tasks.
           </p>
         </div>
         <div className="flex items-center gap-1 rounded-lg bg-surface-muted p-1">
@@ -148,8 +148,9 @@ function Workflows() {
       {mode === "manual" ? (
         <Card className="flex flex-col gap-4 p-5">
           <div>
-            <Label>Roadmap Name</Label>
+            <Label htmlFor="workflow-roadmap-name">Roadmap Name</Label>
             <Input
+              id="workflow-roadmap-name"
               value={manualName}
               onChange={(e) => setManualName(e.target.value)}
               placeholder="e.g. Ethical Hacking Fundamentals"
@@ -158,40 +159,74 @@ function Workflows() {
 
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <Label className="mb-0">Roadmap Phases</Label>
+              <Label className="mb-0">Tasks</Label>
               <Button variant="subtle" size="sm" onClick={() => setPhases((p) => [...p, newPhase()])}>
                 <Plus className="size-3.5" />
-                Add Phase
+                Add task
               </Button>
+            </div>
+            {/* Column headings on wider screens; each field also has its own label. */}
+            <div
+              aria-hidden
+              className="mb-1 hidden gap-2 px-3 text-[11.5px] font-medium text-ink-muted sm:grid sm:grid-cols-[1fr_160px_96px_32px]"
+            >
+              <span>Task</span>
+              <span>Phase (optional)</span>
+              <span>XP reward</span>
             </div>
             <div className="flex flex-col gap-2">
               {phases.map((phase, i) => (
                 <div
                   key={phase.id}
-                  className="grid grid-cols-1 gap-2 rounded-lg border border-line p-3 sm:grid-cols-[1fr_140px_100px_auto]"
+                  className="grid grid-cols-[1fr_96px_32px] gap-2 rounded-lg border border-line p-3 sm:grid-cols-[1fr_160px_96px_32px]"
                 >
-                  <Input
-                    value={phase.title}
-                    onChange={(e) => updatePhase(phase.id, { title: e.target.value })}
-                    placeholder={`Task ${i + 1} title`}
-                  />
-                  <Input
-                    value={phase.label}
-                    onChange={(e) => updatePhase(phase.id, { label: e.target.value })}
-                    placeholder="Phase label (optional)"
-                  />
-                  <Input
-                    type="number"
-                    value={phase.xp}
-                    onChange={(e) => updatePhase(phase.id, { xp: Number(e.target.value) })}
-                    placeholder="XP"
-                  />
+                  <label className="col-span-3 block sm:col-span-1">
+                    <span className="mb-1 block text-[11.5px] font-medium text-ink-muted sm:sr-only">
+                      Task {i + 1}
+                    </span>
+                    <Input
+                      value={phase.title}
+                      onChange={(e) => updatePhase(phase.id, { title: e.target.value })}
+                      placeholder="e.g. Learn networking basics"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-[11.5px] font-medium text-ink-muted sm:sr-only">
+                      Phase (optional)
+                    </span>
+                    <Input
+                      value={phase.label}
+                      onChange={(e) => updatePhase(phase.id, { label: e.target.value })}
+                      placeholder="e.g. Week 1"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-[11.5px] font-medium text-ink-muted sm:sr-only">
+                      XP reward
+                    </span>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        min={0}
+                        value={phase.xp}
+                        onChange={(e) => updatePhase(phase.id, { xp: Number(e.target.value) })}
+                        className="pr-9"
+                      />
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[12px] text-ink-muted"
+                      >
+                        XP
+                      </span>
+                    </div>
+                  </label>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => removePhase(phase.id)}
                     disabled={phases.length === 1}
-                    aria-label="Remove phase"
+                    aria-label={`Remove task ${i + 1}`}
+                    className="self-end"
                   >
                     <Trash2 className="size-3.5" />
                   </Button>
@@ -214,8 +249,9 @@ function Workflows() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Card className="flex flex-col gap-3 p-5">
             <div>
-              <Label>Command</Label>
+              <Label htmlFor="workflow-ai-command">Command</Label>
               <Textarea
+                id="workflow-ai-command"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Describe the roadmap you want, e.g. 'Build me a 6-week roadmap to learn ethical hacking fundamentals'"

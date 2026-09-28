@@ -4,41 +4,29 @@ import { Connector } from "./Connector"
 import { NodeCard, type NodeCardProps } from "./NodeCard"
 
 function RoadmapCanvas({
-  title = "Interactive Roadmap Canvas",
+  title = "Stages",
   subtitle,
   stages,
-  healthy = true,
+  emptyMessage = "No stages yet. Add a task to get started.",
 }: {
   title?: string
   subtitle: string
   stages: NodeCardProps[]
-  healthy?: boolean
+  emptyMessage?: string
 }) {
   return (
-    <Card className="flex flex-col gap-4 p-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-semibold text-ink-strong">{title}</h2>
-          <p className="text-[12px] text-ink-muted">{subtitle}</p>
-        </div>
-        <div className="flex items-center gap-1.5 text-[11px] font-medium text-ink-muted">
-          <span className="flex items-center gap-1.5">
-            <span
-              className={
-                healthy ? "size-1.5 rounded-full bg-sage-text" : "size-1.5 rounded-full bg-amber-text"
-              }
-            />
-            {healthy ? "Healthy" : "Attention needed"}
-          </span>
-        </div>
+    <Card className="flex flex-col gap-4 p-4 sm:p-5">
+      <div>
+        <h2 className="text-sm font-semibold text-ink-strong">{title}</h2>
+        <p className="text-[12px] text-ink-muted">{subtitle}</p>
       </div>
 
       {stages.length === 0 ? (
-        <div className="flex h-32 items-center justify-center rounded-lg bg-surface-muted/60 text-[13px] text-ink-muted">
-          No stages yet — add a node to get started.
+        <div className="flex h-32 items-center justify-center rounded-lg bg-surface-muted/60 px-4 text-center text-[13px] text-ink-muted">
+          {emptyMessage}
         </div>
       ) : (
-        <div className="scrollbar-thin flex items-stretch overflow-x-auto rounded-lg bg-surface-muted/60 p-5">
+        <div className="scrollbar-thin flex items-stretch overflow-x-auto rounded-lg bg-surface-muted/60 p-3 sm:p-5">
           {stages.map((stageProps, i) => (
             <div key={stageProps.title + i} className="flex items-stretch">
               <NodeCard {...stageProps} />

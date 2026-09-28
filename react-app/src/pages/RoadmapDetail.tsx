@@ -58,7 +58,7 @@ function RoadmapDetail() {
   const [saving, setSaving] = useState(false)
   const [savingDueDate, setSavingDueDate] = useState(false)
 
-  usePageHeader(["Smartmap", "Interactive Roadmap Canvas", roadmap?.name ?? "Not Found"], {
+  usePageHeader(["Smartmap", "Roadmaps", roadmap?.name ?? "Not Found"], {
     label: "Add Task",
     onClick: () => setAddTaskOpen(true),
   })
@@ -85,19 +85,19 @@ function RoadmapDetail() {
   const stages: NodeCardProps[] = roots.map((task, i) => {
     const subs = subtasks(task.id)
     const doneSubs = subs.filter((s) => s.done).length
-    const confidence = subs.length ? Math.round((doneSubs / subs.length) * 100) : task.done ? 100 : 0
+    const progress = subs.length ? Math.round((doneSubs / subs.length) * 100) : task.done ? 100 : 0
     return {
       stage: `Stage ${i + 1}`,
       title: task.title,
       description: subs.length
-        ? `${doneSubs}/${subs.length} sub-steps complete`
+        ? `${doneSubs}/${subs.length} subtasks done`
         : task.done
-          ? "Stage complete"
-          : "Awaiting execution",
+          ? "Done"
+          : "Not started",
       icon: STAGE_ICONS[i % STAGE_ICONS.length],
       tone: task.done ? "sage" : "amber",
-      statusLabel: task.done ? "Active" : `+${task.xp} XP`,
-      confidence,
+      statusLabel: task.done ? "Done" : `+${task.xp} XP`,
+      progress,
       onClick: () => setSelectedTaskId(task.id),
     }
   })
@@ -166,7 +166,7 @@ function RoadmapDetail() {
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-semibold text-ink-strong">{roadmap.name}</h1>
             <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-ink-muted">
-              {total} nodes
+              {total} task{total === 1 ? "" : "s"}
             </span>
             {isRoadmapComplete(roadmap.id) && (
               <StatusPill tone="sage" dot={false}>
@@ -176,7 +176,7 @@ function RoadmapDetail() {
           </div>
           <p className="mt-0.5 text-[12.5px] text-ink-muted">{roadmap.description}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setAddTaskOpen(true)}>
             <Plus className="size-3.5" />
             Add Task
@@ -207,9 +207,8 @@ function RoadmapDetail() {
       </Card>
 
       <RoadmapCanvas
-        subtitle={`Live pipeline · ${stages.length} linked stages`}
+        subtitle={`${stages.length} stage${stages.length === 1 ? "" : "s"} · select one to see its subtasks`}
         stages={stages}
-        healthy={pct >= 50 || total === 0}
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -218,14 +217,14 @@ function RoadmapDetail() {
             <span className="text-lg font-bold text-ink-strong">{pct}%</span>
           </ProgressRing>
           <p className="text-[12.5px] text-ink-muted">
-            {completed}/{total} nodes completed
+            {completed}/{total} tasks done
           </p>
         </Card>
 
         <Card className="flex flex-col gap-3 p-5 lg:col-span-2">
           {!selectedTask ? (
             <div className="flex h-full min-h-32 items-center justify-center text-[13px] text-ink-muted">
-              Select a node above to inspect it.
+              Select a stage above to see its subtasks.
             </div>
           ) : (
             <>
@@ -248,8 +247,11 @@ function RoadmapDetail() {
               </div>
 
               <div className="flex items-center gap-2">
-                <Label className="mb-0 shrink-0">Due Date</Label>
+                <Label htmlFor="task-due-date" className="mb-0 shrink-0">
+                  Due Date
+                </Label>
                 <Input
+                  id="task-due-date"
                   type="date"
                   className="w-auto"
                   value={selectedTask.dueDate ?? ""}
@@ -311,16 +313,17 @@ function RoadmapDetail() {
         open={addTaskOpen}
         onClose={() => setAddTaskOpen(false)}
         title="Add Task"
-        description="Add a new stage node to this roadmap."
+        description="Add a new stage to this roadmap."
       >
         <div className="flex flex-col gap-4">
           <div>
-            <Label>Task Title</Label>
-            <Input value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} autoFocus />
+            <Label htmlFor="add-task-title">Task Title</Label>
+            <Input id="add-task-title" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} autoFocus />
           </div>
           <div>
-            <Label>XP Reward</Label>
+            <Label htmlFor="add-task-xp">XP Reward</Label>
             <Input
+              id="add-task-xp"
               type="number"
               value={taskXp}
               onChange={(e) => setTaskXp(Number(e.target.value))}
@@ -345,12 +348,12 @@ function RoadmapDetail() {
       >
         <div className="flex flex-col gap-4">
           <div>
-            <Label>Subtask Title</Label>
-            <Input value={subTitle} onChange={(e) => setSubTitle(e.target.value)} autoFocus />
+            <Label htmlFor="add-subtask-title">Subtask Title</Label>
+            <Input id="add-subtask-title" value={subTitle} onChange={(e) => setSubTitle(e.target.value)} autoFocus />
           </div>
           <div>
-            <Label>XP Reward</Label>
-            <Input type="number" value={subXp} onChange={(e) => setSubXp(Number(e.target.value))} />
+            <Label htmlFor="add-subtask-xp">XP Reward</Label>
+            <Input id="add-subtask-xp" type="number" value={subXp} onChange={(e) => setSubXp(Number(e.target.value))} />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" size="sm" onClick={() => setAddSubOpen(false)}>
@@ -366,12 +369,13 @@ function RoadmapDetail() {
       <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit Roadmap">
         <div className="flex flex-col gap-4">
           <div>
-            <Label>Roadmap Name</Label>
-            <Input value={editName} onChange={(e) => setEditName(e.target.value)} autoFocus />
+            <Label htmlFor="edit-roadmap-name">Roadmap Name</Label>
+            <Input id="edit-roadmap-name" value={editName} onChange={(e) => setEditName(e.target.value)} autoFocus />
           </div>
           <div>
-            <Label>Description</Label>
+            <Label htmlFor="edit-roadmap-description">Description</Label>
             <Textarea
+              id="edit-roadmap-description"
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
               rows={3}

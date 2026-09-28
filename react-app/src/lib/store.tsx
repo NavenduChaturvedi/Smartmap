@@ -11,14 +11,22 @@ import {
 
 import { useAuth } from "./auth-context"
 import {
+  clearGuestState,
+  hasGuestContent,
+  loadGuestState,
+  readGuestState,
+  saveGuestState,
+} from "./guest-storage"
+import {
   hasImportableData,
   isLegacyMigrated,
   markLegacyMigrated,
   normalizeLegacyState,
   readLegacyState,
 } from "./legacy-migration"
+import { resolveDisplayName } from "./profile"
 import { supabase } from "./supabase"
-import { assignDueDates } from "./task-scheduling"
+import { assignDueDates, toDateOnlyIso } from "./task-scheduling"
 import type { Tables } from "./database.types"
 
 interface Task {
@@ -72,19 +80,54 @@ interface Achievement {
 interface AppState {
   roadmaps: Roadmap[]
   tasks: Task[]
-  streak: number
-  lastActiveDate: string | null
   profile: Profile
   settings: Settings
+  // One-off milestones that can't be derived from tasks/roadmaps (e.g. the
+  // "Data Analyst" achievement). Persisted in settings.preferences.
+  viewedAnalytics: boolean
 }
 
 const EMPTY_STATE: AppState = {
   roadmaps: [],
   tasks: [],
-  streak: 0,
-  lastActiveDate: null,
   profile: { displayName: "", email: "" },
   settings: { fontScale: 100, soundEffects: true, reducedMotion: false, compactDensity: false },
+  viewedAnalytics: false,
+}
+
+// A type alias, not an interface, so it's assignable to the Json column type.
+type Preferences = {
+  reducedMotion?: boolean
+  compactDensity?: boolean
+  viewedAnalytics?: boolean
+}
+
+function preferencesPayload(settings: Settings, viewedAnalytics: boolean): Preferences {
+  return {
+    reducedMotion: settings.reducedMotion,
+    compactDensity: settings.compactDensity,
+    viewedAnalytics,
+  }
+}
+
+// Consecutive local days, ending today, with at least one completed task.
+// A day with nothing done yet doesn't break the streak until it's over, so
+// the count runs back from yesterday when today is still empty. Derived from
+// task completion dates rather than a stored counter: a stored counter only
+// changes when you complete something, so it can never notice a missed day.
+function computeStreak(tasks: Task[], now = new Date()): number {
+  const activeDays = new Set<string>()
+  for (const t of tasks) {
+    if (t.done && t.completedAt) activeDays.add(toDateOnlyIso(new Date(t.completedAt)))
+  }
+  const cursor = new Date(now)
+  if (!activeDays.has(toDateOnlyIso(cursor))) cursor.setDate(cursor.getDate() - 1)
+  let streak = 0
+  while (activeDays.has(toDateOnlyIso(cursor))) {
+    streak += 1
+    cursor.setDate(cursor.getDate() - 1)
+  }
+  return streak
 }
 
 type TaskRow = Tables<"tasks">
@@ -115,14 +158,90 @@ function roadmapFromRow(row: RoadmapRow): Roadmap {
   }
 }
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
+// Moves a guest's browser data into their account. Rows keep the ids they
+// were created with (crypto.randomUUID, so they can't collide) and are
+// upserted, which makes this safe to retry after a partial failure or to run
+// twice from two tabs: the second run rewrites the same rows instead of
+// duplicating them. Existing account data is never touched.
+async function syncGuestToAccount(userId: string, guest: AppState) {
+  if (guest.roadmaps.length > 0) {
+    const { error } = await supabase.from("roadmaps").upsert(
+      guest.roadmaps.map((r) => ({
+        id: r.id,
+        user_id: userId,
+        name: r.name,
+        description: r.description,
+        created_at: r.createdAt,
+      })),
+    )
+    if (error) throw error
+  }
+
+  // A task whose roadmap is gone would fail the foreign key; drop it.
+  const roadmapIds = new Set(guest.roadmaps.map((r) => r.id))
+  const tasks = guest.tasks.filter((t) => roadmapIds.has(t.roadmapId))
+  const taskIds = new Set(tasks.map((t) => t.id))
+  const toRow = (t: Task) => ({
+    id: t.id,
+    user_id: userId,
+    roadmap_id: t.roadmapId,
+    parent_task_id: t.parentTaskId && taskIds.has(t.parentTaskId) ? t.parentTaskId : null,
+    title: t.title,
+    xp: t.xp,
+    done: t.done,
+    created_at: t.createdAt,
+    completed_at: t.completedAt,
+    due_date: t.dueDate,
+  })
+  const rows = tasks.map(toRow)
+  // Parents before children so parent_task_id resolves.
+  const roots = rows.filter((r) => !r.parent_task_id)
+  const children = rows.filter((r) => r.parent_task_id)
+  for (const batch of [roots, children]) {
+    if (batch.length === 0) continue
+    const { error } = await supabase.from("tasks").upsert(batch)
+    if (error) throw error
+  }
+
+  if (guest.viewedAnalytics) {
+    const { data } = await supabase
+      .from("settings")
+      .select("preferences")
+      .eq("user_id", userId)
+      .maybeSingle()
+    const current = (data?.preferences ?? {}) as Preferences
+    if (!current.viewedAnalytics) {
+      const { error } = await supabase
+        .from("settings")
+        .upsert({ user_id: userId, preferences: { ...current, viewedAnalytics: true } })
+      if (error) throw error
+    }
+  }
 }
+
+// Progress of moving guest data into an account, for the banner in AppShell.
+interface GuestSync {
+  status: "syncing" | "done" | "error"
+  roadmapCount: number
+  taskCount: number
+}
+
+const GUEST_OWNER = "guest"
 
 interface StoreApi {
   state: AppState
   loading: boolean
+  // No account: data lives in this browser only.
+  isGuest: boolean
+  guestSync: GuestSync | null
+  retryGuestSync: () => Promise<void>
+  dismissGuestSync: () => void
   totalXp: number
+  streak: number
+  // Every done task, newest first; tasks with no completion time (e.g. from
+  // the legacy import) sort last. The single source for activity views and
+  // completion counts, so every screen agrees.
+  completedTasks: Task[]
   achievements: Achievement[]
   rootTasks: (roadmapId: string) => Task[]
   subtasks: (parentId: string) => Task[]
@@ -150,6 +269,7 @@ interface StoreApi {
   updateProfile: (profile: Profile) => Promise<void>
   updateSettings: (settings: Partial<Settings>) => Promise<void>
   resetProgress: () => Promise<void>
+  markAnalyticsViewed: () => Promise<void>
   importState: (data: AppState) => Promise<void>
   pendingImport: { roadmapCount: number; taskCount: number } | null
   confirmLegacyImport: () => Promise<void>
@@ -159,12 +279,25 @@ interface StoreApi {
 const StoreContext = createContext<StoreApi | null>(null)
 
 function StoreProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [state, setState] = useState<AppState>(EMPTY_STATE)
   const [loading, setLoading] = useState(true)
+  // Whose data `state` holds: GUEST_OWNER, a user id, or null mid-switch.
+  // Set in the same batch as the state itself, so guest persistence can
+  // never write an account's data into browser storage during sign-out.
+  const [stateOwner, setStateOwner] = useState<string | null>(null)
+  const [guestSync, setGuestSync] = useState<GuestSync | null>(null)
+  const syncRef = useRef<{ userId: string; promise: Promise<void> } | null>(null)
+  const isGuest = !user
+  // The account whose data we should be showing right now. A fetch that
+  // resolves after a sign-out or account switch is dropped, so an account's
+  // data can never land in (and be persisted as) guest state.
+  const currentUserIdRef = useRef<string | null>(null)
 
-  const loadAll = useCallback(async (userId: string) => {
-    setLoading(true)
+  // `silent` refreshes in place: the page keeps showing the current data
+  // instead of dropping back to the full-page loading state.
+  const loadAll = useCallback(async (userId: string, fallbackName: string, silent = false) => {
+    if (!silent) setLoading(true)
     const [profileRes, settingsRes, roadmapsRes, tasksRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
       supabase.from("settings").select("*").eq("user_id", userId).maybeSingle(),
@@ -172,21 +305,19 @@ function StoreProvider({ children }: { children: ReactNode }) {
       supabase.from("tasks").select("*").eq("user_id", userId).order("created_at"),
     ])
 
+    if (currentUserIdRef.current !== userId) return
+
     const profileRow = profileRes.data as ProfileRow | null
     const settingsRow = settingsRes.data as SettingsRow | null
-    const preferences = (settingsRow?.preferences ?? {}) as {
-      reducedMotion?: boolean
-      compactDensity?: boolean
-    }
+    const preferences = (settingsRow?.preferences ?? {}) as Preferences
+    const email = profileRow?.email ?? ""
 
     setState({
       roadmaps: (roadmapsRes.data ?? []).map(roadmapFromRow),
       tasks: (tasksRes.data ?? []).map(taskFromRow),
-      streak: settingsRow?.streak ?? 0,
-      lastActiveDate: settingsRow?.last_active_date ?? null,
       profile: {
-        displayName: profileRow?.display_name ?? "",
-        email: profileRow?.email ?? "",
+        displayName: resolveDisplayName(profileRow?.display_name ?? "", email, fallbackName),
+        email,
       },
       settings: {
         fontScale: settingsRow?.font_scale ?? 100,
@@ -194,18 +325,78 @@ function StoreProvider({ children }: { children: ReactNode }) {
         reducedMotion: preferences.reducedMotion ?? false,
         compactDensity: preferences.compactDensity ?? false,
       },
+      viewedAnalytics: preferences.viewedAnalytics ?? false,
     })
     setLoading(false)
   }, [])
 
+  // The name given at sign-up, used when the profile row only has an email.
+  const metadataName = (user?.user_metadata?.full_name as string | undefined) ?? ""
+
+  // Runs at most once per sign-in: StrictMode's double effect and a later
+  // retry all share the same in-flight promise. Browser data is cleared only
+  // after the upload succeeds; on failure it stays put for a retry.
+  const runGuestSync = useCallback((userId: string) => {
+    if (syncRef.current?.userId === userId) return syncRef.current.promise
+    const promise = (async () => {
+      const guest = readGuestState()
+      if (!hasGuestContent(guest)) return
+      const counts = { roadmapCount: guest.roadmaps.length, taskCount: guest.tasks.length }
+      setGuestSync({ status: "syncing", ...counts })
+      try {
+        await syncGuestToAccount(userId, guest)
+        clearGuestState()
+        setGuestSync({ status: "done", ...counts })
+      } catch (err) {
+        console.error("Failed to move guest data into the account", err)
+        setGuestSync({ status: "error", ...counts })
+      }
+    })()
+    syncRef.current = { userId, promise }
+    return promise
+  }, [])
+
   useEffect(() => {
-    if (user?.id) {
-      void loadAll(user.id)
-    } else {
-      setState(EMPTY_STATE)
+    if (authLoading) return
+    currentUserIdRef.current = user?.id ?? null
+    setStateOwner(null)
+
+    if (!user?.id) {
+      syncRef.current = null
+      setGuestSync(null)
+      setState(loadGuestState())
+      setStateOwner(GUEST_OWNER)
       setLoading(false)
+      return
     }
-  }, [user?.id, loadAll])
+
+    const userId = user.id
+    let cancelled = false
+    setLoading(true)
+    void (async () => {
+      await runGuestSync(userId)
+      if (cancelled) return
+      await loadAll(userId, metadataName)
+      if (!cancelled) setStateOwner(userId)
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id, loadAll, runGuestSync])
+
+  useEffect(() => {
+    if (stateOwner === GUEST_OWNER) saveGuestState(state)
+  }, [state, stateOwner])
+
+  const retryGuestSync = useCallback(async () => {
+    if (!user) return
+    syncRef.current = null
+    await runGuestSync(user.id)
+    await loadAll(user.id, metadataName, true)
+  }, [user, runGuestSync, loadAll, metadataName])
+
+  const dismissGuestSync = useCallback(() => setGuestSync(null), [])
 
   // One-time offer to import data left in this browser's localStorage by the
   // vanilla-JS app (same origin only, i.e. after the Phase 7 cutover). Only
@@ -218,7 +409,13 @@ function StoreProvider({ children }: { children: ReactNode }) {
   const legacyNormalizedRef = useRef<AppState | null>(null)
 
   useEffect(() => {
-    if (loading || !user?.id) return
+    if (!user?.id) {
+      // Signed out: an offer made to the previous account no longer applies.
+      legacyNormalizedRef.current = null
+      setPendingImport(null)
+      return
+    }
+    if (loading) return
 
     if (state.roadmaps.length > 0) {
       // Real data now exists - e.g. the user created a roadmap manually
@@ -245,11 +442,26 @@ function StoreProvider({ children }: { children: ReactNode }) {
   }, [loading, user?.id, state.roadmaps.length])
 
   const refresh = useCallback(async () => {
-    if (user?.id) await loadAll(user.id)
-  }, [user?.id, loadAll])
+    if (user?.id) await loadAll(user.id, metadataName, true)
+  }, [user?.id, metadataName, loadAll])
 
   const totalXp = useMemo(
     () => state.tasks.filter((t) => t.done).reduce((sum, t) => sum + t.xp, 0),
+    [state.tasks],
+  )
+
+  const streak = useMemo(() => computeStreak(state.tasks), [state.tasks])
+
+  const completedTasks = useMemo(
+    () =>
+      state.tasks
+        .filter((t) => t.done)
+        .sort((a, b) => {
+          if (a.completedAt === b.completedAt) return 0
+          if (!a.completedAt) return 1
+          if (!b.completedAt) return -1
+          return a.completedAt < b.completedAt ? 1 : -1
+        }),
     [state.tasks],
   )
 
@@ -342,7 +554,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
         description: "View the analytics page.",
         rarity: "common",
         xp: 60,
-        unlocked: false,
+        unlocked: state.viewedAnalytics,
       },
       {
         id: "night-watch",
@@ -377,24 +589,25 @@ function StoreProvider({ children }: { children: ReactNode }) {
         unlocked: false,
       })),
     ]
-  }, [state.tasks, state.roadmaps, completedRoadmaps])
+  }, [state.tasks, state.roadmaps, state.viewedAnalytics, completedRoadmaps])
 
   const toggleTask = useCallback(
     async (taskId: string) => {
-      if (!user) return
       const target = state.tasks.find((t) => t.id === taskId)
       if (!target) return
 
       const nowDone = !target.done
       const completedAt = nowDone ? new Date().toISOString() : null
 
-      const { error } = await supabase
-        .from("tasks")
-        .update({ done: nowDone, completed_at: completedAt })
-        .eq("id", taskId)
-      if (error) {
-        console.error("Failed to update task", error)
-        return
+      if (user) {
+        const { error } = await supabase
+          .from("tasks")
+          .update({ done: nowDone, completed_at: completedAt })
+          .eq("id", taskId)
+        if (error) {
+          console.error("Failed to update task", error)
+          return
+        }
       }
 
       let parentUpdate: { id: string; done: boolean; completedAt: string | null } | null = null
@@ -407,30 +620,17 @@ function StoreProvider({ children }: { children: ReactNode }) {
           const allDone = siblings.every((t) => t.done)
           if (allDone !== parent.done) {
             const parentCompletedAt = allDone ? new Date().toISOString() : null
-            const { error: parentError } = await supabase
-              .from("tasks")
-              .update({ done: allDone, completed_at: parentCompletedAt })
-              .eq("id", parent.id)
+            const { error: parentError } = user
+              ? await supabase
+                  .from("tasks")
+                  .update({ done: allDone, completed_at: parentCompletedAt })
+                  .eq("id", parent.id)
+              : { error: null }
             if (!parentError) {
               parentUpdate = { id: parent.id, done: allDone, completedAt: parentCompletedAt }
             }
           }
         }
-      }
-
-      const today = todayIso()
-      let nextStreak = state.streak
-      let nextLastActive = state.lastActiveDate
-      if (nowDone && state.lastActiveDate !== today) {
-        const yesterday = new Date()
-        yesterday.setDate(yesterday.getDate() - 1)
-        const wasYesterday = state.lastActiveDate === yesterday.toISOString().slice(0, 10)
-        nextStreak = wasYesterday ? state.streak + 1 : 1
-        nextLastActive = today
-        await supabase
-          .from("settings")
-          .update({ streak: nextStreak, last_active_date: nextLastActive })
-          .eq("user_id", user.id)
       }
 
       setState((prev) => ({
@@ -442,16 +642,23 @@ function StoreProvider({ children }: { children: ReactNode }) {
           }
           return t
         }),
-        streak: nextStreak,
-        lastActiveDate: nextLastActive,
       }))
     },
-    [state.tasks, state.streak, state.lastActiveDate, user],
+    [state.tasks, user],
   )
 
   const addRoadmap = useCallback(
     async (name: string, description: string) => {
-      if (!user) throw new Error("Not authenticated")
+      if (!user) {
+        const roadmap: Roadmap = {
+          id: crypto.randomUUID(),
+          name,
+          description,
+          createdAt: new Date().toISOString(),
+        }
+        setState((prev) => ({ ...prev, roadmaps: [...prev.roadmaps, roadmap] }))
+        return roadmap
+      }
       const { data, error } = await supabase
         .from("roadmaps")
         .insert({ user_id: user.id, name, description })
@@ -465,30 +672,54 @@ function StoreProvider({ children }: { children: ReactNode }) {
     [user],
   )
 
-  const updateRoadmap = useCallback(async (id: string, name: string, description: string) => {
-    const { error } = await supabase.from("roadmaps").update({ name, description }).eq("id", id)
-    if (error) throw error
-    setState((prev) => ({
-      ...prev,
-      roadmaps: prev.roadmaps.map((r) => (r.id === id ? { ...r, name, description } : r)),
-    }))
-  }, [])
+  const updateRoadmap = useCallback(
+    async (id: string, name: string, description: string) => {
+      if (user) {
+        const { error } = await supabase.from("roadmaps").update({ name, description }).eq("id", id)
+        if (error) throw error
+      }
+      setState((prev) => ({
+        ...prev,
+        roadmaps: prev.roadmaps.map((r) => (r.id === id ? { ...r, name, description } : r)),
+      }))
+    },
+    [user],
+  )
 
-  const deleteRoadmap = useCallback(async (id: string) => {
-    const { error: taskError } = await supabase.from("tasks").delete().eq("roadmap_id", id)
-    if (taskError) throw taskError
-    const { error } = await supabase.from("roadmaps").delete().eq("id", id)
-    if (error) throw error
-    setState((prev) => ({
-      ...prev,
-      roadmaps: prev.roadmaps.filter((r) => r.id !== id),
-      tasks: prev.tasks.filter((t) => t.roadmapId !== id),
-    }))
-  }, [])
+  const deleteRoadmap = useCallback(
+    async (id: string) => {
+      if (user) {
+        const { error: taskError } = await supabase.from("tasks").delete().eq("roadmap_id", id)
+        if (taskError) throw taskError
+        const { error } = await supabase.from("roadmaps").delete().eq("id", id)
+        if (error) throw error
+      }
+      setState((prev) => ({
+        ...prev,
+        roadmaps: prev.roadmaps.filter((r) => r.id !== id),
+        tasks: prev.tasks.filter((t) => t.roadmapId !== id),
+      }))
+    },
+    [user],
+  )
 
   const addTask = useCallback(
     async (roadmapId: string, title: string, xp: number, parentTaskId: string | null = null) => {
-      if (!user) throw new Error("Not authenticated")
+      if (!user) {
+        const task: Task = {
+          id: crypto.randomUUID(),
+          title,
+          xp,
+          done: false,
+          roadmapId,
+          parentTaskId,
+          createdAt: new Date().toISOString(),
+          completedAt: null,
+          dueDate: null,
+        }
+        setState((prev) => ({ ...prev, tasks: [...prev.tasks, task] }))
+        return
+      }
       const { data, error } = await supabase
         .from("tasks")
         .insert({
@@ -513,8 +744,6 @@ function StoreProvider({ children }: { children: ReactNode }) {
       roadmapId: string,
       items: { title: string; xp: number; subtasks?: { title: string; xp: number }[] }[],
     ) => {
-      if (!user) throw new Error("Not authenticated")
-
       // Client-generated ids so subtasks can reference their parent without
       // depending on Postgres returning rows in insert order (unguaranteed).
       // created_at is also set explicitly and staggered by 1ms per row: a
@@ -537,7 +766,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
       )
       const rootRows = items.map((item, i) => ({
         id: rootIds[i],
-        user_id: user.id,
+        user_id: user?.id ?? "",
         roadmap_id: roadmapId,
         parent_task_id: null,
         title: item.title,
@@ -546,15 +775,13 @@ function StoreProvider({ children }: { children: ReactNode }) {
         created_at: new Date(baseTime + i).toISOString(),
         due_date: dueDates[i],
       }))
-      const { error: rootError } = await supabase.from("tasks").insert(rootRows)
-      if (rootError) throw rootError
 
       let subtaskOffset = 0
       const subtaskRows = items.flatMap((item, i) =>
         (item.subtasks ?? []).map((sub) => {
           const row = {
             id: crypto.randomUUID(),
-            user_id: user.id,
+            user_id: user?.id ?? "",
             roadmap_id: roadmapId,
             parent_task_id: rootIds[i],
             title: sub.title,
@@ -567,9 +794,13 @@ function StoreProvider({ children }: { children: ReactNode }) {
           return row
         }),
       )
-      if (subtaskRows.length > 0) {
-        const { error: subError } = await supabase.from("tasks").insert(subtaskRows)
-        if (subError) throw subError
+      if (user) {
+        const { error: rootError } = await supabase.from("tasks").insert(rootRows)
+        if (rootError) throw rootError
+        if (subtaskRows.length > 0) {
+          const { error: subError } = await supabase.from("tasks").insert(subtaskRows)
+          if (subError) throw subError
+        }
       }
 
       const newTasks: Task[] = [...rootRows, ...subtaskRows].map((r) => ({
@@ -588,22 +819,28 @@ function StoreProvider({ children }: { children: ReactNode }) {
     [user],
   )
 
-  const updateTaskDueDate = useCallback(async (taskId: string, dueDate: string | null) => {
-    const { error } = await supabase.from("tasks").update({ due_date: dueDate }).eq("id", taskId)
-    if (error) throw error
-    setState((prev) => ({
-      ...prev,
-      tasks: prev.tasks.map((t) => (t.id === taskId ? { ...t, dueDate } : t)),
-    }))
-  }, [])
+  const updateTaskDueDate = useCallback(
+    async (taskId: string, dueDate: string | null) => {
+      if (user) {
+        const { error } = await supabase.from("tasks").update({ due_date: dueDate }).eq("id", taskId)
+        if (error) throw error
+      }
+      setState((prev) => ({
+        ...prev,
+        tasks: prev.tasks.map((t) => (t.id === taskId ? { ...t, dueDate } : t)),
+      }))
+    },
+    [user],
+  )
 
   const updateProfile = useCallback(
     async (profile: Profile) => {
-      if (!user) throw new Error("Not authenticated")
-      const { error } = await supabase
-        .from("profiles")
-        .upsert({ id: user.id, display_name: profile.displayName, email: profile.email })
-      if (error) throw error
+      if (user) {
+        const { error } = await supabase
+          .from("profiles")
+          .upsert({ id: user.id, display_name: profile.displayName, email: profile.email })
+        if (error) throw error
+      }
       setState((prev) => ({ ...prev, profile }))
     },
     [user],
@@ -611,31 +848,66 @@ function StoreProvider({ children }: { children: ReactNode }) {
 
   const updateSettings = useCallback(
     async (settings: Partial<Settings>) => {
-      if (!user) throw new Error("Not authenticated")
       const next = { ...state.settings, ...settings }
-      const { error } = await supabase.from("settings").upsert({
-        user_id: user.id,
-        font_scale: next.fontScale,
-        sound_effects: next.soundEffects,
-        preferences: { reducedMotion: next.reducedMotion, compactDensity: next.compactDensity },
-      })
-      if (error) throw error
+      if (user) {
+        const { error } = await supabase.from("settings").upsert({
+          user_id: user.id,
+          font_scale: next.fontScale,
+          sound_effects: next.soundEffects,
+          preferences: preferencesPayload(next, state.viewedAnalytics),
+        })
+        if (error) throw error
+      }
       setState((prev) => ({ ...prev, settings: next }))
     },
-    [user, state.settings],
+    [user, state.settings, state.viewedAnalytics],
   )
 
-  const resetProgress = useCallback(async () => {
+  const markAnalyticsViewed = useCallback(async () => {
+    if (state.viewedAnalytics) return
+    // Optimistic: the achievement unlocks immediately; a failed write just
+    // means it gets re-marked on the next visit.
+    setState((prev) => ({ ...prev, viewedAnalytics: true }))
     if (!user) return
-    await supabase.from("tasks").delete().eq("user_id", user.id)
-    await supabase.from("roadmaps").delete().eq("user_id", user.id)
-    await supabase.from("settings").update({ streak: 0, last_active_date: null }).eq("user_id", user.id)
-    setState((prev) => ({ ...prev, roadmaps: [], tasks: [], streak: 0, lastActiveDate: null }))
+    const { error } = await supabase.from("settings").upsert({
+      user_id: user.id,
+      preferences: preferencesPayload(state.settings, true),
+    })
+    if (error) console.error("Failed to record analytics visit", error)
+  }, [user, state.settings, state.viewedAnalytics])
+
+  const resetProgress = useCallback(async () => {
+    if (user) {
+      await supabase.from("tasks").delete().eq("user_id", user.id)
+      await supabase.from("roadmaps").delete().eq("user_id", user.id)
+    }
+    setState((prev) => ({ ...prev, roadmaps: [], tasks: [] }))
   }, [user])
 
   const importState = useCallback(
     async (data: AppState) => {
-      if (!user) return
+      if (!user) {
+        // Same replace-everything semantics as for an account, with fresh
+        // ids so a re-imported backup can't collide with synced rows later.
+        const roadmapIds = new Map(data.roadmaps.map((r) => [r.id, crypto.randomUUID()]))
+        const taskIds = new Map(data.tasks.map((t) => [t.id, crypto.randomUUID()]))
+        setState((prev) => ({
+          ...prev,
+          roadmaps: data.roadmaps.map((r) => ({ ...r, id: roadmapIds.get(r.id)! })),
+          tasks: data.tasks
+            .filter((t) => roadmapIds.has(t.roadmapId))
+            .map((t) => ({
+              ...t,
+              id: taskIds.get(t.id)!,
+              roadmapId: roadmapIds.get(t.roadmapId)!,
+              parentTaskId: t.parentTaskId ? (taskIds.get(t.parentTaskId) ?? null) : null,
+            })),
+          settings: { ...prev.settings, ...data.settings },
+          profile: { ...prev.profile, displayName: data.profile?.displayName || prev.profile.displayName },
+          viewedAnalytics: prev.viewedAnalytics || !!data.viewedAnalytics,
+        }))
+        return
+      }
 
       await supabase.from("tasks").delete().eq("user_id", user.id)
       await supabase.from("roadmaps").delete().eq("user_id", user.id)
@@ -698,20 +970,18 @@ function StoreProvider({ children }: { children: ReactNode }) {
         user_id: user.id,
         font_scale: data.settings.fontScale,
         sound_effects: data.settings.soundEffects,
-        preferences: {
-          reducedMotion: data.settings.reducedMotion,
-          compactDensity: data.settings.compactDensity,
-        },
-        streak: data.streak,
-        last_active_date: data.lastActiveDate,
+        preferences: preferencesPayload(
+          data.settings,
+          data.viewedAnalytics ?? state.viewedAnalytics,
+        ),
       })
       await supabase
         .from("profiles")
         .upsert({ id: user.id, display_name: data.profile.displayName, email: data.profile.email })
 
-      await loadAll(user.id)
+      await loadAll(user.id, metadataName)
     },
-    [user, loadAll],
+    [user, metadataName, loadAll, state.viewedAnalytics],
   )
 
   const confirmLegacyImport = useCallback(async () => {
@@ -740,7 +1010,13 @@ function StoreProvider({ children }: { children: ReactNode }) {
   const value: StoreApi = {
     state,
     loading,
+    isGuest,
+    guestSync,
+    retryGuestSync,
+    dismissGuestSync,
     totalXp,
+    streak,
+    completedTasks,
     achievements,
     rootTasks,
     subtasks,
@@ -759,6 +1035,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
     updateProfile,
     updateSettings,
     resetProgress,
+    markAnalyticsViewed,
     importState,
     pendingImport,
     confirmLegacyImport,
@@ -775,4 +1052,4 @@ function useStore() {
 }
 
 export { StoreProvider, useStore }
-export type { Task, Roadmap, CompletedRoadmap, Settings, Profile, Achievement, AppState }
+export type { Task, Roadmap, CompletedRoadmap, Settings, Profile, Achievement, AppState, GuestSync }
