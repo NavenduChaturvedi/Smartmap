@@ -330,6 +330,8 @@ interface StoreApi {
   ) => Promise<void>
   // v1 scope: top-level tasks only - not exposed in the UI for subtasks.
   updateTaskDueDate: (taskId: string, dueDate: string | null) => Promise<void>
+  updateTask: (taskId: string, patch: { title: string; xp: number }) => Promise<void>
+  deleteTask: (taskId: string) => Promise<void>
   updateProfile: (profile: Profile) => Promise<void>
   updateSettings: (settings: Partial<Settings>) => Promise<void>
   resetProgress: () => Promise<void>
@@ -694,60 +696,110 @@ function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [loading, stateOwner, unlocksReady, achievementContext, state.unlocks])
 
+  // Writes done/undone for a set of tasks in at most two statements, then
+  // mirrors what was saved into state.
+  const setDoneStates = useCallback(
+    async (changes: Map<string, boolean>) => {
+      const completedAt = new Date().toISOString()
+      const saved = new Map<string, boolean>()
+      for (const done of [true, false]) {
+        const ids = [...changes].filter(([, d]) => d === done).map(([id]) => id)
+        if (ids.length === 0) continue
+        if (user) {
+          const { error } = await supabase
+            .from("tasks")
+            .update({ done, completed_at: done ? completedAt : null })
+            .in("id", ids)
+          if (error) {
+            console.error("Failed to update tasks", error)
+            continue
+          }
+        }
+        for (const id of ids) saved.set(id, done)
+      }
+      setState((prev) => ({
+        ...prev,
+        tasks: prev.tasks.map((t) =>
+          saved.has(t.id)
+            ? { ...t, done: saved.get(t.id)!, completedAt: saved.get(t.id) ? completedAt : null }
+            : t,
+        ),
+      }))
+    },
+    [user],
+  )
+
+  // A parent task mirrors its subtasks: toggling the parent applies to every
+  // subtask, and toggling a subtask marks the parent done exactly when all of
+  // its subtasks are done. Otherwise a "done" task could hide open subtasks
+  // and its roadmap would never count as complete.
   const toggleTask = useCallback(
     async (taskId: string) => {
       const target = state.tasks.find((t) => t.id === taskId)
       if (!target) return
-
       const nowDone = !target.done
-      const completedAt = nowDone ? new Date().toISOString() : null
+      const changes = new Map<string, boolean>([[taskId, nowDone]])
 
-      if (user) {
-        const { error } = await supabase
-          .from("tasks")
-          .update({ done: nowDone, completed_at: completedAt })
-          .eq("id", taskId)
-        if (error) {
-          console.error("Failed to update task", error)
-          return
-        }
+      for (const child of state.tasks) {
+        if (child.parentTaskId === taskId && child.done !== nowDone) changes.set(child.id, nowDone)
       }
-
-      let parentUpdate: { id: string; done: boolean; completedAt: string | null } | null = null
       if (target.parentTaskId) {
         const parent = state.tasks.find((t) => t.id === target.parentTaskId)
-        const siblings = state.tasks
+        const allDone = state.tasks
           .filter((t) => t.parentTaskId === target.parentTaskId)
-          .map((t) => (t.id === taskId ? { ...t, done: nowDone } : t))
-        if (parent) {
-          const allDone = siblings.every((t) => t.done)
-          if (allDone !== parent.done) {
-            const parentCompletedAt = allDone ? new Date().toISOString() : null
-            const { error: parentError } = user
-              ? await supabase
-                  .from("tasks")
-                  .update({ done: allDone, completed_at: parentCompletedAt })
-                  .eq("id", parent.id)
-              : { error: null }
-            if (!parentError) {
-              parentUpdate = { id: parent.id, done: allDone, completedAt: parentCompletedAt }
-            }
-          }
-        }
+          .every((t) => (t.id === taskId ? nowDone : t.done))
+        if (parent && parent.done !== allDone) changes.set(parent.id, allDone)
       }
+      await setDoneStates(changes)
+    },
+    [state.tasks, setDoneStates],
+  )
 
+  const updateTask = useCallback(
+    async (taskId: string, patch: { title: string; xp: number }) => {
+      if (user) {
+        const { error } = await supabase.from("tasks").update(patch).eq("id", taskId)
+        if (error) throw error
+      }
       setState((prev) => ({
         ...prev,
-        tasks: prev.tasks.map((t) => {
-          if (t.id === taskId) return { ...t, done: nowDone, completedAt }
-          if (parentUpdate && t.id === parentUpdate.id) {
-            return { ...t, done: parentUpdate.done, completedAt: parentUpdate.completedAt }
-          }
-          return t
-        }),
+        tasks: prev.tasks.map((t) => (t.id === taskId ? { ...t, ...patch } : t)),
       }))
     },
-    [state.tasks, user],
+    [user],
+  )
+
+  // Deletes a task and its subtasks. Deleting a subtask re-syncs the parent,
+  // e.g. removing the last open subtask completes it.
+  const deleteTask = useCallback(
+    async (taskId: string) => {
+      const target = state.tasks.find((t) => t.id === taskId)
+      if (!target) return
+      const ids = [taskId, ...state.tasks.filter((t) => t.parentTaskId === taskId).map((t) => t.id)]
+      if (user) {
+        // Children first: parent_task_id references the parent row.
+        if (ids.length > 1) {
+          const { error } = await supabase.from("tasks").delete().in("id", ids.slice(1))
+          if (error) throw error
+        }
+        const { error } = await supabase.from("tasks").delete().eq("id", taskId)
+        if (error) throw error
+      }
+      const removed = new Set(ids)
+      setState((prev) => ({ ...prev, tasks: prev.tasks.filter((t) => !removed.has(t.id)) }))
+
+      if (target.parentTaskId) {
+        const parent = state.tasks.find((t) => t.id === target.parentTaskId)
+        const remaining = state.tasks.filter(
+          (t) => t.parentTaskId === target.parentTaskId && t.id !== taskId,
+        )
+        const allDone = remaining.every((t) => t.done)
+        if (parent && remaining.length > 0 && parent.done !== allDone) {
+          await setDoneStates(new Map([[parent.id, allDone]]))
+        }
+      }
+    },
+    [state.tasks, user, setDoneStates],
   )
 
   const addRoadmap = useCallback(
@@ -1027,8 +1079,10 @@ function StoreProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      await supabase.from("tasks").delete().eq("user_id", user.id)
-      await supabase.from("roadmaps").delete().eq("user_id", user.id)
+      // Insert the new data first and delete the old rows (by id) only after
+      // that succeeds, so a failure partway leaves the previous data intact.
+      const oldTaskIds = state.tasks.map((t) => t.id)
+      const oldRoadmapIds = state.roadmaps.map((r) => r.id)
 
       const roadmapIdMap = new Map<string, string>()
       for (const r of data.roadmaps) roadmapIdMap.set(r.id, crypto.randomUUID())
@@ -1084,6 +1138,15 @@ function StoreProvider({ children }: { children: ReactNode }) {
         if (error) throw error
       }
 
+      if (oldTaskIds.length > 0) {
+        const { error } = await supabase.from("tasks").delete().in("id", oldTaskIds)
+        if (error) throw error
+      }
+      if (oldRoadmapIds.length > 0) {
+        const { error } = await supabase.from("roadmaps").delete().in("id", oldRoadmapIds)
+        if (error) throw error
+      }
+
       await supabase.from("settings").upsert({
         user_id: user.id,
         font_scale: data.settings.fontScale,
@@ -1097,7 +1160,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
 
       await loadAll(user.id, metadataName)
     },
-    [user, metadataName, loadAll, state.flags],
+    [user, metadataName, loadAll, state.flags, state.tasks, state.roadmaps],
   )
 
   const confirmLegacyImport = useCallback(async () => {
@@ -1151,6 +1214,8 @@ function StoreProvider({ children }: { children: ReactNode }) {
     addTask,
     addTasksBulk,
     updateTaskDueDate,
+    updateTask,
+    deleteTask,
     updateProfile,
     updateSettings,
     resetProgress,

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Input, Label } from "@/components/ui/field"
 import { Modal } from "@/components/ui/modal"
 import { Toggle } from "@/components/ui/toggle"
+import { BackupError, parseBackup } from "@/lib/backup"
 import { usePageHeader } from "@/lib/page-header"
 import { type AppState, useStore } from "@/lib/store"
 
@@ -15,29 +16,44 @@ function Settings() {
   const { state, isGuest, updateProfile, updateSettings, resetProgress, importState } = useStore()
 
   const [displayName, setDisplayName] = useState(state.profile.displayName)
-  const [email, setEmail] = useState(state.profile.email)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [profileError, setProfileError] = useState("")
   const [resetOpen, setResetOpen] = useState(false)
   const [resetting, setResetting] = useState(false)
   const [importError, setImportError] = useState("")
+  const [importNotice, setImportNotice] = useState("")
+  const [pendingImport, setPendingImport] = useState<{ data: AppState; fileName: string } | null>(null)
+  const [importing, setImporting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Local inputs start blank until the real profile finishes loading.
+  // Local input starts blank until the real profile finishes loading.
   useEffect(() => {
     setDisplayName(state.profile.displayName)
-    setEmail(state.profile.email)
-  }, [state.profile.displayName, state.profile.email])
+  }, [state.profile.displayName])
+
+  // The slider moves locally and saves once it settles, instead of writing
+  // on every step of a drag.
+  const [fontScale, setFontScale] = useState(state.settings.fontScale)
+  useEffect(() => setFontScale(state.settings.fontScale), [state.settings.fontScale])
+  useEffect(() => {
+    if (fontScale === state.settings.fontScale) return
+    const timer = window.setTimeout(() => void updateSettings({ fontScale }), 300)
+    return () => window.clearTimeout(timer)
+  }, [fontScale, state.settings.fontScale, updateSettings])
 
   const dataBytes = new Blob([JSON.stringify(state)]).size
   const dataKb = (dataBytes / 1024).toFixed(1)
 
   const handleSaveProfile = async () => {
     setSaving(true)
+    setProfileError("")
     try {
-      await updateProfile({ displayName: displayName.trim(), email: email.trim() })
+      await updateProfile({ displayName: displayName.trim(), email: state.profile.email })
       setSaved(true)
       window.setTimeout(() => setSaved(false), 1500)
+    } catch {
+      setProfileError("Couldn't save your profile. Try again.")
     } finally {
       setSaving(false)
     }
@@ -55,23 +71,43 @@ function Settings() {
 
   const handleImportClick = () => fileInputRef.current?.click()
 
+  // Validate first, then confirm: import replaces everything.
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     setImportError("")
+    setImportNotice("")
     const reader = new FileReader()
     reader.onload = () => {
-      void (async () => {
-        try {
-          const data = JSON.parse(String(reader.result)) as AppState
-          await importState(data)
-        } catch {
-          setImportError("Couldn't import that file — check it's a valid export.")
-        }
-      })()
+      try {
+        setPendingImport({ data: parseBackup(String(reader.result)), fileName: file.name })
+      } catch (err) {
+        setImportError(err instanceof BackupError ? err.message : "Couldn't read that file.")
+      }
     }
+    reader.onerror = () => setImportError("Couldn't read that file.")
     reader.readAsText(file)
     e.target.value = ""
+  }
+
+  const handleConfirmImport = async () => {
+    if (!pendingImport) return
+    setImporting(true)
+    try {
+      await importState(pendingImport.data)
+      const { roadmaps, tasks } = pendingImport.data
+      setImportNotice(
+        `Imported ${roadmaps.length} roadmap${roadmaps.length === 1 ? "" : "s"} and ${tasks.length} task${
+          tasks.length === 1 ? "" : "s"
+        }.`,
+      )
+      setPendingImport(null)
+    } catch {
+      setImportError("The import failed partway. Your previous data is still there; try again.")
+      setPendingImport(null)
+    } finally {
+      setImporting(false)
+    }
   }
 
   const handleReset = async () => {
@@ -84,7 +120,7 @@ function Settings() {
     }
   }
 
-  const fontLabel = state.settings.fontScale < 97 ? "Small" : state.settings.fontScale > 108 ? "Large" : "Medium"
+  const fontLabel = `${fontScale}%${fontScale < 97 ? " · Small" : fontScale > 108 ? " · Large" : ""}`
 
   return (
     <>
@@ -111,17 +147,18 @@ function Settings() {
               </div>
               {!isGuest && (
                 <div>
-                  <Label htmlFor="settings-email">Email</Label>
-                  <Input
-                    id="settings-email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    type="email"
-                  />
+                  <Label htmlFor="settings-email">Sign-in email</Label>
+                  <Input id="settings-email" value={state.profile.email} type="email" readOnly disabled />
                 </div>
               )}
             </div>
-            <Button size="sm" className="self-start" onClick={handleSaveProfile} disabled={saving}>
+            {profileError && <p className="text-[12px] text-coral-text">{profileError}</p>}
+            <Button
+              size="sm"
+              className="self-start"
+              onClick={handleSaveProfile}
+              disabled={saving || !displayName.trim() || displayName.trim() === state.profile.displayName}
+            >
               {saving ? "Saving..." : saved ? "Saved" : "Save Changes"}
             </Button>
           </Card>
@@ -172,15 +209,16 @@ function Settings() {
                 type="range"
                 min={90}
                 max={120}
-                value={state.settings.fontScale}
-                onChange={(e) => void updateSettings({ fontScale: Number(e.target.value) })}
+                step={5}
+                value={fontScale}
+                onChange={(e) => setFontScale(Number(e.target.value))}
                 className="w-full accent-[#0c0c0d]"
               />
             </div>
 
             {[
               { key: "reducedMotion" as const, label: "Reduced Motion", hint: "Disable card/hover animations" },
-              { key: "compactDensity" as const, label: "Compact Density", hint: "Tighter spacing across tables and lists" },
+              { key: "compactDensity" as const, label: "Compact Density", hint: "Tighter spacing throughout the app" },
             ].map((row) => (
               <div key={row.key} className="flex items-center justify-between">
                 <div>
@@ -219,7 +257,12 @@ function Settings() {
               className="hidden"
               onChange={handleImportFile}
             />
-            {importError && <p className="text-[12px] text-coral-text">{importError}</p>}
+            {importError && (
+              <p role="alert" className="text-[12px] text-coral-text">
+                {importError}
+              </p>
+            )}
+            {importNotice && <p className="text-[12px] text-sage-text">{importNotice}</p>}
             <p className="text-[11.5px] text-ink-muted">Current data size: {dataKb} KB</p>
             <Button
               size="sm"
@@ -238,6 +281,30 @@ function Settings() {
           </Card>
         </div>
       </div>
+
+      <Modal
+        open={!!pendingImport}
+        onClose={() => setPendingImport(null)}
+        title="Replace your data?"
+        description={
+          pendingImport
+            ? `"${pendingImport.fileName}" has ${pendingImport.data.roadmaps.length} roadmap${
+                pendingImport.data.roadmaps.length === 1 ? "" : "s"
+              } and ${pendingImport.data.tasks.length} task${
+                pendingImport.data.tasks.length === 1 ? "" : "s"
+              }. Importing replaces every roadmap and task you have now. Achievements you've unlocked are kept.`
+            : undefined
+        }
+      >
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPendingImport(null)}>
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleConfirmImport} disabled={importing}>
+            {importing ? "Importing..." : "Replace and Import"}
+          </Button>
+        </div>
+      </Modal>
 
       <Modal
         open={resetOpen}

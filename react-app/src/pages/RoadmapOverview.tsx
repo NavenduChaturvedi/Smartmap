@@ -82,8 +82,9 @@ function RoadmapOverview() {
     onClick: () => setModalOpen(true),
   })
 
-  const handleCreate = async () => {
-    if (!name.trim()) return
+  const handleCreate = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!name.trim() || creating) return
     setCreating(true)
     setError("")
     try {
@@ -178,7 +179,7 @@ function RoadmapOverview() {
         title="New Roadmap"
         description="Give your roadmap a name and a short description."
       >
-        <div className="flex flex-col gap-4">
+        <form className="flex flex-col gap-4" onSubmit={handleCreate}>
           <div>
             <Label htmlFor="new-roadmap-name">Roadmap Name</Label>
             <Input
@@ -201,14 +202,14 @@ function RoadmapOverview() {
           </div>
           {error && <p className="text-[12.5px] text-coral-text">{error}</p>}
           <div className="flex justify-end gap-2 pt-1">
-            <Button variant="outline" size="sm" onClick={() => setModalOpen(false)}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setModalOpen(false)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleCreate} disabled={!name.trim() || creating}>
+            <Button type="submit" size="sm" disabled={!name.trim() || creating}>
               {creating ? "Creating..." : "Create Roadmap"}
             </Button>
           </div>
-        </div>
+        </form>
       </Modal>
     </>
   )

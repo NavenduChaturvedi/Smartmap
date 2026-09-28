@@ -86,7 +86,7 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
             ) : (
               <Circle className="size-4" aria-hidden />
             ),
-            to: `/roadmap/${t.roadmapId}`,
+            to: `/roadmap/${t.roadmapId}?task=${t.id}`,
           }))
       : []
 

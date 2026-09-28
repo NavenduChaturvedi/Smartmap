@@ -5,6 +5,7 @@ import { Link, Outlet } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
 import { useStore } from "@/lib/store"
+import { cn } from "@/lib/utils"
 
 import { AchievementToast } from "./AchievementToast"
 import { Sidebar } from "./Sidebar"
@@ -33,8 +34,18 @@ function AppShell() {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopHeader />
-        <main className="scrollbar-thin flex-1 overflow-y-auto p-3 sm:p-6">
-          <div className="mx-auto flex max-w-[1400px] flex-col gap-4 sm:gap-6">
+        <main
+          className={cn(
+            "scrollbar-thin flex-1 overflow-y-auto p-3 sm:p-6",
+            state.settings.compactDensity && "density-compact",
+          )}
+        >
+          {/* Font Size scales the page content (zoom scales the px-based type
+              and the layout around it together). */}
+          <div
+            className="mx-auto flex max-w-[1400px] flex-col gap-4 sm:gap-6"
+            style={state.settings.fontScale !== 100 ? { zoom: state.settings.fontScale / 100 } : undefined}
+          >
             {loading ? (
               <div className="flex h-64 items-center justify-center text-[13px] text-ink-muted">
                 {guestSync?.status === "syncing"

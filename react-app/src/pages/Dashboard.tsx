@@ -153,7 +153,7 @@ function Dashboard() {
           tone: task.done ? "sage" : "amber",
           statusLabel: task.done ? "Done" : subs.length ? `${subs.length - doneSubs} left` : "To do",
           progress,
-          onClick: () => navigate(`/roadmap/${focusRoadmap.id}`),
+          onClick: () => navigate(`/roadmap/${focusRoadmap.id}?task=${task.id}`),
         }
       })
     : []

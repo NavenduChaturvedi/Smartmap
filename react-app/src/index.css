@@ -64,3 +64,10 @@
     background: transparent;
   }
 }
+
+/* Settings > Compact Density: every Tailwind spacing utility (padding, gap,
+   margin, sizes) is a multiple of --spacing, so shrinking it tightens the
+   whole page consistently. Default is 0.25rem. */
+.density-compact {
+  --spacing: 0.2rem;
+}
