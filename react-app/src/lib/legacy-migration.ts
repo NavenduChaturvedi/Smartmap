@@ -1,3 +1,4 @@
+import { DEFAULT_FLAGS, DEFAULT_SETTINGS } from "./app-defaults"
 import type { AppState, Roadmap, Task } from "./store"
 
 // Key the old vanilla-JS app (index/dashboard/roadmap.html etc, js/app.js)
@@ -149,8 +150,10 @@ function normalizeLegacyState(legacy: LegacyState): AppState {
       soundEffects: legacy.settings?.soundEffects ?? true,
       reducedMotion: false,
       compactDensity: false,
+      achievementAlerts: DEFAULT_SETTINGS.achievementAlerts,
     },
-    viewedAnalytics: false,
+    flags: DEFAULT_FLAGS,
+    unlocks: {},
   }
 }
 

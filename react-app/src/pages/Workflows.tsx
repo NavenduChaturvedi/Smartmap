@@ -24,7 +24,7 @@ function newPhase(): PhaseRow {
 
 function Workflows() {
   const navigate = useNavigate()
-  const { state, totalXp, streak, addRoadmap, addTasksBulk } = useStore()
+  const { state, totalXp, streak, addRoadmap, addTasksBulk, recordAiRoadmapCreated } = useStore()
   const [mode, setMode] = useState<"manual" | "ai">("manual")
 
   usePageHeader(["Smartmap", "New roadmap"])
@@ -103,6 +103,7 @@ function Workflows() {
     try {
       const roadmap = await addRoadmap(plan.name, plan.description)
       await addTasksBulk(roadmap.id, plan.tasks)
+      await recordAiRoadmapCreated()
       navigate(`/roadmap/${roadmap.id}`)
     } catch {
       setLaunchError("Couldn't create the roadmap. Try again.")

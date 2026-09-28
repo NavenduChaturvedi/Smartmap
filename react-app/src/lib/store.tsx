@@ -9,6 +9,14 @@ import {
   type ReactNode,
 } from "react"
 
+import {
+  ACHIEVEMENTS,
+  canonicalAchievementId,
+  evaluateAchievements,
+  type AchievementDef,
+  type NewUnlock,
+} from "./achievements"
+import { DEFAULT_FLAGS, DEFAULT_SETTINGS } from "./app-defaults"
 import { useAuth } from "./auth-context"
 import {
   clearGuestState,
@@ -62,6 +70,8 @@ interface Settings {
   soundEffects: boolean
   reducedMotion: boolean
   compactDensity: boolean
+  // Show a toast when an achievement unlocks.
+  achievementAlerts: boolean
 }
 
 interface Profile {
@@ -69,13 +79,25 @@ interface Profile {
   email: string
 }
 
-interface Achievement {
-  id: string
-  title: string
-  description: string
-  rarity: "common" | "rare" | "locked"
-  xp: number
+// A catalog achievement joined with this user's unlock state.
+interface Achievement extends Omit<AchievementDef, "check" | "progress" | "earnedAt"> {
   unlocked: boolean
+  unlockedAt: string | null
+  progress: { current: number; target: number } | null
+}
+
+interface Unlock {
+  unlockedAt: string
+  xpAwarded: number
+}
+
+// Facts achievements need that can't be derived from tasks/roadmaps.
+interface Flags {
+  viewedAnalytics: boolean
+  aiRoadmapsCreated: number
+  // Longest streak ever reached (settings.longest_streak). Kept separately
+  // because task history changes when tasks are un-checked.
+  longestStreak: number
 }
 
 interface AppState {
@@ -83,32 +105,69 @@ interface AppState {
   tasks: Task[]
   profile: Profile
   settings: Settings
-  // One-off milestones that can't be derived from tasks/roadmaps (e.g. the
-  // "Data Analyst" achievement). Persisted in settings.preferences.
-  viewedAnalytics: boolean
+  flags: Flags
+  // Permanent achievement unlocks, keyed by achievement id.
+  unlocks: Record<string, Unlock>
 }
 
 const EMPTY_STATE: AppState = {
   roadmaps: [],
   tasks: [],
   profile: { displayName: "", email: "" },
-  settings: { fontScale: 100, soundEffects: true, reducedMotion: false, compactDensity: false },
-  viewedAnalytics: false,
+  settings: DEFAULT_SETTINGS,
+  flags: DEFAULT_FLAGS,
+  unlocks: {},
 }
 
-// A type alias, not an interface, so it's assignable to the Json column type.
+// settings.preferences jsonb. A type alias, not an interface, so it's
+// assignable to the Json column type.
 type Preferences = {
   reducedMotion?: boolean
   compactDensity?: boolean
+  achievementAlerts?: boolean
   viewedAnalytics?: boolean
+  aiRoadmapsCreated?: number
 }
 
-function preferencesPayload(settings: Settings, viewedAnalytics: boolean): Preferences {
+function preferencesPayload(settings: Settings, flags: Flags): Preferences {
   return {
     reducedMotion: settings.reducedMotion,
     compactDensity: settings.compactDensity,
-    viewedAnalytics,
+    achievementAlerts: settings.achievementAlerts,
+    viewedAnalytics: flags.viewedAnalytics,
+    aiRoadmapsCreated: flags.aiRoadmapsCreated,
   }
+}
+
+type UnlockRow = Tables<"user_achievements">
+
+// Stored rows keyed by current catalog id (old aliases mapped, retired ids
+// dropped).
+function unlocksFromRows(rows: UnlockRow[]): Record<string, Unlock> {
+  const out: Record<string, Unlock> = {}
+  for (const row of rows) {
+    const id = canonicalAchievementId(row.achievement_id)
+    if (!id || out[id]) continue
+    out[id] = { unlockedAt: row.unlocked_at, xpAwarded: row.xp_awarded }
+  }
+  return out
+}
+
+// Insert-or-ignore: unlocks are permanent and the table has no update
+// policy, so a repeat (another tab, a retry, a re-evaluation after refresh)
+// is a no-op rather than an error or an overwrite.
+async function persistUnlocks(userId: string, unlocks: NewUnlock[]) {
+  if (unlocks.length === 0) return
+  const { error } = await supabase.from("user_achievements").upsert(
+    unlocks.map((u) => ({
+      user_id: userId,
+      achievement_id: u.id,
+      unlocked_at: u.unlockedAt,
+      xp_awarded: u.xp,
+    })),
+    { onConflict: "user_id,achievement_id", ignoreDuplicates: true },
+  )
+  if (error) throw error
 }
 
 
@@ -185,19 +244,34 @@ async function syncGuestToAccount(userId: string, guest: AppState) {
     if (error) throw error
   }
 
-  if (guest.viewedAnalytics) {
+  await persistUnlocks(
+    userId,
+    Object.entries(guest.unlocks).map(([id, u]) => ({
+      id,
+      unlockedAt: u.unlockedAt,
+      xp: u.xpAwarded,
+    })),
+  )
+
+  // Merge milestone flags into the account's: never lose one either side has.
+  const { flags } = guest
+  if (flags.viewedAnalytics || flags.aiRoadmapsCreated > 0 || flags.longestStreak > 0) {
     const { data } = await supabase
       .from("settings")
-      .select("preferences")
+      .select("preferences, longest_streak")
       .eq("user_id", userId)
       .maybeSingle()
     const current = (data?.preferences ?? {}) as Preferences
-    if (!current.viewedAnalytics) {
-      const { error } = await supabase
-        .from("settings")
-        .upsert({ user_id: userId, preferences: { ...current, viewedAnalytics: true } })
-      if (error) throw error
-    }
+    const { error } = await supabase.from("settings").upsert({
+      user_id: userId,
+      preferences: {
+        ...current,
+        viewedAnalytics: !!current.viewedAnalytics || flags.viewedAnalytics,
+        aiRoadmapsCreated: (current.aiRoadmapsCreated ?? 0) + flags.aiRoadmapsCreated,
+      },
+      longest_streak: Math.max(data?.longest_streak ?? 0, flags.longestStreak),
+    })
+    if (error) throw error
   }
 }
 
@@ -252,6 +326,7 @@ interface StoreApi {
   updateSettings: (settings: Partial<Settings>) => Promise<void>
   resetProgress: () => Promise<void>
   markAnalyticsViewed: () => Promise<void>
+  recordAiRoadmapCreated: () => Promise<void>
   importState: (data: AppState) => Promise<void>
   pendingImport: { roadmapCount: number; taskCount: number } | null
   confirmLegacyImport: () => Promise<void>
@@ -269,6 +344,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
   // never write an account's data into browser storage during sign-out.
   const [stateOwner, setStateOwner] = useState<string | null>(null)
   const [guestSync, setGuestSync] = useState<GuestSync | null>(null)
+  const [unlocksReady, setUnlocksReady] = useState(false)
   const syncRef = useRef<{ userId: string; promise: Promise<void> } | null>(null)
   const isGuest = !user
   // The account whose data we should be showing right now. A fetch that
@@ -280,11 +356,12 @@ function StoreProvider({ children }: { children: ReactNode }) {
   // instead of dropping back to the full-page loading state.
   const loadAll = useCallback(async (userId: string, fallbackName: string, silent = false) => {
     if (!silent) setLoading(true)
-    const [profileRes, settingsRes, roadmapsRes, tasksRes] = await Promise.all([
+    const [profileRes, settingsRes, roadmapsRes, tasksRes, unlocksRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
       supabase.from("settings").select("*").eq("user_id", userId).maybeSingle(),
       supabase.from("roadmaps").select("*").eq("user_id", userId).order("created_at"),
       supabase.from("tasks").select("*").eq("user_id", userId).order("created_at"),
+      supabase.from("user_achievements").select("*").eq("user_id", userId),
     ])
 
     if (currentUserIdRef.current !== userId) return
@@ -306,9 +383,19 @@ function StoreProvider({ children }: { children: ReactNode }) {
         soundEffects: settingsRow?.sound_effects ?? true,
         reducedMotion: preferences.reducedMotion ?? false,
         compactDensity: preferences.compactDensity ?? false,
+        achievementAlerts: preferences.achievementAlerts ?? true,
       },
-      viewedAnalytics: preferences.viewedAnalytics ?? false,
+      flags: {
+        viewedAnalytics: preferences.viewedAnalytics ?? false,
+        aiRoadmapsCreated: preferences.aiRoadmapsCreated ?? 0,
+        longestStreak: settingsRow?.longest_streak ?? 0,
+      },
+      unlocks: unlocksFromRows(unlocksRes.data ?? []),
     })
+    // Without the stored unlocks we can't tell new unlocks from old ones, so
+    // don't evaluate at all rather than re-announce (or double-count) them.
+    if (unlocksRes.error) console.error("Failed to load achievements", unlocksRes.error)
+    setUnlocksReady(!unlocksRes.error)
     setLoading(false)
   }, [])
 
@@ -342,12 +429,14 @@ function StoreProvider({ children }: { children: ReactNode }) {
     if (authLoading) return
     currentUserIdRef.current = user?.id ?? null
     setStateOwner(null)
+    setUnlocksReady(false)
 
     if (!user?.id) {
       syncRef.current = null
       setGuestSync(null)
       setState(loadGuestState())
       setStateOwner(GUEST_OWNER)
+      setUnlocksReady(true)
       setLoading(false)
       return
     }
@@ -487,91 +576,63 @@ function StoreProvider({ children }: { children: ReactNode }) {
     [completedRoadmaps],
   )
 
-  const achievements = useMemo<Achievement[]>(() => {
-    const completedCount = state.tasks.filter((t) => t.done).length
-    const xpByRoadmap = new Map<string, number>()
-    for (const t of state.tasks) {
-      if (!t.done) continue
-      xpByRoadmap.set(t.roadmapId, (xpByRoadmap.get(t.roadmapId) ?? 0) + t.xp)
-    }
-    const maxRoadmapXp = Math.max(0, ...xpByRoadmap.values())
-    const hasPerfectRoadmap = completedRoadmaps.length > 0
+  const achievementContext = useMemo(
+    () => ({
+      tasks: state.tasks,
+      roadmaps: state.roadmaps,
+      currentStreak: streak,
+      longestStreak: state.flags.longestStreak,
+      viewedAnalytics: state.flags.viewedAnalytics,
+      aiRoadmapsCreated: state.flags.aiRoadmapsCreated,
+      now: new Date(),
+    }),
+    [state.tasks, state.roadmaps, state.flags, streak],
+  )
 
-    return [
-      {
-        id: "first-contact",
-        title: "First Contact",
-        description: "Complete your first task.",
-        rarity: "common",
-        xp: 20,
-        unlocked: completedCount >= 1,
-      },
-      {
-        id: "base-camp",
-        title: "Base Camp",
-        description: "Create your first roadmap.",
-        rarity: "common",
-        xp: 10,
-        unlocked: state.roadmaps.length >= 1,
-      },
-      {
-        id: "quick-start",
-        title: "Quick Start",
-        description: "Complete 10 tasks total.",
-        rarity: "common",
-        xp: 50,
-        unlocked: completedCount >= 10,
-      },
-      {
-        id: "cartographer",
-        title: "Cartographer",
-        description: "Create 5 different roadmaps.",
-        rarity: "common",
-        xp: 40,
-        unlocked: state.roadmaps.length >= 5,
-      },
-      {
-        id: "data-analyst",
-        title: "Data Analyst",
-        description: "View the analytics page.",
-        rarity: "common",
-        xp: 60,
-        unlocked: state.viewedAnalytics,
-      },
-      {
-        id: "night-watch",
-        title: "Night Watch",
-        description: "Complete a task after midnight.",
-        rarity: "common",
-        xp: 80,
-        unlocked: state.tasks.some((t) => t.completedAt && new Date(t.completedAt).getHours() === 0),
-      },
-      {
-        id: "century-mark",
-        title: "Century Mark",
-        description: "Earn 200 XP in a single roadmap.",
-        rarity: "rare",
-        xp: 200,
-        unlocked: maxRoadmapXp >= 200,
-      },
-      {
-        id: "perfectionist",
-        title: "Perfectionist",
-        description: "Finish a roadmap with zero pending tasks.",
-        rarity: "rare",
-        xp: 150,
-        unlocked: hasPerfectRoadmap,
-      },
-      ...Array.from({ length: 4 }, (_, i) => ({
-        id: `locked-${i}`,
-        title: "Locked Achievement",
-        description: "Keep progressing to unlock this achievement.",
-        rarity: "locked" as const,
-        xp: 0,
-        unlocked: false,
-      })),
-    ]
-  }, [state.tasks, state.roadmaps, state.viewedAnalytics, completedRoadmaps])
+  const achievements = useMemo<Achievement[]>(
+    () =>
+      ACHIEVEMENTS.map(({ check: _check, progress, earnedAt: _earnedAt, ...def }) => {
+        const unlock = state.unlocks[def.id]
+        return {
+          ...def,
+          unlocked: !!unlock,
+          unlockedAt: unlock?.unlockedAt ?? null,
+          progress: progress ? progress(achievementContext) : null,
+        }
+      }),
+    [state.unlocks, achievementContext],
+  )
+
+  // Evaluate after anything that could earn an achievement (task toggles,
+  // new roadmaps, flags like the analytics visit) and once per load. The
+  // first pass after a load is the backfill for existing accounts: it
+  // records everything their history already qualifies for, quietly. Later
+  // passes are live unlocks.
+  const backfilledOwnerRef = useRef<string | null>(null)
+  // Set by the toast queue; a ref so evaluation doesn't depend on it.
+  const onUnlockRef = useRef<(ids: string[]) => void>(() => {})
+  useEffect(() => {
+    if (loading || !stateOwner || !unlocksReady) return
+    const isBackfill = backfilledOwnerRef.current !== stateOwner
+    backfilledOwnerRef.current = stateOwner
+
+    const fresh = evaluateAchievements(achievementContext, Object.keys(state.unlocks))
+    if (fresh.length === 0) return
+
+    setState((prev) => {
+      const unlocks = { ...prev.unlocks }
+      for (const u of fresh) unlocks[u.id] ??= { unlockedAt: u.unlockedAt, xpAwarded: u.xp }
+      return { ...prev, unlocks }
+    })
+    if (!isBackfill) onUnlockRef.current(fresh.map((u) => u.id))
+    if (stateOwner !== GUEST_OWNER) {
+      // Kept in state even if the write fails: the next load re-evaluates
+      // and inserts it again.
+      persistUnlocks(stateOwner, fresh).catch((err) =>
+        console.error("Failed to save achievements", err),
+      )
+    }
+  }, [loading, stateOwner, unlocksReady, achievementContext, state.unlocks])
 
   const toggleTask = useCallback(
     async (taskId: string) => {
@@ -836,27 +897,41 @@ function StoreProvider({ children }: { children: ReactNode }) {
           user_id: user.id,
           font_scale: next.fontScale,
           sound_effects: next.soundEffects,
-          preferences: preferencesPayload(next, state.viewedAnalytics),
+          preferences: preferencesPayload(next, state.flags),
         })
         if (error) throw error
       }
       setState((prev) => ({ ...prev, settings: next }))
     },
-    [user, state.settings, state.viewedAnalytics],
+    [user, state.settings, state.flags],
+  )
+
+  // Flags are milestones, so they're updated optimistically; a failed write
+  // is logged and the flag is set again next time the user does the thing.
+  const updateFlags = useCallback(
+    async (patch: Partial<Flags>, what: string) => {
+      const next = { ...state.flags, ...patch }
+      setState((prev) => ({ ...prev, flags: { ...prev.flags, ...patch } }))
+      if (!user) return
+      const { error } = await supabase.from("settings").upsert({
+        user_id: user.id,
+        preferences: preferencesPayload(state.settings, next),
+      })
+      if (error) console.error(`Failed to record ${what}`, error)
+    },
+    [user, state.settings, state.flags],
   )
 
   const markAnalyticsViewed = useCallback(async () => {
-    if (state.viewedAnalytics) return
-    // Optimistic: the achievement unlocks immediately; a failed write just
-    // means it gets re-marked on the next visit.
-    setState((prev) => ({ ...prev, viewedAnalytics: true }))
-    if (!user) return
-    const { error } = await supabase.from("settings").upsert({
-      user_id: user.id,
-      preferences: preferencesPayload(state.settings, true),
-    })
-    if (error) console.error("Failed to record analytics visit", error)
-  }, [user, state.settings, state.viewedAnalytics])
+    if (state.flags.viewedAnalytics) return
+    await updateFlags({ viewedAnalytics: true }, "analytics visit")
+  }, [state.flags.viewedAnalytics, updateFlags])
+
+  const recordAiRoadmapCreated = useCallback(
+    () =>
+      updateFlags({ aiRoadmapsCreated: state.flags.aiRoadmapsCreated + 1 }, "AI roadmap creation"),
+    [state.flags.aiRoadmapsCreated, updateFlags],
+  )
 
   const resetProgress = useCallback(async () => {
     if (user) {
@@ -886,7 +961,8 @@ function StoreProvider({ children }: { children: ReactNode }) {
             })),
           settings: { ...prev.settings, ...data.settings },
           profile: { ...prev.profile, displayName: data.profile?.displayName || prev.profile.displayName },
-          viewedAnalytics: prev.viewedAnalytics || !!data.viewedAnalytics,
+          // Achievements and milestones aren't restored from a file: they're
+          // earned, and keep what this browser already has.
         }))
         return
       }
@@ -952,10 +1028,8 @@ function StoreProvider({ children }: { children: ReactNode }) {
         user_id: user.id,
         font_scale: data.settings.fontScale,
         sound_effects: data.settings.soundEffects,
-        preferences: preferencesPayload(
-          data.settings,
-          data.viewedAnalytics ?? state.viewedAnalytics,
-        ),
+        // Milestone flags belong to the account, not the backup file.
+        preferences: preferencesPayload({ ...DEFAULT_SETTINGS, ...data.settings }, state.flags),
       })
       await supabase
         .from("profiles")
@@ -963,7 +1037,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
 
       await loadAll(user.id, metadataName)
     },
-    [user, metadataName, loadAll, state.viewedAnalytics],
+    [user, metadataName, loadAll, state.flags],
   )
 
   const confirmLegacyImport = useCallback(async () => {
@@ -1018,6 +1092,7 @@ function StoreProvider({ children }: { children: ReactNode }) {
     updateSettings,
     resetProgress,
     markAnalyticsViewed,
+    recordAiRoadmapCreated,
     importState,
     pendingImport,
     confirmLegacyImport,
@@ -1034,4 +1109,15 @@ function useStore() {
 }
 
 export { StoreProvider, useStore }
-export type { Task, Roadmap, CompletedRoadmap, Settings, Profile, Achievement, AppState, GuestSync }
+export type {
+  Task,
+  Roadmap,
+  CompletedRoadmap,
+  Settings,
+  Profile,
+  Achievement,
+  AppState,
+  Flags,
+  GuestSync,
+  Unlock,
+}

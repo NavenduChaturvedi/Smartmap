@@ -9,7 +9,7 @@ import { getInitials } from "@/lib/profile"
 import { type Achievement, useStore } from "@/lib/store"
 import { cn } from "@/lib/utils"
 
-const FILTERS = ["all", "rare", "common", "locked"] as const
+const FILTERS = ["all", "common", "rare", "epic"] as const
 
 const RARITY_CONFIG: Record<
   Achievement["rarity"],
@@ -17,7 +17,7 @@ const RARITY_CONFIG: Record<
 > = {
   rare: { icon: Star, tone: "amber", iconBg: "bg-amber-bg text-amber-text" },
   common: { icon: Award, tone: "sage", iconBg: "bg-sage-bg text-sage-text" },
-  locked: { icon: Lock, tone: "neutral", iconBg: "bg-surface-muted text-ink-muted" },
+  epic: { icon: Lock, tone: "neutral", iconBg: "bg-surface-muted text-ink-muted" },
 }
 
 function Achievements() {
@@ -83,7 +83,7 @@ function Achievements() {
         {visible.map((a) => {
           const config = RARITY_CONFIG[a.rarity]
           const Icon = config.icon
-          const isLocked = a.rarity === "locked"
+          const isLocked = !a.unlocked && !!a.secret
           return (
             <Card
               key={a.id}
@@ -101,10 +101,10 @@ function Achievements() {
               </div>
               <div>
                 <h3 className="text-[13.5px] font-semibold text-ink-strong">
-                  {isLocked ? "Locked Achievement" : a.title}
+                  {isLocked ? "???" : a.title}
                 </h3>
                 <p className="mt-1 text-[12px] leading-snug text-ink-muted">
-                  {isLocked ? "Keep progressing to unlock this achievement." : a.description}
+                  {isLocked ? "Hidden achievement." : a.description}
                 </p>
               </div>
               {!isLocked && (
@@ -120,7 +120,7 @@ function Achievements() {
       <Modal
         open={!!selected}
         onClose={() => setSelected(null)}
-        title={selected?.rarity === "locked" ? "Locked Achievement" : (selected?.title ?? "")}
+        title={selected && !selected.unlocked && selected.secret ? "???" : (selected?.title ?? "")}
       >
         {selected && (
           <div className="flex flex-col gap-3">
@@ -128,9 +128,9 @@ function Achievements() {
               {selected.rarity}
             </StatusPill>
             <p className="text-[13px] text-ink">
-              {selected.rarity === "locked" ? "Keep progressing to unlock this achievement." : selected.description}
+              {!selected.unlocked && selected.secret ? "Hidden achievement." : selected.description}
             </p>
-            {selected.rarity !== "locked" && (
+            {(selected.unlocked || !selected.secret) && (
               <p className="text-[12px] text-ink-muted">
                 Reward: <span className="font-semibold text-ink">+{selected.xp} XP</span>
               </p>
