@@ -56,7 +56,7 @@ function Analytics() {
     {
       label: "Current streak",
       value: `${streak} ${streak === 1 ? "day" : "days"}`,
-      subtext: "Days in a row with a completed task",
+      subtext: `Longest: ${state.flags.longestStreak} ${state.flags.longestStreak === 1 ? "day" : "days"}`,
       icon: Flame,
     },
   ]

@@ -34,7 +34,7 @@ import {
 } from "./legacy-migration"
 import { addDays, localDateKey } from "./dates"
 import { resolveDisplayName } from "./profile"
-import { computeStreak } from "./streak"
+import { computeLongestStreak, computeStreak } from "./streak"
 import { supabase } from "./supabase"
 import { assignDueDates } from "./task-scheduling"
 import type { Tables } from "./database.types"
@@ -542,6 +542,26 @@ function StoreProvider({ children }: { children: ReactNode }) {
   }, [state.tasks, state.unlocks])
 
   const streak = useMemo(() => computeStreak(state.tasks), [state.tasks])
+
+  // settings.longest_streak only ever grows. Recomputing from task history
+  // both seeds it for accounts that predate the column and raises it as the
+  // current streak sets new records; un-checked tasks can shrink the history
+  // but never the stored best.
+  const historyLongest = useMemo(() => computeLongestStreak(state.tasks), [state.tasks])
+  useEffect(() => {
+    if (loading || !stateOwner || historyLongest <= state.flags.longestStreak) return
+    setState((prev) => ({
+      ...prev,
+      flags: { ...prev.flags, longestStreak: Math.max(prev.flags.longestStreak, historyLongest) },
+    }))
+    if (stateOwner === GUEST_OWNER) return
+    supabase
+      .from("settings")
+      .upsert({ user_id: stateOwner, longest_streak: historyLongest })
+      .then(({ error }) => {
+        if (error) console.error("Failed to save longest streak", error)
+      })
+  }, [loading, stateOwner, historyLongest, state.flags.longestStreak])
 
   const completedTasks = useMemo(
     () =>
