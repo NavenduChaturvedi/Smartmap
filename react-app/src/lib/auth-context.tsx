@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react"
 
-import { supabase } from "./supabase"
+import { arrivedFromRecoveryLink, supabase } from "./supabase"
 
 interface AuthApi {
   session: Session | null
@@ -20,6 +20,12 @@ interface AuthApi {
     fullName: string,
   ) => Promise<{ error: string | null; needsEmailConfirm: boolean }>
   signOut: () => Promise<void>
+  // Emails a password-reset link that returns to /reset-password.
+  requestPasswordReset: (email: string) => Promise<{ error: string | null }>
+  updatePassword: (password: string) => Promise<{ error: string | null }>
+  // Signed in through a reset link and hasn't set a new password yet.
+  passwordRecovery: boolean
+  clearPasswordRecovery: () => void
 }
 
 const AuthContext = createContext<AuthApi | null>(null)
@@ -27,6 +33,7 @@ const AuthContext = createContext<AuthApi | null>(null)
 function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [passwordRecovery, setPasswordRecovery] = useState(arrivedFromRecoveryLink)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -34,8 +41,10 @@ function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession)
+      if (event === "PASSWORD_RECOVERY") setPasswordRecovery(true)
+      if (event === "SIGNED_OUT") setPasswordRecovery(false)
     })
 
     return () => listener.subscription.unsubscribe()
@@ -61,6 +70,19 @@ function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  const requestPasswordReset = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    return { error: error?.message ?? null }
+  }
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password })
+    if (!error) setPasswordRecovery(false)
+    return { error: error?.message ?? null }
+  }
+
   const value: AuthApi = {
     session,
     user: session?.user ?? null,
@@ -68,6 +90,10 @@ function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     signOut,
+    requestPasswordReset,
+    updatePassword,
+    passwordRecovery,
+    clearPasswordRecovery: () => setPasswordRecovery(false),
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

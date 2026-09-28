@@ -11,13 +11,14 @@ import { useStore } from "@/lib/store"
 function Login() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { session, loading, signIn, signUp } = useAuth()
+  const { session, loading, signIn, signUp, requestPasswordReset } = useAuth()
   const { isGuest, state } = useStore()
   const guestRoadmaps = isGuest ? state.roadmaps.length : 0
 
-  const [mode, setMode] = useState<"login" | "signup">(
-    (location.state as { mode?: string } | null)?.mode === "signup" ? "signup" : "login",
-  )
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">(() => {
+    const requested = (location.state as { mode?: string } | null)?.mode
+    return requested === "signup" || requested === "forgot" ? requested : "login"
+  })
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -32,10 +33,31 @@ function Login() {
     if (!loading && session) navigate(redirectTo, { replace: true })
   }, [loading, session, navigate, redirectTo])
 
+  const switchMode = (next: typeof mode) => {
+    setMode(next)
+    setError("")
+    setInfo("")
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setInfo("")
+
+    if (mode === "forgot") {
+      if (!email.trim()) {
+        setError("Enter the email you signed up with.")
+        return
+      }
+      setSubmitting(true)
+      const { error: resetError } = await requestPasswordReset(email.trim())
+      setSubmitting(false)
+      // Same message whether or not the account exists, so this form can't
+      // be used to find out who has an account.
+      if (resetError) setError(resetError)
+      else setInfo("If an account exists for that email, a reset link is on its way. Check your inbox and spam folder.")
+      return
+    }
 
     if (!email.trim() || !password.trim()) {
       setError("Email and password are required.")
@@ -84,11 +106,13 @@ function Login() {
           <p className="text-[12.5px] text-ink-muted">
             {mode === "login"
               ? "Sign in to sync your roadmaps across devices."
-              : "Create an account to keep your roadmaps safe."}
+              : mode === "signup"
+                ? "Create an account to keep your roadmaps safe."
+                : "Enter your email and we'll send you a link to reset your password."}
           </p>
         </div>
 
-        {guestRoadmaps > 0 && (
+        {guestRoadmaps > 0 && mode !== "forgot" && (
           <p className="mb-4 rounded-lg bg-sage-bg px-3 py-2 text-[12.5px] text-sage-text">
             The {guestRoadmaps} roadmap{guestRoadmaps === 1 ? "" : "s"} you made in this browser
             will be added to your account.
@@ -117,45 +141,64 @@ function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              autoFocus={mode === "login"}
+              autoFocus={mode !== "signup"}
             />
           </div>
-          <div>
-            <Label htmlFor="login-password">Password</Label>
-            <Input
-              id="login-password"
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-          </div>
+          {mode !== "forgot" && (
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <Label htmlFor="login-password" className="mb-0">
+                  Password
+                </Label>
+                {mode === "login" && (
+                  <button
+                    type="button"
+                    onClick={() => switchMode("forgot")}
+                    className="text-[12px] font-medium text-ink-muted hover:text-ink"
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
+              <Input
+                id="login-password"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+          )}
 
-          {error && <p className="text-[12.5px] text-coral-text">{error}</p>}
-          {info && <p className="text-[12.5px] text-sage-text">{info}</p>}
+          {error && (
+            <p role="alert" className="text-[12.5px] text-coral-text">
+              {error}
+            </p>
+          )}
+          {info && (
+            <p role="status" className="text-[12.5px] text-sage-text">
+              {info}
+            </p>
+          )}
 
           <Button type="submit" className="mt-1" disabled={submitting}>
             {submitting
-              ? mode === "login"
-                ? "Signing in..."
-                : "Creating account..."
-              : mode === "login"
-                ? "Sign In"
-                : "Create Account"}
+              ? { login: "Signing in...", signup: "Creating account...", forgot: "Sending..." }[mode]
+              : { login: "Sign In", signup: "Create Account", forgot: "Send reset link" }[mode]}
           </Button>
         </form>
 
         <button
           type="button"
-          onClick={() => {
-            setMode((m) => (m === "login" ? "signup" : "login"))
-            setError("")
-            setInfo("")
-          }}
+          onClick={() => switchMode(mode === "login" ? "signup" : "login")}
           className="mt-4 w-full text-center text-[12.5px] font-medium text-ink-muted hover:text-ink"
         >
-          {mode === "login" ? "Need an account? Create one" : "Already have an account? Sign in"}
+          {mode === "login"
+            ? "Need an account? Create one"
+            : mode === "signup"
+              ? "Already have an account? Sign in"
+              : "Back to sign in"}
         </button>
 
         <div className="mt-4 border-t border-line pt-4 text-center">
