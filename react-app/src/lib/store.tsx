@@ -25,8 +25,9 @@ import {
   readLegacyState,
 } from "./legacy-migration"
 import { resolveDisplayName } from "./profile"
+import { computeStreak } from "./streak"
 import { supabase } from "./supabase"
-import { assignDueDates, toDateOnlyIso } from "./task-scheduling"
+import { assignDueDates } from "./task-scheduling"
 import type { Tables } from "./database.types"
 
 interface Task {
@@ -110,25 +111,6 @@ function preferencesPayload(settings: Settings, viewedAnalytics: boolean): Prefe
   }
 }
 
-// Consecutive local days, ending today, with at least one completed task.
-// A day with nothing done yet doesn't break the streak until it's over, so
-// the count runs back from yesterday when today is still empty. Derived from
-// task completion dates rather than a stored counter: a stored counter only
-// changes when you complete something, so it can never notice a missed day.
-function computeStreak(tasks: Task[], now = new Date()): number {
-  const activeDays = new Set<string>()
-  for (const t of tasks) {
-    if (t.done && t.completedAt) activeDays.add(toDateOnlyIso(new Date(t.completedAt)))
-  }
-  const cursor = new Date(now)
-  if (!activeDays.has(toDateOnlyIso(cursor))) cursor.setDate(cursor.getDate() - 1)
-  let streak = 0
-  while (activeDays.has(toDateOnlyIso(cursor))) {
-    streak += 1
-    cursor.setDate(cursor.getDate() - 1)
-  }
-  return streak
-}
 
 type TaskRow = Tables<"tasks">
 type RoadmapRow = Tables<"roadmaps">

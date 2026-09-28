@@ -6,14 +6,7 @@
 // roadmap has no clear duration/stage structure and every task gets a null
 // due date (falls into "unscheduled", not "today").
 
-// YYYY-MM-DD in the user's local timezone. Not toISOString(), which is UTC:
-// in e.g. IST that files anything done before 05:30 under the previous day.
-function toDateOnlyIso(date: Date): string {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, "0")
-  const d = String(date.getDate()).padStart(2, "0")
-  return `${y}-${m}-${d}`
-}
+import { localDateKey } from "./dates"
 
 // Returns the total span in days implied by the titles, or null if the
 // titles don't share one consistent day/week pattern. Requires *every*
@@ -42,7 +35,7 @@ function assignDueDates(titles: string[], startDate: Date): (string | null)[] {
   if (titles.length === 0) return []
   if (titles.length === 1) {
     // Nothing to "spread" - a single task just starts on day one.
-    return detectDurationDays(titles) !== null ? [toDateOnlyIso(startDate)] : [null]
+    return detectDurationDays(titles) !== null ? [localDateKey(startDate)] : [null]
   }
 
   const totalDays = detectDurationDays(titles)
@@ -53,8 +46,8 @@ function assignDueDates(titles: string[], startDate: Date): (string | null)[] {
     const offsetDays = Math.round((i / (titles.length - 1)) * spanDays)
     const d = new Date(startDate)
     d.setDate(d.getDate() + offsetDays)
-    return toDateOnlyIso(d)
+    return localDateKey(d)
   })
 }
 
-export { assignDueDates, detectDurationDays, toDateOnlyIso }
+export { assignDueDates, detectDurationDays }

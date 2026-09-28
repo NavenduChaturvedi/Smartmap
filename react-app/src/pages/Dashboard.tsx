@@ -23,9 +23,9 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ProgressRing } from "@/components/ui/progress-ring"
 import { StatusPill } from "@/components/ui/status-pill"
+import { localDateKey } from "@/lib/dates"
 import { usePageHeader } from "@/lib/page-header"
 import { useStore } from "@/lib/store"
-import { toDateOnlyIso } from "@/lib/task-scheduling"
 import { cn } from "@/lib/utils"
 
 const STAGE_ICONS = [Webhook, BrainCircuit, SplitSquareHorizontal, BellRing]
@@ -63,13 +63,13 @@ function Dashboard() {
     for (let i = 6; i >= 0; i--) {
       const d = new Date()
       d.setDate(d.getDate() - i)
-      keys.push(toDateOnlyIso(d))
+      keys.push(localDateKey(d))
     }
     const counts = keys.map(() => 0)
     let xp = 0
     for (const t of completedTasks) {
       if (!t.completedAt) continue
-      const idx = keys.indexOf(toDateOnlyIso(new Date(t.completedAt)))
+      const idx = keys.indexOf(localDateKey(new Date(t.completedAt)))
       if (idx === -1) continue
       counts[idx] += 1
       xp += t.xp

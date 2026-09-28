@@ -3,9 +3,9 @@ import { useEffect, useMemo } from "react"
 
 import { BarChart } from "@/components/ui/bar-chart"
 import { Card } from "@/components/ui/card"
+import { localDateKey } from "@/lib/dates"
 import { usePageHeader } from "@/lib/page-header"
 import { useStore } from "@/lib/store"
-import { toDateOnlyIso } from "@/lib/task-scheduling"
 
 function Analytics() {
   usePageHeader(["Smartmap", "Analytics"])
@@ -23,9 +23,9 @@ function Analytics() {
     for (let i = 6; i >= 0; i--) {
       const d = new Date()
       d.setDate(d.getDate() - i)
-      const key = toDateOnlyIso(d)
+      const key = localDateKey(d)
       const count = completedTasks.filter(
-        (t) => t.completedAt && toDateOnlyIso(new Date(t.completedAt)) === key,
+        (t) => t.completedAt && localDateKey(new Date(t.completedAt)) === key,
       ).length
       days.push({ label: d.toLocaleDateString(undefined, { weekday: "short" }), value: count })
     }

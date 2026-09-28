@@ -3,7 +3,7 @@ import { useMemo, useState } from "react"
 
 import { Card } from "@/components/ui/card"
 import { StatusPill } from "@/components/ui/status-pill"
-import { toDateOnlyIso } from "@/lib/task-scheduling"
+import { localDateKey } from "@/lib/dates"
 import { useStore } from "@/lib/store"
 import type { Task } from "@/lib/store"
 import { cn } from "@/lib/utils"
@@ -62,10 +62,10 @@ function TodayView() {
     state.roadmaps.find((r) => r.id === roadmapId)?.name ?? "Unknown roadmap"
 
   const { todayTasks, overdueTasks, comingUpTasks, todayStr } = useMemo(() => {
-    const todayStr = toDateOnlyIso(new Date())
+    const todayStr = localDateKey(new Date())
     const comingUpEnd = new Date()
     comingUpEnd.setDate(comingUpEnd.getDate() + COMING_UP_DAYS)
-    const comingUpEndStr = toDateOnlyIso(comingUpEnd)
+    const comingUpEndStr = localDateKey(comingUpEnd)
 
     const activeIds = new Set(activeRoadmaps.map((r) => r.id))
     const dated = state.tasks.filter(
