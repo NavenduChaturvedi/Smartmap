@@ -245,8 +245,8 @@ function Settings() {
         title="Reset All Progress"
         description={
           isGuest
-            ? "This permanently deletes every roadmap and task saved in this browser. This cannot be undone."
-            : "This permanently deletes every roadmap and task in your account. This cannot be undone."
+            ? "This permanently deletes every roadmap and task saved in this browser. This cannot be undone. Achievements you've unlocked are kept."
+            : "This permanently deletes every roadmap and task in your account. This cannot be undone. Achievements you've unlocked are kept."
         }
       >
         <div className="flex justify-end gap-2">

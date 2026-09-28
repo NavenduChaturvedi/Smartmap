@@ -45,6 +45,8 @@ interface AchievementDef {
   aliases?: string[]
   check: (ctx: AchievementContext) => boolean
   progress?: (ctx: AchievementContext) => { current: number; target: number }
+  // Label for progress numbers, e.g. "roadmaps" in "3 / 5 roadmaps".
+  progressUnit?: string
   // When the condition was first met, if the data can tell. Used as
   // unlocked_at so a backfilled achievement shows when it was really earned.
   earnedAt?: (ctx: AchievementContext) => string | null
@@ -158,6 +160,7 @@ const ACHIEVEMENTS: AchievementDef[] = [
     xp: 50,
     check: (ctx) => doneCount(ctx) >= 10,
     progress: (ctx) => ({ current: doneCount(ctx), target: 10 }),
+    progressUnit: "tasks",
     earnedAt: (ctx) => nth(completionTimes(ctx), 10),
   },
   {
@@ -168,6 +171,7 @@ const ACHIEVEMENTS: AchievementDef[] = [
     xp: 40,
     check: (ctx) => ctx.roadmaps.length >= 5,
     progress: (ctx) => ({ current: ctx.roadmaps.length, target: 5 }),
+    progressUnit: "roadmaps",
     earnedAt: (ctx) => nth(roadmapsByCreation(ctx), 5)?.createdAt ?? null,
   },
   {
@@ -214,6 +218,7 @@ const ACHIEVEMENTS: AchievementDef[] = [
     xp: 100,
     check: (ctx) => bestStreak(ctx) >= 7,
     progress: (ctx) => ({ current: bestStreak(ctx), target: 7 }),
+    progressUnit: "days",
   },
   {
     id: "deep-work",
@@ -226,6 +231,7 @@ const ACHIEVEMENTS: AchievementDef[] = [
       current: Math.max(0, ...[...completionsByDay(ctx).values()].map((d) => d.length)),
       target: DEEP_WORK_TASKS,
     }),
+    progressUnit: "tasks in a day",
     earnedAt: (ctx) => deepWorkAt(ctx),
   },
   {
@@ -246,6 +252,7 @@ const ACHIEVEMENTS: AchievementDef[] = [
     xp: 200,
     check: (ctx) => maxRoadmapXp(ctx) >= 200,
     progress: (ctx) => ({ current: maxRoadmapXp(ctx), target: 200 }),
+    progressUnit: "XP",
   },
   {
     id: "speedrunner",
@@ -265,6 +272,7 @@ const ACHIEVEMENTS: AchievementDef[] = [
     xp: 300,
     check: (ctx) => bestStreak(ctx) >= 30,
     progress: (ctx) => ({ current: bestStreak(ctx), target: 30 }),
+    progressUnit: "days",
   },
 ]
 
