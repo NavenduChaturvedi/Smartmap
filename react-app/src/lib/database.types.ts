@@ -81,6 +81,7 @@ export type Database = {
           animations: boolean | null
           font_scale: number | null
           last_active_date: string | null
+          longest_streak: number
           preferences: Json
           scanlines: boolean | null
           sound_effects: boolean | null
@@ -92,6 +93,7 @@ export type Database = {
           animations?: boolean | null
           font_scale?: number | null
           last_active_date?: string | null
+          longest_streak?: number
           preferences?: Json
           scanlines?: boolean | null
           sound_effects?: boolean | null
@@ -103,6 +105,7 @@ export type Database = {
           animations?: boolean | null
           font_scale?: number | null
           last_active_date?: string | null
+          longest_streak?: number
           preferences?: Json
           scanlines?: boolean | null
           sound_effects?: boolean | null
@@ -165,6 +168,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          unlocked_at: string
+          user_id: string
+          xp_awarded: number
+        }
+        Insert: {
+          achievement_id: string
+          unlocked_at?: string
+          user_id: string
+          xp_awarded?: number
+        }
+        Update: {
+          achievement_id?: string
+          unlocked_at?: string
+          user_id?: string
+          xp_awarded?: number
+        }
+        Relationships: []
       }
     }
     Views: {
