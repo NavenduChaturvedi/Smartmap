@@ -26,12 +26,14 @@ function ctx(overrides: Partial<Ctx> = {}): Ctx {
   }
 }
 
+const CREATED = "2026-09-01T09:00:00+05:30"
+
 function doneTask(completedAt: string | null, extra: Partial<TaskInput> = {}): TaskInput {
-  return { done: true, completedAt, roadmapId: "r1", xp: 10, ...extra }
+  return { done: true, completedAt, createdAt: CREATED, roadmapId: "r1", xp: 10, ...extra }
 }
 
 function openTask(extra: Partial<TaskInput> = {}): TaskInput {
-  return { done: false, completedAt: null, roadmapId: "r1", xp: 10, ...extra }
+  return { done: false, completedAt: null, createdAt: CREATED, roadmapId: "r1", xp: 10, ...extra }
 }
 
 // Completions at 10:00 on consecutive local days starting 2026-09-01.
@@ -71,6 +73,19 @@ describe("boundaries", () => {
     expect(unlocks(ctx({ tasks: dailyTasks(9) }), "quick-start")).toBe(false)
     const hit = find(ctx({ tasks: dailyTasks(10) }), "quick-start")
     expect(hit?.unlockedAt).toBe("2026-09-10T10:00:00+05:30")
+  })
+
+  it("quick-start: done tasks with no completion time count as done when created", () => {
+    // 2 imported tasks (no completion time) + 8 timed = 10 by Sep 5.
+    const c = ctx({
+      tasks: [
+        doneTask(null, { createdAt: "2026-09-05T08:00:00+05:30" }),
+        doneTask(null, { createdAt: "2026-09-05T08:00:00+05:30" }),
+        ...Array.from({ length: 8 }, (_, i) => doneTask(`2026-09-05T20:1${i}:00+05:30`)),
+        doneTask("2026-09-28T18:00:00+05:30"),
+      ],
+    })
+    expect(find(c, "quick-start")?.unlockedAt).toBe("2026-09-05T20:17:00+05:30")
   })
 
   it("quick-start: progress counts done tasks", () => {
@@ -167,6 +182,17 @@ describe("boundaries", () => {
     expect(find(c, "summit")?.unlockedAt).toBe("2026-09-06T10:00:00+05:30")
   })
 
+  it("century-mark: dated by the task that took a roadmap to 200 XP", () => {
+    const c = ctx({
+      tasks: [
+        doneTask("2026-09-05T10:00:00+05:30", { xp: 150 }),
+        doneTask("2026-09-05T10:05:00+05:30", { xp: 60 }),
+        doneTask("2026-09-06T10:00:00+05:30", { xp: 300 }),
+      ],
+    })
+    expect(find(c, "century-mark")?.unlockedAt).toBe("2026-09-05T10:05:00+05:30")
+  })
+
   it("century-mark: 199 vs 200 XP in one roadmap; split across roadmaps doesn't count", () => {
     const one = (xp: number) => ctx({ tasks: [doneTask("2026-09-05T10:00:00+05:30", { xp })] })
     expect(unlocks(one(199), "century-mark")).toBe(false)
@@ -182,6 +208,12 @@ describe("boundaries", () => {
       ],
     })
     expect(unlocks(split, "century-mark")).toBe(false)
+  })
+
+  it("speedrunner: an imported roadmap with no completion times doesn't count", () => {
+    const c = ctx({ tasks: [doneTask(null, { createdAt: "2026-09-01T09:00:10+05:30" })] })
+    expect(unlocks(c, "summit")).toBe(true)
+    expect(unlocks(c, "speedrunner")).toBe(false)
   })
 
   it("speedrunner: finished exactly 7 days after creation counts, a minute later doesn't", () => {
@@ -245,8 +277,9 @@ describe("backfill of an existing account", () => {
       ...Array.from({ length: 9 }, (_, i) =>
         doneTask(`2026-09-05T20:1${i}:00+05:30`, { xp: 50, roadmapId: "r1" }),
       ),
-      doneTask(null, { xp: 100, roadmapId: "r2" }),
-      doneTask(null, { xp: 100, roadmapId: "r2" }),
+      // Legacy imports: done on arrival, no completion time.
+      doneTask(null, { xp: 100, roadmapId: "r2", createdAt: "2026-09-05T08:05:00+05:30" }),
+      doneTask(null, { xp: 100, roadmapId: "r2", createdAt: "2026-09-05T08:05:00+05:30" }),
     ],
     viewedAnalytics: true,
   })
@@ -266,15 +299,21 @@ describe("backfill of an existing account", () => {
     )
   })
 
-  it("dates each unlock by the task that earned it, else now", () => {
+  it("dates each unlock by the task that earned it, never now, when the data can tell", () => {
     const at = (id: string) => find(existing, id)?.unlockedAt
-    expect(at("first-contact")).toBe("2026-09-05T20:10:00+05:30")
+    // The imported tasks were done when they arrived (08:05).
+    expect(at("first-contact")).toBe("2026-09-05T08:05:00+05:30")
     expect(at("base-camp")).toBe("2026-09-05T08:00:00+05:30")
+    // 2 imported + the 8th timed completion.
+    expect(at("quick-start")).toBe("2026-09-05T20:17:00+05:30")
+    // r2 reached 200 XP with its imported tasks.
+    expect(at("century-mark")).toBe("2026-09-05T08:05:00+05:30")
+    // r2 (imported) finished first; r1 is the timed one that counts for speed.
+    expect(at("summit")).toBe("2026-09-05T08:05:00+05:30")
+    expect(at("speedrunner")).toBe("2026-09-05T20:18:00+05:30")
+    // Deep Work needs real times: the 5th timed completion that day.
     expect(at("deep-work")).toBe("2026-09-05T20:14:00+05:30")
-    // Roadmap r1 finished at its last completion.
-    expect(at("summit")).toBe("2026-09-05T20:18:00+05:30")
-    // Only 9 tasks carry a completion time, so the 10th is unknown.
-    expect(at("quick-start")).toBe(NOW.toISOString())
+    // Only a visit flag, no time recorded.
     expect(at("data-analyst")).toBe(NOW.toISOString())
   })
 

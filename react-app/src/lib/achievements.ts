@@ -14,6 +14,7 @@ type Rarity = "common" | "rare" | "epic"
 interface AchievementTask {
   done: boolean
   completedAt: string | null
+  createdAt: string
   roadmapId: string
   xp: number
 }
@@ -66,37 +67,47 @@ function doneCount(ctx: AchievementContext) {
   return ctx.tasks.filter((t) => t.done).length
 }
 
-// Completion timestamps, oldest first.
+const byTime = (a: string, b: string) => Date.parse(a) - Date.parse(b)
+
+// Recorded completion timestamps, oldest first. For achievements about *when*
+// something happened (time of day, which day, gaps, speed), where a guessed
+// time could award something that didn't happen.
 function completionTimes(ctx: AchievementContext): string[] {
   return ctx.tasks
     .filter((t) => t.done && t.completedAt)
     .map((t) => t.completedAt!)
-    .sort((a, b) => Date.parse(a) - Date.parse(b))
+    .sort(byTime)
+}
+
+// When a done task is known to have been done: its completion time, or for
+// tasks that never recorded one (legacy imports arrive already done), its
+// creation time. For count and threshold achievements, where every done task
+// must count and the question is only when the threshold was crossed.
+function doneAt(t: AchievementTask): string {
+  return t.completedAt ?? t.createdAt
+}
+
+// Done tasks, oldest (by doneAt) first.
+function doneTasksInOrder(ctx: AchievementContext): AchievementTask[] {
+  return ctx.tasks.filter((t) => t.done).sort((a, b) => byTime(doneAt(a), doneAt(b)))
 }
 
 function roadmapsByCreation(ctx: AchievementContext) {
   return [...ctx.roadmaps].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
 }
 
-// Roadmaps with at least one task where every task is done, with the time
-// the last task was completed (null when no task recorded a time).
+// Roadmaps with at least one task where every task is done, oldest finish
+// first. finishedAt is when the last task was done (by doneAt); `timed` says
+// whether every task recorded a real completion time.
 function finishedRoadmaps(ctx: AchievementContext) {
-  const out: { roadmap: AchievementRoadmap; finishedAt: string | null }[] = []
+  const out: { roadmap: AchievementRoadmap; finishedAt: string; timed: boolean }[] = []
   for (const roadmap of ctx.roadmaps) {
     const tasks = ctx.tasks.filter((t) => t.roadmapId === roadmap.id)
     if (tasks.length === 0 || !tasks.every((t) => t.done)) continue
-    const times = tasks.map((t) => t.completedAt).filter((c): c is string => !!c)
-    const finishedAt = times.length
-      ? times.reduce((max, c) => (Date.parse(c) > Date.parse(max) ? c : max))
-      : null
-    out.push({ roadmap, finishedAt })
+    const finishedAt = tasks.map(doneAt).reduce((max, c) => (byTime(c, max) > 0 ? c : max))
+    out.push({ roadmap, finishedAt, timed: tasks.every((t) => t.completedAt) })
   }
-  // Oldest finish first; unknown finish times last.
-  return out.sort((a, b) => {
-    if (a.finishedAt === null) return b.finishedAt === null ? 0 : 1
-    if (b.finishedAt === null) return -1
-    return Date.parse(a.finishedAt) - Date.parse(b.finishedAt)
-  })
+  return out.sort((a, b) => byTime(a.finishedAt, b.finishedAt))
 }
 
 function maxRoadmapXp(ctx: AchievementContext) {
@@ -105,6 +116,17 @@ function maxRoadmapXp(ctx: AchievementContext) {
     if (t.done) xp.set(t.roadmapId, (xp.get(t.roadmapId) ?? 0) + t.xp)
   }
   return Math.max(0, ...xp.values())
+}
+
+// When any single roadmap's done-task XP first reached `target`.
+function roadmapXpReachedAt(ctx: AchievementContext, target: number): string | null {
+  const xp = new Map<string, number>()
+  for (const t of doneTasksInOrder(ctx)) {
+    const total = (xp.get(t.roadmapId) ?? 0) + t.xp
+    xp.set(t.roadmapId, total)
+    if (total >= target) return doneAt(t)
+  }
+  return null
 }
 
 function bestStreak(ctx: AchievementContext) {
@@ -141,7 +163,10 @@ const ACHIEVEMENTS: AchievementDef[] = [
     rarity: "common",
     xp: 20,
     check: (ctx) => doneCount(ctx) >= 1,
-    earnedAt: (ctx) => nth(completionTimes(ctx), 1),
+    earnedAt: (ctx) => {
+      const task = nth(doneTasksInOrder(ctx), 1)
+      return task && doneAt(task)
+    },
   },
   {
     id: "base-camp",
@@ -161,7 +186,10 @@ const ACHIEVEMENTS: AchievementDef[] = [
     check: (ctx) => doneCount(ctx) >= 10,
     progress: (ctx) => ({ current: doneCount(ctx), target: 10 }),
     progressUnit: "tasks",
-    earnedAt: (ctx) => nth(completionTimes(ctx), 10),
+    earnedAt: (ctx) => {
+      const task = nth(doneTasksInOrder(ctx), 10)
+      return task && doneAt(task)
+    },
   },
   {
     id: "cartographer",
@@ -253,6 +281,7 @@ const ACHIEVEMENTS: AchievementDef[] = [
     check: (ctx) => maxRoadmapXp(ctx) >= 200,
     progress: (ctx) => ({ current: maxRoadmapXp(ctx), target: 200 }),
     progressUnit: "XP",
+    earnedAt: (ctx) => roadmapXpReachedAt(ctx, 200),
   },
   {
     id: "speedrunner",
@@ -301,11 +330,12 @@ function deepWorkAt(ctx: AchievementContext): string | null {
   return earliest
 }
 
+// Needs real completion times: an imported roadmap whose tasks arrived
+// already done would otherwise look like it was finished instantly.
 function speedrunAt(ctx: AchievementContext): string | null {
   const hit = finishedRoadmaps(ctx).find(
-    ({ roadmap, finishedAt }) =>
-      finishedAt !== null &&
-      Date.parse(finishedAt) - Date.parse(roadmap.createdAt) <= SPEEDRUN_DAYS * DAY_MS,
+    ({ roadmap, finishedAt, timed }) =>
+      timed && Date.parse(finishedAt) - Date.parse(roadmap.createdAt) <= SPEEDRUN_DAYS * DAY_MS,
   )
   return hit?.finishedAt ?? null
 }
