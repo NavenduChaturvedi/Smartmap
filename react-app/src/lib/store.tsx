@@ -304,6 +304,9 @@ interface StoreApi {
   // completion counts, so every screen agrees.
   completedTasks: Task[]
   achievements: Achievement[]
+  // Unlocked achievement ids waiting to be announced, oldest first.
+  achievementToasts: string[]
+  dismissAchievementToast: () => void
   rootTasks: (roadmapId: string) => Task[]
   subtasks: (parentId: string) => Task[]
   roadmapProgress: (roadmapId: string) => { completed: number; total: number }
@@ -626,8 +629,28 @@ function StoreProvider({ children }: { children: ReactNode }) {
   // records everything their history already qualifies for, quietly. Later
   // passes are live unlocks.
   const backfilledOwnerRef = useRef<string | null>(null)
-  // Set by the toast queue; a ref so evaluation doesn't depend on it.
+  // Called with live (non-backfill) unlocks. A ref, refreshed every render
+  // before the evaluation effect runs, so evaluation doesn't re-run when
+  // settings change.
   const onUnlockRef = useRef<(ids: string[]) => void>(() => {})
+  const [achievementToasts, setAchievementToasts] = useState<string[]>([])
+  // Announced this session. A refresh can briefly drop an unlock whose
+  // insert hasn't landed and re-evaluate it; it shouldn't toast twice.
+  const toastedRef = useRef(new Set<string>())
+  useEffect(() => {
+    onUnlockRef.current = (ids) => {
+      if (!state.settings.achievementAlerts) return
+      const fresh = ids.filter((id) => !toastedRef.current.has(id))
+      for (const id of fresh) toastedRef.current.add(id)
+      if (fresh.length) setAchievementToasts((q) => [...q, ...fresh])
+    }
+  })
+  useEffect(() => {
+    // A different account (or signing out) starts a fresh queue.
+    setAchievementToasts([])
+    toastedRef.current = new Set()
+  }, [stateOwner])
+  const dismissAchievementToast = useCallback(() => setAchievementToasts((q) => q.slice(1)), [])
   useEffect(() => {
     if (loading || !stateOwner || !unlocksReady) return
     const isBackfill = backfilledOwnerRef.current !== stateOwner
@@ -1092,6 +1115,8 @@ function StoreProvider({ children }: { children: ReactNode }) {
     streak,
     completedTasks,
     achievements,
+    achievementToasts,
+    dismissAchievementToast,
     rootTasks,
     subtasks,
     roadmapProgress,

@@ -1,4 +1,4 @@
-import { AlertTriangle, Database, Download, Upload, User } from "lucide-react"
+import { AlertTriangle, Bell, Database, Download, Upload, User } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 
@@ -127,6 +127,37 @@ function Settings() {
           </Card>
 
           <Card className="flex flex-col gap-5 p-5">
+            <div className="flex items-center gap-2">
+              <Bell className="size-4 text-ink-muted" aria-hidden />
+              <h2 className="text-sm font-semibold text-ink-strong">Notifications</h2>
+            </div>
+            {[
+              {
+                key: "achievementAlerts" as const,
+                label: "Achievement Alerts",
+                hint: "Show a notification when you unlock an achievement",
+              },
+              {
+                key: "soundEffects" as const,
+                label: "Sound Effects",
+                hint: "Play a chime with achievement alerts",
+              },
+            ].map((row) => (
+              <div key={row.key} className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[13px] font-medium text-ink">{row.label}</p>
+                  <p className="text-[11.5px] text-ink-muted">{row.hint}</p>
+                </div>
+                <Toggle
+                  checked={state.settings[row.key]}
+                  onChange={(value) => void updateSettings({ [row.key]: value })}
+                  label={row.label}
+                />
+              </div>
+            ))}
+          </Card>
+
+          <Card className="flex flex-col gap-5 p-5">
             <h2 className="text-sm font-semibold text-ink-strong">Appearance</h2>
 
             <div>
@@ -148,7 +179,6 @@ function Settings() {
             </div>
 
             {[
-              { key: "soundEffects" as const, label: "Sound Effects", hint: "Play a chime on task completion" },
               { key: "reducedMotion" as const, label: "Reduced Motion", hint: "Disable card/hover animations" },
               { key: "compactDensity" as const, label: "Compact Density", hint: "Tighter spacing across tables and lists" },
             ].map((row) => (

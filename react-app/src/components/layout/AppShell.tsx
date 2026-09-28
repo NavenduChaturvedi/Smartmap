@@ -6,6 +6,7 @@ import { Link, Outlet } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useStore } from "@/lib/store"
 
+import { AchievementToast } from "./AchievementToast"
 import { Sidebar } from "./Sidebar"
 import { TopHeader } from "./TopHeader"
 
@@ -28,6 +29,7 @@ function AppShell() {
   return (
     <MotionConfig reducedMotion={state.settings.reducedMotion ? "always" : "user"}>
     <div className="flex h-dvh bg-canvas font-sans">
+      <AchievementToast />
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopHeader />
