@@ -38,10 +38,26 @@ jobs:
           # Selecting from a table (not just hitting the API root) makes
           # Postgres run a query, which is what counts as activity. Row Level
           # Security returns no rows to the anon key, which is fine.
-          curl --silent --show-error --fail-with-body \
+          api_url="${SUPABASE_URL%/}/rest/v1/roadmaps?select=id&limit=1"
+          if ! curl --silent --show-error --fail-with-body \
             --retry 3 --retry-delay 10 --retry-all-errors \
             --max-time 30 \
-            "${SUPABASE_URL%/}/rest/v1/roadmaps?select=id&limit=1" \
+            "$api_url" \
             -H "apikey: $SUPABASE_ANON_KEY" \
             -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-            -o /dev/null -w "Supabase responded HTTP %{http_code}\n"
+            -o /dev/null -w "Supabase responded HTTP %{http_code}\n"; then
+            status=$?
+            if [ "$status" -eq 6 ]; then
+              echo "::warning::DNS resolution failed; retrying via DNS-over-HTTPS."
+              curl --silent --show-error --fail-with-body \
+                --retry 3 --retry-delay 10 --retry-all-errors \
+                --max-time 30 \
+                --doh-url https://dns.google/dns-query \
+                "$api_url" \
+                -H "apikey: $SUPABASE_ANON_KEY" \
+                -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+                -o /dev/null -w "Supabase responded HTTP %{http_code}\n"
+            else
+              exit "$status"
+            fi
+          fi
